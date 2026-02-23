@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableMongoRepositories(basePackages = "com.festiva.datastorage.mongo")
+@EnableMongoRepositories(basePackages = "com.festiva.friend.repository")
 public class FestivaApplication {
 
     public static void main(String[] args) {

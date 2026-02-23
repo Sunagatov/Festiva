@@ -2,88 +2,78 @@ package com.festiva.bot;
 
 import com.festiva.command.CommandRouter;
 import com.festiva.metrics.MetricsSender;
+import com.festiva.notification.NotificationSender;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
+import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
+import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 @Slf4j
 @Component
-public class BirthdayBot extends TelegramLongPollingBot {
+public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer, NotificationSender {
 
-    @Value("${telegram.bot.username}")
-    private String botUsername;
-
+    private final String botToken;
+    private final TelegramClient telegramClient;
     private final CommandRouter commandRouter;
-    private final Callback callbackQuery;
+    private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
 
     public BirthdayBot(CommandRouter commandRouter,
-                       Callback callbackQuery,
+                       CallbackQueryHandler callbackQueryHandler,
                        @Value("${telegram.bot.token}") String botToken,
                        MetricsSender metricsSender) {
-        super(botToken);
+        this.botToken = botToken;
+        this.telegramClient = new OkHttpTelegramClient(botToken);
         this.commandRouter = commandRouter;
-        this.callbackQuery = callbackQuery;
+        this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
     }
 
     @Override
-    public void onUpdateReceived(Update update) {
+    public String getBotToken() {
+        return botToken;
+    }
+
+    @Override
+    public LongPollingUpdateConsumer getUpdatesConsumer() {
+        return this;
+    }
+
+    @Override
+    public void consume(Update update) {
         if (update == null) {
-            log.warn("Received a null update.");
+            log.warn("Received null update");
             return;
         }
-
-        final long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         try {
             if (update.hasCallbackQuery()) {
-                processCallbackQuery(update);
+                EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
+                if (edit != null) telegramClient.execute(edit);
             } else if (update.hasMessage()) {
-                processMessageUpdate(update);
-            } else {
-                log.warn("Update contains neither a message nor a callback query: {}", update);
+                SendMessage response = commandRouter.route(update);
+                if (response != null) telegramClient.execute(response);
             }
-            final long duration = System.currentTimeMillis() - startTime;
-            metricsSender.sendMetrics(update, "SUCCESS", duration);
+            metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
         } catch (Exception e) {
-            final long duration = System.currentTimeMillis() - startTime;
-            metricsSender.sendMetrics(update, "ERROR", duration);
-            log.error("Error processing update: {}", update, e);
-        }
-    }
-
-    private void processCallbackQuery(Update update) throws Exception {
-        EditMessageText editMessage = callbackQuery.handleCallbackQuery(update.getCallbackQuery());
-        if (editMessage == null) {
-            log.warn("Callback query did not produce a response.");
-        } else {
-            execute(editMessage);
-        }
-    }
-
-    private void processMessageUpdate(Update update) throws Exception {
-        SendMessage response = commandRouter.route(update);
-        if (response == null) {
-            log.warn("No response generated from command router for update: {}", update);
-        } else {
-            execute(response);
+            metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
+            log.error("Error processing update: updateId={}", update.getUpdateId(), e);
         }
     }
 
     @Override
-    public String getBotUsername() {
-        return botUsername;
-    }
-
-    public void sendMessage(SendMessage message) {
+    public void send(long telegramUserId, String text) {
         try {
-            execute(message);
+            telegramClient.execute(SendMessage.builder().chatId(telegramUserId).text(text).build());
         } catch (Exception e) {
-            log.error("Error while sending message: {}", message, e);
+            log.error("Failed to send notification to userId={}", telegramUserId, e);
         }
     }
 }

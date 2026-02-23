@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,54 +14,41 @@ import java.util.List;
 @Component
 public class BirthdaysCommandHandler implements CommandHandler {
 
+    private static final int COLUMNS_PER_ROW = 4;
+    private static final int TOTAL_MONTHS = 12;
+
+    @Override
+    public String command() {
+        return "/birthdays";
+    }
+
     @Override
     public SendMessage handle(Update update) {
-        long chatId = update.getMessage().getChatId();
-        return sendMonthSelection(chatId);
+        return SendMessage.builder()
+                .chatId(update.getMessage().getChatId())
+                .parseMode("HTML")
+                .text("<b>Просмотр дней рождения</b>\n\nВыберите месяц, чтобы увидеть список дней рождения:")
+                .replyMarkup(InlineKeyboardMarkup.builder().keyboard(buildKeyboard()).build())
+                .build();
     }
 
-    public SendMessage sendMonthSelection(long chatId) {
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        markup.setKeyboard(buildKeyboardRows());
+    private List<InlineKeyboardRow> buildKeyboard() {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        rows.add(new InlineKeyboardRow(button("Текущий месяц", "MONTH_CURRENT")));
 
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setParseMode("HTML");
-        message.setText("<b>Просмотр дней рождения</b>\n\nВыберите месяц, чтобы увидеть список дней рождения:");
-        message.setReplyMarkup(markup);
-
-        return message;
-    }
-
-    private List<List<InlineKeyboardButton>> buildKeyboardRows() {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        // Первая строка: кнопка для текущего месяца
-        List<InlineKeyboardButton> currentMonthRow = new ArrayList<>();
-        currentMonthRow.add(createButton("Текущий месяц", "MONTH_CURRENT"));
-        rows.add(currentMonthRow);
-
-        // Остальные строки: кнопки для каждого месяца (числовые кнопки)
-        final int columns = 4;
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        for (int month = 1; month <= 12; month++) {
-            InlineKeyboardButton button = createButton(String.valueOf(month), "MONTH_" + month);
-            row.add(button);
-            if (month % columns == 0) {
-                rows.add(new ArrayList<>(row));
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        for (int m = 1; m <= TOTAL_MONTHS; m++) {
+            row.add(button(String.valueOf(m), "MONTH_" + m));
+            if (m % COLUMNS_PER_ROW == 0) {
+                rows.add(new InlineKeyboardRow(row));
                 row.clear();
             }
         }
-        if (!row.isEmpty()) {
-            rows.add(new ArrayList<>(row));
-        }
+        if (!row.isEmpty()) rows.add(row);
         return rows;
     }
 
-    private InlineKeyboardButton createButton(String text, String callbackData) {
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText(text);
-        button.setCallbackData(callbackData);
-        return button;
+    private InlineKeyboardButton button(String text, String callbackData) {
+        return InlineKeyboardButton.builder().text(text).callbackData(callbackData).build();
     }
 }

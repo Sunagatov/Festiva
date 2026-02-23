@@ -1,8 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
-import com.festiva.datastorage.CustomDAO;
-import com.festiva.datastorage.entity.Friend;
+import com.festiva.friend.api.FriendService;
+import com.festiva.friend.entity.Friend;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -16,49 +16,40 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ListCommandHandler implements CommandHandler {
 
-    private final CustomDAO dao;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    private final FriendService friendService;
+
+    @Override
+    public String command() {
+        return "/list";
+    }
 
     @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long telegramUserId = update.getMessage().getFrom().getId();
-        List<Friend> friends = dao.getAllBySortedByDayMonth(telegramUserId);
-
-        String response;
-        if (friends.isEmpty()) {
-            response = "<b>Список пользователей пуст.</b>";
-        } else {
-            response = allFriendsInfo(friends);
-        }
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setParseMode("HTML");
-        message.setText(response);
-        return message;
+        List<Friend> friends = friendService.getFriendsSortedByDayMonth(update.getMessage().getFrom().getId());
+        String text = friends.isEmpty() ? "<b>Список пользователей пуст.</b>" : buildText(friends);
+        return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).build();
     }
 
-    public String allFriendsInfo(List<Friend> friends) {
-        StringBuilder response = new StringBuilder("<b>Список пользователей (текущий календарный год):</b>\n\n");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        LocalDate currentDate = LocalDate.now();
+    private String buildText(List<Friend> friends) {
+        StringBuilder sb = new StringBuilder("<b>Список пользователей (текущий календарный год):</b>\n\n");
+        LocalDate today = LocalDate.now();
 
-        for (Friend friend : friends) {
-            LocalDate birthDate = friend.getBirthDate();
-            LocalDate nextBirthday = birthDate.withYear(currentDate.getYear());
-            if (nextBirthday.isBefore(currentDate) || nextBirthday.isEqual(currentDate)) {
-                response.append("– ")
-                        .append("<b>").append(friend.getBirthDate().format(formatter)).append("</b> ")
-                        .append("<i>").append(friend.getName()).append("</i>")
-                        .append(" (в этом году исполнилось <b>").append(friend.getAge()).append("</b>)\n");
+        for (Friend f : friends) {
+            LocalDate nextBirthday = f.getBirthDate().withYear(today.getYear());
+            sb.append("– <b>").append(f.getBirthDate().format(DATE_FORMATTER))
+                    .append("</b> <i>").append(f.getName()).append("</i> ");
+
+            if (nextBirthday.isBefore(today) || nextBirthday.isEqual(today)) {
+                sb.append("(в этом году исполнилось <b>").append(f.getAge()).append("</b>)");
             } else {
-                response.append("– ")
-                        .append("<b>").append(friend.getBirthDate().format(formatter)).append("</b> ")
-                        .append("<i>").append(friend.getName()).append("</i>")
-                        .append(" (сейчас пользователю <b>").append(friend.getAge())
-                        .append("</b>, в этом году исполнится <b>").append(friend.getNextAge()).append("</b>)\n");
+                sb.append("(сейчас пользователю <b>").append(f.getAge())
+                        .append("</b>, в этом году исполнится <b>").append(f.getNextAge()).append("</b>)");
             }
+            sb.append("\n");
         }
-        return response.toString();
+        return sb.toString();
     }
 }

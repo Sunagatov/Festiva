@@ -8,29 +8,39 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Component
 public class StartCommandHandler implements CommandHandler {
 
+    private static final String WELCOME_TEXT = """
+            <b>Добро пожаловать!</b>
+            Я бот для учета дней рождения. Я помогу вам управлять списком друзей и отслеживать их дни рождения.
+            
+            <b>Основные команды:</b>
+            /start - Запуск бота и вывод этого сообщения
+            /help - Вывод списка команд
+            
+            <b>Управление списком друзей:</b>
+            /list - Показать список друзей
+            /add - Добавить нового друга
+            /remove - Удалить существующего друга
+            
+            <b>Просмотр дней рождения:</b>
+            /birthdays - Дни рождения по месяцам
+            /upcomingbirthdays - Ближайшие дни рождения
+            /jubilee - Юбилейные дни рождения
+            
+            <b>Отмена операций:</b>
+            /cancel - Отмена текущей команды
+            """;
+
+    @Override
+    public String command() {
+        return "/start";
+    }
+
     @Override
     public SendMessage handle(Update update) {
-        long chatId = update.getMessage().getChatId();
-        String text = "<b>Добро пожаловать!</b>\n" +
-                "Я бот для учета дней рождения. Я помогу вам управлять списком друзей и отслеживать их дни рождения.\n\n" +
-                "<b>Основные команды:</b>\n" +
-                "/start - Запуск бота и вывод этого сообщения\n" +
-                "/help - Вывод списка команд\n\n" +
-                "<b>Управление списком друзей:</b>\n" +
-                "/list - Показать список друзей\n" +
-                "/add - Добавить нового друга\n" +
-                "/remove - Удалить существующего друга\n\n" +
-                "<b>Просмотр дней рождения:</b>\n" +
-                "/birthdays - Дни рождения по месяцам\n" +
-                "/upcomingbirthdays - Ближайшие дни рождения\n" +
-                "/jubilee - Юбилейные дни рождения\n\n" +
-                "<b>Отмена операций:</b>\n" +
-                "/cancel - Отмена текущей команды";
-
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setParseMode("HTML");
-        message.setText(text);
-        return message;
+        return SendMessage.builder()
+                .chatId(update.getMessage().getChatId())
+                .parseMode("HTML")
+                .text(WELCOME_TEXT)
+                .build();
     }
 }

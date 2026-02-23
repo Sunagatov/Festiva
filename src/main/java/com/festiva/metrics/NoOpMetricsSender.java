@@ -9,10 +9,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class NoOpMetricsSender implements MetricsSender {
 
     @Override
-    public void sendMetrics(String jsonMessage) {
-    }
-
-    @Override
     public void sendMetrics(Update update, String status, long processingTimeMillis) {
     }
 }

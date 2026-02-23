@@ -1,10 +1,10 @@
-package com.festiva.datastorage;
+package com.festiva.friend.repository;
 
-import com.festiva.datastorage.entity.Friend;
+import com.festiva.friend.entity.Friend;
 
 import java.util.List;
 
-public interface CustomDAO {
+public interface FriendRepository {
 
     void addFriend(long telegramUserId, Friend friend);
 
@@ -13,10 +13,6 @@ public interface CustomDAO {
     boolean friendExists(long telegramUserId, String name);
 
     void deleteFriend(long telegramUserId, String name);
-
-    List<Friend> getAllBySortedByDayMonth(long telegramUserId);
-
-    List<Friend> getAllSortedByUpcomingBirthday(long telegramUserId);
 
     List<Long> getAllUserIds();
 }

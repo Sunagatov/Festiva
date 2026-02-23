@@ -1,0 +1,17 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_TEST_URI:mongodb://localhost:27017}
+      database: festiva-test
+  autoconfigure:
+    exclude: org.telegram.telegrambots.longpolling.starter.TelegramBotStarterConfiguration
+  main:
+    allow-bean-definition-overriding: true
+
+telegram:
+  bot:
+    token: test-token
+    username: test-bot
+
+kafka:
+  enabled: false

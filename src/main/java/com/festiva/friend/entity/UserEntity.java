@@ -1,4 +1,4 @@
-package com.festiva.datastorage.entity;
+package com.festiva.friend.entity;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;

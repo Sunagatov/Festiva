@@ -15,20 +15,22 @@ public class CancelCommandHandler implements CommandHandler {
     private final UserStateService userStateService;
 
     @Override
+    public String command() {
+        return "/cancel";
+    }
+
+    @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long telegramUserId = update.getMessage().getFrom().getId();
+        Long userId = update.getMessage().getFrom().getId();
+        boolean active = userStateService.getState(userId) != BotState.IDLE;
 
-        SendMessage response = new SendMessage();
-        response.setChatId(String.valueOf(chatId));
-        response.setParseMode("HTML");
+        if (active) userStateService.clearState(userId);
 
-        if (userStateService.getState(telegramUserId) == BotState.IDLE) {
-            response.setText("<b><i>Нет активной команды для отмены. Я и так ничего не делал. Zzzzz...</i></b>");
-        } else {
-            userStateService.clearState(telegramUserId);
-            response.setText("<b><i>Текущая команда отменена. Чем ещё могу помочь? Отправьте /help для списка команд.</i></b>");
-        }
-        return response;
+        String text = active
+                ? "<b><i>Текущая команда отменена. Чем ещё могу помочь? Отправьте /help для списка команд.</i></b>"
+                : "<b><i>Нет активной команды для отмены. Я и так ничего не делал. Zzzzz...</i></b>";
+
+        return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).build();
     }
 }

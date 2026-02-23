@@ -1,8 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
-import com.festiva.datastorage.CustomDAO;
-import com.festiva.datastorage.entity.Friend;
+import com.festiva.friend.api.FriendService;
+import com.festiva.friend.entity.Friend;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -11,79 +11,66 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 @Component
 @RequiredArgsConstructor
 public class AddFriendCommandHandler implements CommandHandler {
 
-    private final CustomDAO dao;
+    private final FriendService friendService;
     private final UserStateService userStateService;
+
+    @Override
+    public String command() {
+        return "/add";
+    }
 
     @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long telegramUserId = update.getMessage().getFrom().getId();
-        String text = update.getMessage().getText().trim();
+        Long userId = update.getMessage().getFrom().getId();
 
-        // Если команда ровно "/add" — начинаем процесс добавления и переводим пользователя в состояние ожидания.
-        if (text.equals("/add")) {
-            userStateService.setState(telegramUserId, BotState.WAITING_FOR_ADD_FRIEND_INPUT);
-            SendMessage response = new SendMessage();
-            response.setChatId(String.valueOf(chatId));
-            response.setText("Введите имя и дату рождения следующим образом:\nИмя гггг-мм-дд");
-            return response;
-        } else {
-            // Если текст не является командой, пробуем его обработать как ответ на запрос ввода.
-            return handleAwaitingInput(update);
-        }
+        userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_INPUT);
+        return response(chatId, "Введите имя и дату рождения следующим образом:\nИмя гггг-мм-дд");
     }
 
-    /**
-     * Обрабатывает ввод пользователя в состоянии ожидания данных для добавления друга.
-     * Ожидается формат: "Имя гггг-мм-дд".
-     */
     public SendMessage handleAwaitingInput(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long telegramUserId = update.getMessage().getFrom().getId();
-        String messageText = update.getMessage().getText().trim();
+        Long userId = update.getMessage().getFrom().getId();
+        String text = update.getMessage().getText().trim();
 
-        SendMessage response = new SendMessage();
-        response.setChatId(String.valueOf(chatId));
-
-        // Проверка формата ввода – ищем последний пробел для разделения имени и даты.
-        int lastSpaceIndex = messageText.lastIndexOf(" ");
-        if (lastSpaceIndex <= 0) {
-            response.setText("Неверный формат. Используйте: Имя гггг-мм-дд");
-            return response;
+        int lastSpace = text.lastIndexOf(" ");
+        if (lastSpace <= 0) {
+            return response(chatId, "Неверный формат. Используйте: Имя гггг-мм-дд");
         }
 
-        String name = messageText.substring(0, lastSpaceIndex).trim();
-        String birthDateStr = messageText.substring(lastSpaceIndex + 1).trim();
+        String name = text.substring(0, lastSpace).trim();
+        String dateStr = text.substring(lastSpace + 1).trim();
 
         if (name.isEmpty()) {
-            response.setText("Имя не может быть пустым.");
-            return response;
+            return response(chatId, "Имя не может быть пустым.");
+        }
+        if (friendService.friendExists(userId, name)) {
+            return response(chatId, "Друг с таким именем уже существует.");
         }
 
         LocalDate birthDate;
         try {
-            birthDate = LocalDate.parse(birthDateStr);
-        } catch (Exception e) {
-            response.setText("Неверный формат даты. Используйте: гггг-мм-дд");
-            return response;
+            birthDate = LocalDate.parse(dateStr);
+        } catch (DateTimeParseException e) {
+            return response(chatId, "Неверный формат даты. Используйте: гггг-мм-дд");
         }
 
         if (birthDate.isAfter(LocalDate.now())) {
-            response.setText("Дата рождения не может быть в будущем.");
-            return response;
+            return response(chatId, "Дата рождения не может быть в будущем.");
         }
 
-        Friend friend = new Friend(name, birthDate);
-        dao.addFriend(telegramUserId, friend);
+        friendService.addFriend(userId, new Friend(name, birthDate));
+        userStateService.clearState(userId);
+        return response(chatId, "Пользователь " + name + " успешно добавлен!");
+    }
 
-        response.setText("Пользователь " + name + " успешно добавлен!");
-        // Сбрасываем состояние после успешного добавления.
-        userStateService.clearState(telegramUserId);
-        return response;
+    private SendMessage response(long chatId, String text) {
+        return SendMessage.builder().chatId(chatId).text(text).build();
     }
 }

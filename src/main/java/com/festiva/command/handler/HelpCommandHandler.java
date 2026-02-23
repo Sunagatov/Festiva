@@ -8,28 +8,38 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Component
 public class HelpCommandHandler implements CommandHandler {
 
+    private static final String HELP_TEXT = """
+            <b>Список доступных команд:</b>
+            
+            <b>Основные команды:</b>
+            /start - Запуск бота и вывод приветственного сообщения
+            /help - Вывод этого списка команд
+            
+            <b>Управление списком друзей:</b>
+            /list - Показать список друзей
+            /add - Добавить нового друга
+            /remove - Удалить существующего друга
+            
+            <b>Просмотр дней рождения:</b>
+            /birthdays - Дни рождения по месяцам
+            /upcomingbirthdays - Ближайшие дни рождения
+            /jubilee - Юбилейные дни рождения
+            
+            <b>Отмена операций:</b>
+            /cancel - Отмена текущей команды
+            """;
+
+    @Override
+    public String command() {
+        return "/help";
+    }
+
     @Override
     public SendMessage handle(Update update) {
-        long chatId = update.getMessage().getChatId();
-        String text = "<b>Список доступных команд:</b>\n\n" +
-                "<b>Основные команды:</b>\n" +
-                "/start - Запуск бота и вывод приветственного сообщения\n" +
-                "/help - Вывод этого списка команд\n\n" +
-                "<b>Управление списком друзей:</b>\n" +
-                "/list - Показать список друзей\n" +
-                "/add - Добавить нового друга\n" +
-                "/remove - Удалить существующего друга\n\n" +
-                "<b>Просмотр дней рождения:</b>\n" +
-                "/birthdays - Дни рождения по месяцам\n" +
-                "/upcomingbirthdays - Ближайшие дни рождения\n" +
-                "/jubilee - Юбилейные дни рождения\n\n" +
-                "<b>Отмена операций:</b>\n" +
-                "/cancel - Отмена текущей команды";
-
-        SendMessage response = new SendMessage();
-        response.setChatId(String.valueOf(chatId));
-        response.setParseMode("HTML");
-        response.setText(text);
-        return response;
+        return SendMessage.builder()
+                .chatId(update.getMessage().getChatId())
+                .parseMode("HTML")
+                .text(HELP_TEXT)
+                .build();
     }
 }
