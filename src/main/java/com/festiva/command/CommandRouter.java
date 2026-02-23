@@ -5,7 +5,6 @@ import com.festiva.command.handler.CancelCommandHandler;
 import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -49,7 +48,8 @@ public class CommandRouter {
         }
 
         Long userId = update.getMessage().getFrom().getId();
-        String command = update.getMessage().getText().trim().split(" ")[0];
+        String text = update.getMessage().getText().trim();
+        String command = text.split(" ")[0];
         BotState state = userStateService.getState(userId);
 
         if ("/cancel".equals(command)) {
@@ -57,7 +57,8 @@ public class CommandRouter {
         }
 
         return switch (state) {
-            case WAITING_FOR_ADD_FRIEND_INPUT -> addFriendHandler.handleAwaitingInput(update);
+            case WAITING_FOR_ADD_FRIEND_NAME -> addFriendHandler.handleAwaitingName(update);
+            case WAITING_FOR_ADD_FRIEND_DATE -> addFriendHandler.handleAwaitingDate(update);
             case WAITING_FOR_REMOVE_FRIEND_INPUT -> removeHandler.handleAwaitingInput(update);
             default -> handlers.getOrDefault(command, defaultHandler).handle(update);
         };

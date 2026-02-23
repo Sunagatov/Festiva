@@ -4,7 +4,7 @@ import com.festiva.IntegrationTestBase;
 import com.festiva.bot.BirthdayBot;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
-import com.festiva.friend.repository.UserMongoRepository;
+import com.festiva.friend.repository.FriendMongoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +24,14 @@ class BirthdayReminderTest extends IntegrationTestBase {
     FriendService friendService;
 
     @Autowired
-    UserMongoRepository userMongoRepository;
+    FriendMongoRepository friendMongoRepository;
 
     @Autowired
     BirthdayBot birthdayBot;
 
     @BeforeEach
     void clean() {
-        userMongoRepository.deleteAll();
+        friendMongoRepository.deleteAll();
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.festiva.friend.repository;
 
 import com.festiva.friend.entity.Friend;
-import com.festiva.friend.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -11,46 +10,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MongoFriendRepository implements FriendRepository {
 
-    private final UserMongoRepository userMongoRepository;
+    private final FriendMongoRepository friendMongoRepository;
 
     @Override
     public void addFriend(long telegramUserId, Friend friend) {
-        UserEntity user = userMongoRepository.findByTelegramUserId(telegramUserId)
-                .orElseGet(() -> {
-                    UserEntity newUser = new UserEntity();
-                    newUser.setTelegramUserId(telegramUserId);
-                    return newUser;
-                });
-        user.getFriends().add(friend);
-        userMongoRepository.save(user);
+        friend.setTelegramUserId(telegramUserId);
+        friendMongoRepository.save(friend);
     }
 
     @Override
     public List<Friend> getFriends(long telegramUserId) {
-        return userMongoRepository.findByTelegramUserId(telegramUserId)
-                .map(UserEntity::getFriends)
-                .orElse(List.of());
+        return friendMongoRepository.findByTelegramUserId(telegramUserId);
     }
 
     @Override
     public boolean friendExists(long telegramUserId, String name) {
-        return getFriends(telegramUserId).stream()
-                .anyMatch(f -> f.getName().equals(name));
+        return friendMongoRepository.existsByTelegramUserIdAndName(telegramUserId, name);
     }
 
     @Override
     public void deleteFriend(long telegramUserId, String name) {
-        userMongoRepository.findByTelegramUserId(telegramUserId)
-                .ifPresent(user -> {
-                    user.getFriends().removeIf(f -> f.getName().equals(name));
-                    userMongoRepository.save(user);
-                });
+        friendMongoRepository.deleteByTelegramUserIdAndName(telegramUserId, name);
     }
 
     @Override
     public List<Long> getAllUserIds() {
-        return userMongoRepository.findAll().stream()
-                .map(UserEntity::getTelegramUserId)
+        return friendMongoRepository.findAll().stream()
+                .map(Friend::getTelegramUserId)
+                .distinct()
                 .toList();
     }
 }

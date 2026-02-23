@@ -9,24 +9,19 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class HelpCommandHandler implements CommandHandler {
 
     private static final String HELP_TEXT = """
-            <b>Список доступных команд:</b>
+            📖 <b>Команды Festiva:</b>
             
-            <b>Основные команды:</b>
-            /start - Запуск бота и вывод приветственного сообщения
-            /help - Вывод этого списка команд
+            👥 <b>Друзья:</b>
+            /list — список друзей
+            /add — добавить друга
+            /remove — удалить друга
             
-            <b>Управление списком друзей:</b>
-            /list - Показать список друзей
-            /add - Добавить нового друга
-            /remove - Удалить существующего друга
+            🎂 <b>Дни рождения:</b>
+            /birthdays — по месяцам
+            /upcomingbirthdays — ближайшие
+            /jubilee — юбилейные
             
-            <b>Просмотр дней рождения:</b>
-            /birthdays - Дни рождения по месяцам
-            /upcomingbirthdays - Ближайшие дни рождения
-            /jubilee - Юбилейные дни рождения
-            
-            <b>Отмена операций:</b>
-            /cancel - Отмена текущей команды
+            /cancel — отменить текущую операцию
             """;
 
     @Override

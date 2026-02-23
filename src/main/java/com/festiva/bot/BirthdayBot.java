@@ -3,6 +3,7 @@ package com.festiva.bot;
 import com.festiva.command.CommandRouter;
 import com.festiva.metrics.MetricsSender;
 import com.festiva.notification.NotificationSender;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -10,10 +11,14 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -34,6 +39,27 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
+    }
+
+    @PostConstruct
+    public void registerCommands() {
+        try {
+            telegramClient.execute(SetMyCommands.builder()
+                    .commands(List.of(
+                            new BotCommand("start", "Запустить бота"),
+                            new BotCommand("list", "Список друзей"),
+                            new BotCommand("add", "Добавить друга"),
+                            new BotCommand("remove", "Удалить друга"),
+                            new BotCommand("birthdays", "Дни рождения по месяцам"),
+                            new BotCommand("upcomingbirthdays", "Ближайшие дни рождения"),
+                            new BotCommand("jubilee", "Юбилейные дни рождения"),
+                            new BotCommand("help", "Список команд"),
+                            new BotCommand("cancel", "Отменить текущую операцию")
+                    ))
+                    .build());
+        } catch (Exception e) {
+            log.error("Failed to register bot commands", e);
+        }
     }
 
     @Override

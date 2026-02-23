@@ -2,6 +2,7 @@ package com.festiva.bot;
 
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,64 +20,81 @@ import java.util.List;
 public class CallbackQueryHandler {
 
     private static final String MONTH_PREFIX = "MONTH_";
+    private static final String REMOVE_PREFIX = "REMOVE_";
     private static final String CURRENT_MONTH = "CURRENT";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+    private static final String[] MONTH_NAMES = {
+        "", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    };
+
     private final FriendService friendService;
+    private final UserStateService userStateService;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
-        if (callbackQuery == null) {
-            log.warn("Received null CallbackQuery");
-            return null;
-        }
+        if (callbackQuery == null) return null;
 
         String data = callbackQuery.getData();
-        if (data == null || !data.startsWith(MONTH_PREFIX)) {
-            log.debug("Invalid callback data: {}", data);
-            return null;
-        }
-
         MaybeInaccessibleMessage message = callbackQuery.getMessage();
-        if (message == null) {
-            log.warn("CallbackQuery message is null");
+        if (data == null || message == null) return null;
+
+        long chatId = message.getChatId();
+        long userId = callbackQuery.getFrom().getId();
+
+        String text;
+        if (data.startsWith(REMOVE_PREFIX)) {
+            text = handleRemove(userId, data.substring(REMOVE_PREFIX.length()));
+        } else if (data.startsWith(MONTH_PREFIX)) {
+            text = handleMonth(chatId, data);
+        } else {
+            log.debug("Unknown callback data: {}", data);
             return null;
         }
-
-        int month = parseMonth(data);
-        String text = month < 0 ? "Ошибка при выборе месяца." : buildMonthText(message.getChatId(), month);
 
         return EditMessageText.builder()
-                .chatId(message.getChatId())
+                .chatId(chatId)
                 .messageId(message.getMessageId())
+                .parseMode("HTML")
                 .text(text)
                 .build();
     }
 
-    private int parseMonth(String data) {
-        String value = data.substring(MONTH_PREFIX.length());
-        if (CURRENT_MONTH.equalsIgnoreCase(value)) return 0;
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse month from callback data: {}", data, e);
-            return -1;
+    private String handleRemove(long userId, String name) {
+        if (!friendService.friendExists(userId, name)) {
+            return "Друг \"" + name + "\" не найден.";
         }
+        friendService.deleteFriend(userId, name);
+        userStateService.clearState(userId);
+        return "✅ <b>" + name + "</b> удалён!";
     }
 
-    private String buildMonthText(long telegramUserId, int month) {
-        int monthToShow = (month == 0) ? LocalDate.now().getMonthValue() : month;
-        List<Friend> filtered = friendService.getFriendsSortedByDayMonth(telegramUserId).stream()
-                .filter(f -> f.getBirthDate().getMonthValue() == monthToShow)
+    private String handleMonth(long chatId, String data) {
+        String value = data.substring(MONTH_PREFIX.length());
+        int month;
+        if (CURRENT_MONTH.equalsIgnoreCase(value)) {
+            month = LocalDate.now().getMonthValue();
+        } else {
+            try {
+                month = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                log.error("Failed to parse month from callback data: {}", data);
+                return "Ошибка при выборе месяца.";
+            }
+        }
+
+        List<Friend> filtered = friendService.getFriendsSortedByDayMonth(chatId).stream()
+                .filter(f -> f.getBirthDate().getMonthValue() == month)
                 .toList();
 
         if (filtered.isEmpty()) {
-            return "В выбранном месяце нет дней рождения.";
+            return "В <b>" + MONTH_NAMES[month].toLowerCase() + "</b> нет дней рождения.";
         }
 
-        StringBuilder sb = new StringBuilder("Дни рождения в " + monthToShow + "-м месяце:\n");
-        filtered.forEach(f -> sb.append("* ").append(f.getBirthDate().format(DATE_FORMATTER))
-                .append(" ").append(f.getName())
-                .append(" (сейчас пользователю ").append(f.getAge()).append(")\n"));
+        StringBuilder sb = new StringBuilder("🎂 <b>Дни рождения — " + MONTH_NAMES[month] + "</b>\n\n");
+        filtered.forEach(f -> sb.append("– <b>").append(f.getBirthDate().format(DATE_FORMATTER))
+                .append("</b> ").append(f.getName())
+                .append(" (<i>").append(f.getAge()).append(" лет</i>)\n"));
         return sb.toString();
     }
 }

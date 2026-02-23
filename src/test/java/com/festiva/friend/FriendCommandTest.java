@@ -4,7 +4,7 @@ import com.festiva.IntegrationTestBase;
 import com.festiva.command.CommandRouter;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
-import com.festiva.friend.repository.UserMongoRepository;
+import com.festiva.friend.repository.FriendMongoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +29,23 @@ class FriendCommandTest extends IntegrationTestBase {
     FriendService friendService;
 
     @Autowired
-    UserMongoRepository userMongoRepository;
+    FriendMongoRepository friendMongoRepository;
 
     @BeforeEach
     void clean() {
-        userMongoRepository.deleteAll();
+        friendMongoRepository.deleteAll();
     }
 
     @Test
     void addFriend_thenListShowsFriend() {
-        SendMessage addPrompt = commandRouter.route(update(1L, 1L, "/add"));
-        assertThat(addPrompt.getText()).contains("Введите имя");
+        SendMessage namePrompt = commandRouter.route(update(1L, 1L, "/add"));
+        assertThat(namePrompt.getText()).contains("имя");
 
-        SendMessage addResult = commandRouter.route(update(1L, 1L, "Alice 1990-06-15"));
-        assertThat(addResult.getText()).contains("успешно добавлен");
+        SendMessage datePrompt = commandRouter.route(update(1L, 1L, "Alice"));
+        assertThat(datePrompt.getText()).contains("дату");
+
+        SendMessage addResult = commandRouter.route(update(1L, 1L, "15.06.1990"));
+        assertThat(addResult.getText()).contains("добавлен");
 
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(1L);
         assertThat(friends).hasSize(1);
@@ -53,21 +56,23 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     void addDuplicateFriend_returnsError() {
         commandRouter.route(update(2L, 2L, "/add"));
-        commandRouter.route(update(2L, 2L, "Bob 1985-03-20"));
+        commandRouter.route(update(2L, 2L, "Bob"));
+        commandRouter.route(update(2L, 2L, "20.03.1985"));
 
         commandRouter.route(update(2L, 2L, "/add"));
-        SendMessage duplicate = commandRouter.route(update(2L, 2L, "Bob 1985-03-20"));
+        SendMessage duplicate = commandRouter.route(update(2L, 2L, "Bob"));
         assertThat(duplicate.getText()).contains("уже существует");
     }
 
     @Test
     void removeFriend_thenListIsEmpty() {
         commandRouter.route(update(3L, 3L, "/add"));
-        commandRouter.route(update(3L, 3L, "Carol 2000-01-01"));
+        commandRouter.route(update(3L, 3L, "Carol"));
+        commandRouter.route(update(3L, 3L, "01.01.2000"));
 
         commandRouter.route(update(3L, 3L, "/remove"));
         SendMessage removeResult = commandRouter.route(update(3L, 3L, "Carol"));
-        assertThat(removeResult.getText()).contains("успешно удалён");
+        assertThat(removeResult.getText()).contains("удалён");
 
         assertThat(friendService.getFriendsSortedByDayMonth(3L)).isEmpty();
     }
@@ -75,14 +80,16 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     void addFriend_invalidDate_returnsError() {
         commandRouter.route(update(4L, 4L, "/add"));
-        SendMessage result = commandRouter.route(update(4L, 4L, "Dave not-a-date"));
+        commandRouter.route(update(4L, 4L, "Dave"));
+        SendMessage result = commandRouter.route(update(4L, 4L, "not-a-date"));
         assertThat(result.getText()).contains("Неверный формат даты");
     }
 
     @Test
     void addFriend_futureBirthDate_returnsError() {
         commandRouter.route(update(5L, 5L, "/add"));
-        SendMessage result = commandRouter.route(update(5L, 5L, "Eve 2099-01-01"));
+        commandRouter.route(update(5L, 5L, "Eve"));
+        SendMessage result = commandRouter.route(update(5L, 5L, "01.01.2099"));
         assertThat(result.getText()).contains("не может быть в будущем");
     }
 

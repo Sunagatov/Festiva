@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserStateService {
 
     private final ConcurrentHashMap<Long, BotState> userStates = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, String> pendingNames = new ConcurrentHashMap<>();
 
     public BotState getState(Long userId) {
         return userStates.getOrDefault(userId, BotState.IDLE);
@@ -18,5 +19,14 @@ public class UserStateService {
 
     public void clearState(Long userId) {
         userStates.put(userId, BotState.IDLE);
+        pendingNames.remove(userId);
+    }
+
+    public void setPendingName(Long userId, String name) {
+        pendingNames.put(userId, name);
+    }
+
+    public String getPendingName(Long userId) {
+        return pendingNames.get(userId);
     }
 }
