@@ -40,4 +40,9 @@ public class MongoFriendRepository implements FriendRepository {
                 .distinct()
                 .toList();
     }
+
+    @Override
+    public long count() {
+        return friendMongoRepository.count();
+    }
 }

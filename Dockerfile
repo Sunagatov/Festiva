@@ -1,5 +1,5 @@
 # 1. Сборочный этап: используем Maven + JDK 21
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM maven:3.9-amazoncorretto-25 AS build
 
 # 2. Устанавливаем рабочую директорию
 WORKDIR /app
@@ -9,7 +9,7 @@ COPY . /app
 RUN mvn clean package -DskipTests
 
 # 4. Финальный образ: только JRE + приложение
-FROM eclipse-temurin:21-jre
+FROM amazoncorretto:25
 
 # 5. Рабочая директория в контейнере
 WORKDIR /app
@@ -21,4 +21,4 @@ COPY --from=build /app/target/Festiva-1.0-SNAPSHOT.jar /app/festiva.jar
 ENV JAVA_OPTS=""
 
 # 8. Точка входа
-CMD java $JAVA_OPTS -jar festiva.jar
+CMD ["sh", "-c", "java $JAVA_OPTS -jar festiva.jar"]

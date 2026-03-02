@@ -15,4 +15,6 @@ public interface FriendRepository {
     void deleteFriend(long telegramUserId, String name);
 
     List<Long> getAllUserIds();
+
+    long count();
 }

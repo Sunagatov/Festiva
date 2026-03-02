@@ -3,6 +3,16 @@ spring:
     mongodb:
       uri: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}/?retryWrites=true&w=majority&appName=FestivaDatabase&readPreference=primary
       database: ${MONGO_DATABASE_NAME}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
 telegram:
   bot:
     token: ${TELEGRAM_BOT_TOKEN}
