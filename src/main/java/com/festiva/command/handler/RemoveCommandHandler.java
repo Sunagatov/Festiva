@@ -67,7 +67,7 @@ public class RemoveCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
         String name = update.getMessage().getText().trim();
 
-        if (name.isEmpty()) {
+        if (name.isBlank()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (!friendService.friendExists(userId, name)) {

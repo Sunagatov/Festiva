@@ -12,6 +12,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendService {
 
+    private static final int LEAP_YEAR = 2000; // leap year so Feb 29 sorts correctly
+
     private final FriendMongoRepository friendRepository;
 
     public void addFriend(long telegramUserId, Friend friend) {
@@ -27,9 +29,13 @@ public class FriendService {
         friendRepository.deleteByTelegramUserIdAndName(telegramUserId, name);
     }
 
+    public List<Friend> getFriends(long telegramUserId) {
+        return friendRepository.findByTelegramUserId(telegramUserId);
+    }
+
     public List<Friend> getFriendsSortedByDayMonth(long telegramUserId) {
         return friendRepository.findByTelegramUserId(telegramUserId).stream()
-                .sorted(Comparator.comparing(f -> f.getBirthDate().withYear(2000)))
+                .sorted(Comparator.comparing(f -> f.getBirthDate().withYear(LEAP_YEAR)))
                 .toList();
     }
 

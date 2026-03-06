@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @Component
@@ -69,7 +68,7 @@ public class CallbackQueryHandler {
             userStateService.setLanguage(userId, lang);
             return Messages.get(lang, Messages.LANGUAGE_SET);
         } catch (IllegalArgumentException e) {
-            log.warn("Unknown language code: {}", code);
+            log.warn("Unknown language code: {}", code, e);
             return Messages.get(userStateService.getLanguage(userId), Messages.UNKNOWN_COMMAND);
         }
     }
@@ -101,8 +100,7 @@ public class CallbackQueryHandler {
                 .filter(f -> f.getBirthDate().getMonthValue() == month)
                 .toList();
 
-        Locale locale = lang == Lang.EN ? Locale.ENGLISH : Locale.forLanguageTag("ru");
-        String raw = Month.of(month).getDisplayName(TextStyle.FULL_STANDALONE, locale);
+        String raw = Month.of(month).getDisplayName(TextStyle.FULL_STANDALONE, lang.locale());
         String monthName = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
 
         if (filtered.isEmpty()) {

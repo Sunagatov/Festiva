@@ -33,14 +33,14 @@ public class BirthdayReminder {
     public void checkBirthdays() {
         log.info("Starting birthday check");
         List<Long> userIds = friendService.getAllUserIds();
+        LocalDate today = LocalDate.now();
         userIds.forEach(userId ->
-                friendService.getFriendsSortedByDayMonth(userId).forEach(f -> checkAndNotify(userId, f))
+                friendService.getFriends(userId).forEach(f -> checkAndNotify(userId, f, today))
         );
         log.info("Birthday check completed for {} users", userIds.size());
     }
 
-    private void checkAndNotify(long userId, Friend friend) {
-        LocalDate today = LocalDate.now();
+    private void checkAndNotify(long userId, Friend friend, LocalDate today) {
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
         String key = TEMPLATE_KEYS.get(daysUntil);
         if (key == null) return;

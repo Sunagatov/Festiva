@@ -35,8 +35,9 @@ public class JubileeCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .sorted(Comparator.comparing(f -> f.nextBirthday(LocalDate.now())))
+        LocalDate today = LocalDate.now();
+        List<Friend> friends = friendService.getFriends(userId).stream()
+                .sorted(Comparator.comparing(f -> f.nextBirthday(today)))
                 .toList();
         String text = friends.isEmpty()
                 ? Messages.get(lang, Messages.FRIENDS_EMPTY)

@@ -36,7 +36,7 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
+        List<Friend> friends = friendService.getFriends(userId);
         return MessageBuilder.html(chatId, buildText(friends, lang));
     }
 

@@ -45,15 +45,13 @@ public class BirthdaysCommandHandler implements CommandHandler {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         rows.add(new InlineKeyboardRow(button(Messages.get(lang, Messages.CURRENT_MONTH), "MONTH_CURRENT")));
 
-        InlineKeyboardRow row = new InlineKeyboardRow();
-        for (int m = 1; m <= TOTAL_MONTHS; m++) {
-            row.add(button(String.valueOf(m), "MONTH_" + m));
-            if (m % COLUMNS_PER_ROW == 0) {
-                rows.add(new InlineKeyboardRow(row));
-                row.clear();
+        for (int m = 1; m <= TOTAL_MONTHS; m += COLUMNS_PER_ROW) {
+            InlineKeyboardRow row = new InlineKeyboardRow();
+            for (int col = 0; col < COLUMNS_PER_ROW && m + col <= TOTAL_MONTHS; col++) {
+                row.add(button(String.valueOf(m + col), "MONTH_" + (m + col)));
             }
+            rows.add(row);
         }
-        if (!row.isEmpty()) rows.add(row);
         return rows;
     }
 

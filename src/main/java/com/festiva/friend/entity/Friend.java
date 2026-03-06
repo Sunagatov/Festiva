@@ -39,6 +39,6 @@ public class Friend {
 
     public int getNextAge() {
         LocalDate today = LocalDate.now();
-        return Period.between(birthDate, nextBirthday(today)).getYears();
+        return birthDate.withYear(today.getYear()).isBefore(today) ? getAge() + 1 : getAge();
     }
 }

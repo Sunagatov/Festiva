@@ -39,7 +39,8 @@ public class CommandRouter {
         if (!update.hasMessage() || !update.getMessage().hasText()) return null;
 
         long userId = update.getMessage().getFrom().getId();
-        String command = update.getMessage().getText().trim().split(" ")[0];
+        String text = update.getMessage().getText().trim();
+        String command = text.split("[\\s@]")[0];
         BotState state = userStateService.getState(userId);
 
         if ("/cancel".equals(command)) return handlers.get("/cancel").handle(update);

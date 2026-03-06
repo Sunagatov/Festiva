@@ -24,7 +24,7 @@ public class FestivaMetricsSender implements MetricsSender {
 
     private final KafkaProducer<String, String> producer;
     private final String topic;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public FestivaMetricsSender(
             @Value("${kafka.bootstrap-servers}") String bootstrapServers,
@@ -78,7 +78,8 @@ public class FestivaMetricsSender implements MetricsSender {
             command = (text != null && text.startsWith("/")) ? text.split("\\s+")[0] : "text_message";
         } else if (update.hasCallbackQuery() && update.getCallbackQuery().getFrom() != null) {
             user = update.getCallbackQuery().getFrom();
-            command = update.getCallbackQuery().getData();
+            String data = update.getCallbackQuery().getData();
+            command = data != null ? data.replaceAll("_.*", "_*") : "callback";
         }
         if (user != null) {
             userId = user.getId();
@@ -95,7 +96,7 @@ public class FestivaMetricsSender implements MetricsSender {
         );
 
         try {
-            return objectMapper.writeValueAsString(metrics);
+            return OBJECT_MAPPER.writeValueAsString(metrics);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize metrics", e);
             return "{}";
@@ -103,10 +104,11 @@ public class FestivaMetricsSender implements MetricsSender {
     }
 
     private String extractUserName(User user) {
-        if (user.getUserName() != null && !user.getUserName().isEmpty()) return user.getUserName();
+        String username = user.getUserName();
+        if (username != null && !username.isBlank()) return username;
         String full = ((user.getFirstName() != null ? user.getFirstName() : "") +
                        (user.getLastName()  != null ? " " + user.getLastName() : "")).trim();
-        return full.isEmpty() ? "unknown" : full;
+        return full.isBlank() ? "unknown" : full;
     }
 
     private String sanitize(String value) {
