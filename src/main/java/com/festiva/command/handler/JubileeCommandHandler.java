@@ -56,11 +56,12 @@ public class JubileeCommandHandler implements CommandHandler {
         LocalDate today = LocalDate.now();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER));
         jubilee.forEach(f -> {
-            long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
+            LocalDate next = f.nextBirthday(today);
+            long days = ChronoUnit.DAYS.between(today, next);
             String daysLabel = days == 0
                     ? " " + Messages.get(lang, Messages.JUBILEE_DAYS_TODAY)
                     : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
-            sb.append("– <b>").append(f.nextBirthday(today).format(MessageBuilder.DATE_FORMATTER))
+            sb.append("– <b>").append(next.format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> <i>").append(f.getName()).append("</i> ")
                     .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge()))
                     .append(daysLabel).append("\n");

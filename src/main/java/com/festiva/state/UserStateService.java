@@ -69,8 +69,7 @@ public class UserStateService {
 
     public void setLanguage(long userId, Lang lang) {
         session(userId).lang = lang;
-        UserPreference pref = userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, lang, 9, "Europe/Moscow"));
+        UserPreference pref = getOrCreatePref(userId);
         pref.setLang(lang);
         userPreferenceRepository.save(pref);
     }
@@ -82,8 +81,7 @@ public class UserStateService {
     }
 
     public void setNotifyHour(long userId, int hour) {
-        UserPreference pref = userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
+        UserPreference pref = getOrCreatePref(userId);
         pref.setNotifyHour(hour);
         userPreferenceRepository.save(pref);
     }
@@ -95,9 +93,13 @@ public class UserStateService {
     }
 
     public void setTimezone(long userId, String timezone) {
-        UserPreference pref = userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
+        UserPreference pref = getOrCreatePref(userId);
         pref.setTimezone(timezone);
         userPreferenceRepository.save(pref);
+    }
+
+    private UserPreference getOrCreatePref(long userId) {
+        return userPreferenceRepository.findById(userId)
+                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
     }
 }

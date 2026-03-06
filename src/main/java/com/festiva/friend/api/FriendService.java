@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -32,27 +33,20 @@ public class FriendService {
     }
 
     public void updateFriendName(long telegramUserId, String oldName, String newName) {
-        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, oldName)
-                .ifPresent(f -> {
-                    f.setName(newName);
-                    friendRepository.save(f);
-                });
+        update(telegramUserId, oldName, f -> f.setName(newName));
     }
 
     public void updateFriendDate(long telegramUserId, String name, java.time.LocalDate date) {
-        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> {
-                    f.setBirthDate(date);
-                    friendRepository.save(f);
-                });
+        update(telegramUserId, name, f -> f.setBirthDate(date));
     }
 
     public void updateFriendRelationship(long telegramUserId, String name, com.festiva.friend.entity.Relationship relationship) {
+        update(telegramUserId, name, f -> f.setRelationship(relationship));
+    }
+
+    private void update(long telegramUserId, String name, Consumer<Friend> mutator) {
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> {
-                    f.setRelationship(relationship);
-                    friendRepository.save(f);
-                });
+                .ifPresent(f -> { mutator.accept(f); friendRepository.save(f); });
     }
 
     public boolean toggleFriendNotify(long telegramUserId, String name) {

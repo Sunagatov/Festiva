@@ -42,14 +42,13 @@ public class StatsCommandHandler implements CommandHandler {
         int jubilees = (int) friends.stream()
                 .filter(f -> f.getNextAge() > 0 && f.getNextAge() % FriendService.JUBILEE_INTERVAL == 0)
                 .count();
+        record Entry(Friend friend, long days) {}
         String nextBirthday = friends.stream()
-                .min(Comparator.comparing(f -> ChronoUnit.DAYS.between(today, f.nextBirthday(today))))
-                .map(f -> {
-                    long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
-                    return days == 0
-                            ? f.getName() + " 🎂"
-                            : f.getName() + " (" + days + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")";
-                })
+                .map(f -> new Entry(f, ChronoUnit.DAYS.between(today, f.nextBirthday(today))))
+                .min(Comparator.comparingLong(Entry::days))
+                .map(e -> e.days() == 0
+                        ? e.friend().getName() + " 🎂"
+                        : e.friend().getName() + " (" + e.days() + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")")
                 .orElse("—");
 
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.STATS_HEADER, total, nextBirthday, thisMonth, jubilees));
