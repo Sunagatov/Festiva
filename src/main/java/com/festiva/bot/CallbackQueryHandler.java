@@ -37,8 +37,9 @@ public class CallbackQueryHandler {
     private static final String CANCEL_REMOVE   = "CANCEL_REMOVE";
     private static final String ACTION_ADD      = "ACTION_ADD";
     private static final String EDIT_PREFIX     = "EDIT_";
-    private static final String EDIT_FIELD_NAME = "EDIT_FIELD_NAME_";
-    private static final String EDIT_FIELD_DATE = "EDIT_FIELD_DATE_";
+    private static final String EDIT_FIELD_NAME   = "EDIT_FIELD_NAME_";
+    private static final String EDIT_FIELD_DATE   = "EDIT_FIELD_DATE_";
+    private static final String EDIT_FIELD_NOTIFY = "EDIT_FIELD_NOTIFY_";
     private static final String LANG_PREFIX     = "LANG_";
     private static final String CURRENT_MONTH   = "CURRENT";
 
@@ -131,6 +132,13 @@ public class CallbackQueryHandler {
             text = Messages.get(lang, Messages.ENTER_NAME);
         } else if (data.startsWith(LANG_PREFIX)) {
             text = handleLanguage(userId, data.substring(LANG_PREFIX.length()));
+        } else if (data.startsWith(EDIT_FIELD_NOTIFY)) {
+            String name = data.substring(EDIT_FIELD_NOTIFY.length());
+            friendService.toggleFriendNotify(userId, name);
+            boolean enabled = friendService.getFriends(userId).stream()
+                    .filter(f -> f.getName().equalsIgnoreCase(name))
+                    .findFirst().map(com.festiva.friend.entity.Friend::isNotifyEnabled).orElse(true);
+            text = Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, name, enabled ? "ON 🔔" : "OFF 🔕");
         } else if (data.startsWith(EDIT_FIELD_NAME)) {
             String name = data.substring(EDIT_FIELD_NAME.length());
             userStateService.setPendingName(userId, name);
@@ -143,7 +151,7 @@ public class CallbackQueryHandler {
             userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
             text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
             markup = DatePickerKeyboard.yearKeyboard(0);
-        } else if (data.startsWith(EDIT_PREFIX) && !data.startsWith(EDIT_FIELD_NAME) && !data.startsWith(EDIT_FIELD_DATE)) {
+        } else if (data.startsWith(EDIT_PREFIX) && !data.startsWith(EDIT_FIELD_NAME) && !data.startsWith(EDIT_FIELD_DATE) && !data.startsWith(EDIT_FIELD_NOTIFY)) {
             String name = data.substring(EDIT_PREFIX.length());
             String currentDate = friendService.getFriends(userId).stream()
                     .filter(f -> f.getName().equalsIgnoreCase(name))
@@ -151,11 +159,17 @@ public class CallbackQueryHandler {
                     .map(f -> f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .orElse("?");
             text = Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate);
+            boolean notifyOn = friendService.getFriends(userId).stream()
+                    .filter(f -> f.getName().equalsIgnoreCase(name))
+                    .findFirst().map(com.festiva.friend.entity.Friend::isNotifyEnabled).orElse(true);
             markup = InlineKeyboardMarkup.builder()
-                    .keyboard(List.of(new InlineKeyboardRow(
-                            InlineKeyboardButton.builder().text("✏️ Name").callbackData(EDIT_FIELD_NAME + name).build(),
-                            InlineKeyboardButton.builder().text("📅 Date").callbackData(EDIT_FIELD_DATE + name).build()
-                    )))
+                    .keyboard(List.of(
+                            new InlineKeyboardRow(
+                                    InlineKeyboardButton.builder().text("✏️ Name").callbackData(EDIT_FIELD_NAME + name).build(),
+                                    InlineKeyboardButton.builder().text("📅 Date").callbackData(EDIT_FIELD_DATE + name).build()),
+                            new InlineKeyboardRow(
+                                    InlineKeyboardButton.builder().text(notifyOn ? "🔔 Notifs ON" : "🔕 Notifs OFF").callbackData(EDIT_FIELD_NOTIFY + name).build())
+                    ))
                     .build();
         } else if (data.startsWith(REMOVE_PREFIX)) {
             String name = data.substring(REMOVE_PREFIX.length());

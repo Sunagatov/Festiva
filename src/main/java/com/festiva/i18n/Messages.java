@@ -7,6 +7,7 @@ public final class Messages {
     private Messages() {}
 
     // Keys
+    public static final String EDIT_NOTIFY_TOGGLED   = "edit_notify_toggled";
     public static final String FRIEND_CAP            = "friend_cap";
     public static final String LIST_SORT_DATE        = "list_sort_date";
     public static final String LIST_SORT_NAME        = "list_sort_name";
@@ -144,7 +145,8 @@ public final class Messages {
         Map.entry(STATS_HEADER,           "📊 <b>Your Festiva stats</b>\n\n👥 Friends: <b>%d</b>\n🎂 Next birthday: %s\n📅 This month: <b>%d</b>\n🏆 Upcoming jubilees: <b>%d</b>"),
         Map.entry(SETTINGS_HEADER,        "⏰ <b>Notification time</b>\n\nChoose when to receive daily reminders:"),
         Map.entry(SETTINGS_HOUR_SET,      "✅ Reminders set to <b>%02d:00</b>"),
-        Map.entry(START_ADD_FIRST,        "➕ Add your first friend")
+        Map.entry(START_ADD_FIRST,        "➕ Add your first friend"),
+        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Notifications for <b>%s</b>: <b>%s</b>")
     );
 
     private static final Map<String, String> RU = Map.ofEntries(
@@ -215,7 +217,8 @@ public final class Messages {
         Map.entry(STATS_HEADER,           "📊 <b>Ваша статистика</b>\n\n👥 Друзья: <b>%d</b>\n🎂 Следующий ДР: %s\n📅 В этом месяце: <b>%d</b>\n🏆 Юбилеи: <b>%d</b>"),
         Map.entry(SETTINGS_HEADER,        "⏰ <b>Время уведомлений</b>\n\nВыберите время ежедневных напоминаний:"),
         Map.entry(SETTINGS_HOUR_SET,      "✅ Напоминания установлены на <b>%02d:00</b>"),
-        Map.entry(START_ADD_FIRST,        "➕ Добавить первого друга")
+        Map.entry(START_ADD_FIRST,        "➕ Добавить первого друга"),
+        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Уведомления для <b>%s</b>: <b>%s</b>")
     );
 
     public static String get(Lang lang, String key) {

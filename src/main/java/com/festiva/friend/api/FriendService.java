@@ -39,6 +39,11 @@ public class FriendService {
                 .ifPresent(f -> { f.setBirthDate(date); friendRepository.save(f); });
     }
 
+    public void toggleFriendNotify(long telegramUserId, String name) {
+        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
+                .ifPresent(f -> { f.setNotifyEnabled(!f.isNotifyEnabled()); friendRepository.save(f); });
+    }
+
     public List<Friend> getFriends(long telegramUserId) {
         return friendRepository.findByTelegramUserId(telegramUserId);
     }

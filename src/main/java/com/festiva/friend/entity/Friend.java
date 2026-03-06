@@ -22,6 +22,7 @@ public class Friend {
     private long telegramUserId;
     private String name;
     private LocalDate birthDate;
+    private boolean notifyEnabled = true;
 
     public Friend(String name, LocalDate birthDate) {
         this.name = name;

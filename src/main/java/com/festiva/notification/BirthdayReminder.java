@@ -63,6 +63,7 @@ public class BirthdayReminder {
     }
 
     private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang) {
+        if (!friend.isNotifyEnabled()) return false;
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
         String key = TEMPLATE_KEYS.get(daysUntil);
         if (key == null) return false;
