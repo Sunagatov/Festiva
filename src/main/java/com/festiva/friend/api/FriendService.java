@@ -22,11 +22,11 @@ public class FriendService {
     }
 
     public boolean friendExists(long telegramUserId, String name) {
-        return friendRepository.existsByTelegramUserIdAndName(telegramUserId, name);
+        return friendRepository.existsByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
     }
 
     public void deleteFriend(long telegramUserId, String name) {
-        friendRepository.deleteByTelegramUserIdAndName(telegramUserId, name);
+        friendRepository.deleteByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
     }
 
     public List<Friend> getFriends(long telegramUserId) {

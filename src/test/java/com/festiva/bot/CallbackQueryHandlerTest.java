@@ -67,21 +67,38 @@ class CallbackQueryHandlerTest {
     }
 
     @Test
-    @DisplayName("REMOVE_ callback — deletes friend and returns removed confirmation")
-    void removeCallback_deletesFriendAndConfirms() {
-        when(friendService.friendExists(1L, "Alice")).thenReturn(true);
+    @DisplayName("REMOVE_ callback — shows confirmation prompt with Yes/No buttons")
+    void removeCallback_showsConfirmation() {
         EditMessageText result = handler.handle(callback("REMOVE_Alice"));
+        verify(friendService, never()).deleteFriend(anyLong(), anyString());
+        assertThat(result.getText()).contains("Alice");
+        assertThat(result.getReplyMarkup()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("CONFIRM_REMOVE_ callback — deletes friend and returns removed confirmation")
+    void confirmRemoveCallback_deletesFriendAndConfirms() {
+        when(friendService.friendExists(1L, "Alice")).thenReturn(true);
+        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_Alice"));
         verify(friendService).deleteFriend(1L, "Alice");
         assertThat(result.getText()).contains("Alice");
     }
 
     @Test
-    @DisplayName("REMOVE_ callback — friend not found returns not-found message")
-    void removeCallback_friendNotFound() {
+    @DisplayName("CONFIRM_REMOVE_ callback — friend not found returns not-found message")
+    void confirmRemoveCallback_friendNotFound() {
         when(friendService.friendExists(1L, "Ghost")).thenReturn(false);
-        EditMessageText result = handler.handle(callback("REMOVE_Ghost"));
+        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_Ghost"));
         verify(friendService, never()).deleteFriend(anyLong(), anyString());
         assertThat(result.getText()).contains("Ghost");
+    }
+
+    @Test
+    @DisplayName("CANCEL_REMOVE callback — clears state and returns cancelled message")
+    void cancelRemoveCallback_clearsState() {
+        EditMessageText result = handler.handle(callback("CANCEL_REMOVE"));
+        verify(userStateService).clearState(1L);
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL));
     }
 
     @Test

@@ -45,9 +45,9 @@ public class CommandRouter {
         String command = text.split("[\\s@]")[0];
         BotState state = userStateService.getState(userId);
 
-        if ("/cancel".equals(command)) {
+        if ("/cancel".equals(command) || handlers.containsKey(command)) {
             log.debug("router.command: userId={}, command={}", userId, command);
-            return handlers.get("/cancel").handle(update);
+            return handlers.getOrDefault(command, defaultHandler).handle(update);
         }
 
         StatefulCommandHandler statefulHandler = statefulHandlers.get(state);

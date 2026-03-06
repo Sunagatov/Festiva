@@ -13,6 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.time.Month;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +50,10 @@ public class BirthdaysCommandHandler implements CommandHandler {
         for (int m = 1; m <= TOTAL_MONTHS; m += COLUMNS_PER_ROW) {
             InlineKeyboardRow row = new InlineKeyboardRow();
             for (int col = 0; col < COLUMNS_PER_ROW && m + col <= TOTAL_MONTHS; col++) {
-                row.add(button(String.valueOf(m + col), "MONTH_" + (m + col)));
+                int month = m + col;
+                String name = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
+                String label = Character.toUpperCase(name.charAt(0)) + name.substring(1).replace(".", "");
+                row.add(button(label, "MONTH_" + month));
             }
             rows.add(row);
         }

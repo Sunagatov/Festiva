@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @DisplayName("UserStateService")
 class UserStateServiceTest {
@@ -13,7 +14,7 @@ class UserStateServiceTest {
     UserStateService service;
 
     @BeforeEach
-    void setUp() { service = new UserStateService(); }
+    void setUp() { service = new UserStateService(mock(com.festiva.user.UserPreferenceRepository.class)); }
 
     @Test
     @DisplayName("new user defaults to IDLE state and RU language")

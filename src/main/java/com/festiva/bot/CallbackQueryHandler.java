@@ -1,10 +1,12 @@
 package com.festiva.bot;
 
+import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -23,10 +28,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CallbackQueryHandler {
 
-    private static final String MONTH_PREFIX  = "MONTH_";
-    private static final String REMOVE_PREFIX = "REMOVE_";
-    private static final String LANG_PREFIX   = "LANG_";
-    private static final String CURRENT_MONTH = "CURRENT";
+    private static final String MONTH_PREFIX   = "MONTH_";
+    private static final String REMOVE_PREFIX  = "REMOVE_";
+    private static final String CONFIRM_PREFIX = "CONFIRM_REMOVE_";
+    private static final String CANCEL_REMOVE  = "CANCEL_REMOVE";
+    private static final String LANG_PREFIX    = "LANG_";
+    private static final String CURRENT_MONTH  = "CURRENT";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -39,14 +46,55 @@ public class CallbackQueryHandler {
         if (data == null || message == null) return null;
 
         long chatId = message.getChatId();
+        int messageId = message.getMessageId();
         long userId = callbackQuery.getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
 
         String text;
-        if (data.startsWith(LANG_PREFIX)) {
+        InlineKeyboardMarkup markup = null;
+
+        if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX)) {
+            int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX.length()));
+            userStateService.setYearPageOffset(userId, offset);
+            String name = userStateService.getPendingName(userId);
+            text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
+            markup = DatePickerKeyboard.yearKeyboard(offset);
+        } else if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PREFIX)) {
+            int year = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_YEAR_PREFIX.length()));
+            userStateService.setPendingYear(userId, year);
+            String name = userStateService.getPendingName(userId);
+            text = Messages.get(lang, Messages.DATE_PICK_MONTH, name);
+            markup = DatePickerKeyboard.monthKeyboard(lang);
+        } else if (data.startsWith(DatePickerKeyboard.DATE_MONTH_PREFIX)) {
+            int month = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_MONTH_PREFIX.length()));
+            userStateService.setPendingMonth(userId, month);
+            Integer year = userStateService.getPendingYear(userId);
+            String name = userStateService.getPendingName(userId);
+            text = Messages.get(lang, Messages.DATE_PICK_DAY, name);
+            markup = DatePickerKeyboard.dayKeyboard(year, month);
+        } else if (data.startsWith(DatePickerKeyboard.DATE_DAY_PREFIX)) {
+            int day = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_DAY_PREFIX.length()));
+            Integer year = userStateService.getPendingYear(userId);
+            Integer month = userStateService.getPendingMonth(userId);
+            String name = userStateService.getPendingName(userId);
+            LocalDate birthDate = LocalDate.of(year, month, day);
+            friendService.addFriend(userId, new Friend(name, birthDate));
+            userStateService.clearState(userId);
+            log.debug("friend.added: userId={}, name={}", userId, name);
+            text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+        } else if (data.startsWith(LANG_PREFIX)) {
             text = handleLanguage(userId, data.substring(LANG_PREFIX.length()));
         } else if (data.startsWith(REMOVE_PREFIX)) {
-            text = handleRemove(userId, data.substring(REMOVE_PREFIX.length()), lang);
+            String name = data.substring(REMOVE_PREFIX.length());
+            text = Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name);
+            markup = confirmKeyboard(name);
+            userStateService.setPendingName(userId, name);
+            userStateService.setState(userId, BotState.WAITING_FOR_REMOVE_CONFIRM);
+        } else if (data.startsWith(CONFIRM_PREFIX)) {
+            text = handleConfirmRemove(userId, data.substring(CONFIRM_PREFIX.length()), lang);
+        } else if (CANCEL_REMOVE.equals(data)) {
+            userStateService.clearState(userId);
+            text = Messages.get(lang, Messages.CONFIRM_REMOVE_CANCEL);
         } else if (data.startsWith(MONTH_PREFIX)) {
             text = handleMonth(userId, data, lang);
         } else {
@@ -54,12 +102,32 @@ public class CallbackQueryHandler {
             return null;
         }
 
-        return EditMessageText.builder()
+        EditMessageText.EditMessageTextBuilder builder = EditMessageText.builder()
                 .chatId(chatId)
-                .messageId(message.getMessageId())
+                .messageId(messageId)
                 .parseMode("HTML")
-                .text(text)
+                .text(text);
+        if (markup != null) builder.replyMarkup(markup);
+        return builder.build();
+    }
+
+    private InlineKeyboardMarkup confirmKeyboard(String name) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text("✅ Yes").callbackData(CONFIRM_PREFIX + name).build(),
+                        InlineKeyboardButton.builder().text("❌ No").callbackData(CANCEL_REMOVE).build()
+                )))
                 .build();
+    }
+
+    private String handleConfirmRemove(long userId, String name, Lang lang) {
+        if (!friendService.friendExists(userId, name)) {
+            return Messages.get(lang, Messages.FRIEND_NOT_FOUND, name);
+        }
+        friendService.deleteFriend(userId, name);
+        userStateService.clearState(userId);
+        log.debug("callback.friend.removed: userId={}, name={}", userId, name);
+        return Messages.get(lang, Messages.FRIEND_REMOVED, name);
     }
 
     private String handleLanguage(long userId, String code) {
@@ -72,16 +140,6 @@ public class CallbackQueryHandler {
             log.warn("callback.language.unknown: code={}, reason={}", code, e.getMessage());
             return Messages.get(userStateService.getLanguage(userId), Messages.UNKNOWN_COMMAND);
         }
-    }
-
-    private String handleRemove(long userId, String name, Lang lang) {
-        if (!friendService.friendExists(userId, name)) {
-            return Messages.get(lang, Messages.FRIEND_NOT_FOUND, name);
-        }
-        friendService.deleteFriend(userId, name);
-        userStateService.clearState(userId);
-        log.debug("callback.friend.removed: userId={}, name={}", userId, name);
-        return Messages.get(lang, Messages.FRIEND_REMOVED, name);
     }
 
     private String handleMonth(long userId, String data, Lang lang) {

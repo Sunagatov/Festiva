@@ -1,9 +1,9 @@
 package com.festiva.command.handler;
 
+import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
-import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.Set;
 
 @Slf4j
@@ -46,13 +44,6 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
 
     @Override
     public SendMessage handleState(Update update) {
-        BotState state = userStateService.getState(update.getMessage().getFrom().getId());
-        return state == BotState.WAITING_FOR_ADD_FRIEND_DATE
-                ? handleAwaitingDate(update)
-                : handleAwaitingName(update);
-    }
-
-    private SendMessage handleAwaitingName(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
@@ -66,37 +57,10 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         }
 
         userStateService.setPendingName(userId, name);
+        userStateService.setYearPageOffset(userId, 0);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_DATE);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.ENTER_DATE, name));
-    }
-
-    private SendMessage handleAwaitingDate(Update update) {
-        long chatId = update.getMessage().getChatId();
-        long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
-        String name = userStateService.getPendingName(userId);
-
-        if (name == null) {
-            log.warn("friend.add.session.lost: userId={}", userId);
-            userStateService.clearState(userId);
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ADD_ERROR));
-        }
-
-        LocalDate birthDate;
-        try {
-            birthDate = LocalDate.parse(update.getMessage().getText().trim(), MessageBuilder.DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            log.debug("friend.add.date.invalid: userId={}, input={}", userId, update.getMessage().getText().trim());
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.DATE_FORMAT_ERROR));
-        }
-
-        if (birthDate.isAfter(LocalDate.now())) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.DATE_FUTURE_ERROR));
-        }
-
-        friendService.addFriend(userId, new Friend(name, birthDate));
-        userStateService.clearState(userId);
-        log.debug("friend.added: userId={}, name={}", userId, name);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_ADDED, name));
+        return MessageBuilder.html(chatId,
+                Messages.get(lang, Messages.DATE_PICK_YEAR, name),
+                DatePickerKeyboard.yearKeyboard(0));
     }
 }

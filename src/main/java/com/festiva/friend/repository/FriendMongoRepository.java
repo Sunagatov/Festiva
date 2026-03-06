@@ -11,9 +11,9 @@ public interface FriendMongoRepository extends MongoRepository<Friend, String> {
 
     List<Friend> findByTelegramUserId(long telegramUserId);
 
-    boolean existsByTelegramUserIdAndName(long telegramUserId, String name);
+    boolean existsByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
 
-    void deleteByTelegramUserIdAndName(long telegramUserId, String name);
+    void deleteByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
 
     @Aggregation("{ $group: { _id: '$telegramUserId' } }")
     List<Long> findDistinctTelegramUserIds();

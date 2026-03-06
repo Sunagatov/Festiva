@@ -49,7 +49,7 @@ public class BirthdayReminder {
         if (key == null) return false;
         try {
             notificationSender.send(userId,
-                    Messages.get(userStateService.getLanguage(userId), key, friend.getName()));
+                    Messages.get(userStateService.getLanguage(userId), key, friend.getName(), friend.getNextAge()));
             log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
             return true;
         } catch (RuntimeException e) {

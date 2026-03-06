@@ -29,7 +29,7 @@ class CommandRouterTest {
 
     @BeforeEach
     void setUp() {
-        stateService = new UserStateService();
+        stateService = new UserStateService(mock(com.festiva.user.UserPreferenceRepository.class));
 
         cancelHandler   = handler("/cancel",  "cancelled");
         startHandler    = handler("/start",   "started");

@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Component
@@ -43,6 +44,10 @@ public class ListCommandHandler implements CommandHandler {
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
         LocalDate today = LocalDate.now();
         for (Friend f : friends) {
+            long daysUntil = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
+            String daysLabel = daysUntil == 0
+                    ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
+                    : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
             sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> <i>").append(f.getName()).append("</i> ");
             boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
@@ -51,7 +56,7 @@ public class ListCommandHandler implements CommandHandler {
             } else {
                 sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(), f.getNextAge()));
             }
-            sb.append("\n");
+            sb.append(daysLabel).append("\n");
         }
         return sb.toString();
     }

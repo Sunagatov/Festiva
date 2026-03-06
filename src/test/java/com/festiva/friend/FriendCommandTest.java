@@ -1,7 +1,9 @@
 package com.festiva.friend;
 
 import com.festiva.IntegrationTestBase;
+import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandRouter;
+import com.festiva.command.DatePickerKeyboard;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.repository.FriendMongoRepository;
@@ -11,8 +13,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.time.LocalDate;
@@ -27,6 +31,7 @@ class FriendCommandTest extends IntegrationTestBase {
     private static final Lang L = Lang.RU;
 
     @Autowired CommandRouter commandRouter;
+    @Autowired CallbackQueryHandler callbackQueryHandler;
     @Autowired FriendService friendService;
     @Autowired FriendMongoRepository friendMongoRepository;
 
@@ -34,13 +39,13 @@ class FriendCommandTest extends IntegrationTestBase {
     void clean() { friendMongoRepository.deleteAll(); }
 
     @Test
-    @DisplayName("/add → name → date persists friend and confirms")
+    @DisplayName("/add → name → year/month/day callbacks → persists friend and confirms")
     void addFriend_persistsAndConfirms() {
         commandRouter.route(update(1L, "/add"));
         commandRouter.route(update(1L, "Alice"));
-        var result = commandRouter.route(update(1L, "15.06.1990"));
-
-        assertThat(result.getText()).contains("Alice");
+        callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_YEAR_PREFIX + "1990"));
+        callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_MONTH_PREFIX + "6"));
+        callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_DAY_PREFIX + "15"));
 
         Friend saved = friendService.getFriends(1L).getFirst();
         assertThat(saved.getName()).isEqualTo("Alice");
@@ -50,9 +55,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/add duplicate name → returns name-exists error containing the name")
     void addDuplicateFriend_returnsError() {
-        commandRouter.route(update(2L, "/add"));
-        commandRouter.route(update(2L, "Bob"));
-        commandRouter.route(update(2L, "20.03.1985"));
+        friendService.addFriend(2L, new Friend("Bob", LocalDate.of(1985, 3, 20)));
 
         commandRouter.route(update(2L, "/add"));
         var result = commandRouter.route(update(2L, "Bob"));
@@ -63,14 +66,12 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/remove existing friend → confirms removal, list is empty")
     void removeFriend_confirmsAndListIsEmpty() {
-        commandRouter.route(update(3L, "/add"));
-        commandRouter.route(update(3L, "Carol"));
-        commandRouter.route(update(3L, "01.01.2000"));
+        friendService.addFriend(3L, new Friend("Carol", LocalDate.of(2000, 1, 1)));
 
         commandRouter.route(update(3L, "/remove"));
-        var result = commandRouter.route(update(3L, "Carol"));
+        callbackQueryHandler.handle(callback(3L, "REMOVE_Carol"));
+        callbackQueryHandler.handle(callback(3L, "CONFIRM_REMOVE_Carol"));
 
-        assertThat(result.getText()).contains("Carol");
         assertThat(friendService.getFriends(3L)).isEmpty();
     }
 
@@ -81,26 +82,6 @@ class FriendCommandTest extends IntegrationTestBase {
         commandRouter.route(update(8L, "/remove"));
         var result = commandRouter.route(update(8L, "Ghost"));
         assertThat(result.getText()).contains(Messages.get(L, Messages.FRIEND_NOT_FOUND, "Ghost"));
-    }
-
-    @Test
-    @DisplayName("/add with unparseable date → returns date-format error")
-    void addFriend_invalidDate_returnsError() {
-        commandRouter.route(update(4L, "/add"));
-        commandRouter.route(update(4L, "Dave"));
-        var result = commandRouter.route(update(4L, "not-a-date"));
-
-        assertThat(result.getText()).contains(Messages.get(L, Messages.DATE_FORMAT_ERROR));
-    }
-
-    @Test
-    @DisplayName("/add with future birth date → returns future-date error")
-    void addFriend_futureBirthDate_returnsError() {
-        commandRouter.route(update(5L, "/add"));
-        commandRouter.route(update(5L, "Eve"));
-        var result = commandRouter.route(update(5L, "01.01.2099"));
-
-        assertThat(result.getText()).contains(Messages.get(L, Messages.DATE_FUTURE_ERROR));
     }
 
     @Test
@@ -125,5 +106,18 @@ class FriendCommandTest extends IntegrationTestBase {
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
         return update;
+    }
+
+    private CallbackQuery callback(long userId, String data) {
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(userId);
+        MaybeInaccessibleMessage message = mock(MaybeInaccessibleMessage.class);
+        when(message.getChatId()).thenReturn(userId);
+        when(message.getMessageId()).thenReturn(1);
+        CallbackQuery cq = mock(CallbackQuery.class);
+        when(cq.getFrom()).thenReturn(user);
+        when(cq.getData()).thenReturn(data);
+        when(cq.getMessage()).thenReturn(message);
+        return cq;
     }
 }
