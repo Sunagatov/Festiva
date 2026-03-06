@@ -6,6 +6,7 @@ import com.festiva.notification.NotificationSender;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
@@ -33,10 +34,11 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
+                       TelegramClient telegramClient,
                        @Value("${telegram.bot.token}") String botToken,
                        MetricsSender metricsSender) {
         this.botToken = botToken;
-        this.telegramClient = new OkHttpTelegramClient(botToken);
+        this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
@@ -71,6 +73,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                             new BotCommand("settings",          "Settings / Настройки"),
                             new BotCommand("language",          "Language / Язык"),
                             new BotCommand("help",              "Help / Помощь"),
+                            new BotCommand("addmany",           "Bulk add / Добавить несколько"),
                             new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());

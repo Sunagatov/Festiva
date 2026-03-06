@@ -38,12 +38,24 @@ public class CommandRouter {
     }
 
     public SendMessage route(Update update) {
-        if (!update.hasMessage() || !update.getMessage().hasText()) return null;
+        if (!update.hasMessage()) return null;
+        if (!update.getMessage().hasText() && !update.getMessage().hasDocument()) return null;
 
         long userId = update.getMessage().getFrom().getId();
+        BotState state = userStateService.getState(userId);
+
+        // document upload — route to stateful handler if waiting
+        if (update.getMessage().hasDocument()) {
+            StatefulCommandHandler statefulHandler = statefulHandlers.get(state);
+            if (statefulHandler != null) {
+                log.debug("router.document: userId={}, state={}", userId, state);
+                return statefulHandler.handleState(update);
+            }
+            return null;
+        }
+
         String text = update.getMessage().getText().trim();
         String command = text.split("[\\s@]")[0];
-        BotState state = userStateService.getState(userId);
 
         if ("/cancel".equals(command) || handlers.containsKey(command)) {
             log.debug("router.command: userId={}, command={}", userId, command);

@@ -94,6 +94,11 @@ public final class Messages {
     public static final String EDIT_NAME_DONE        = "edit_name_done";
     public static final String EDIT_DATE_DONE        = "edit_date_done";
     public static final String YEARS_TURNS           = "years_turns";
+    public static final String BULK_ADD_PROMPT        = "bulk_add_prompt";
+    public static final String BULK_ADD_SUCCESS       = "bulk_add_success";
+    public static final String BULK_ADD_ERRORS        = "bulk_add_errors";
+    public static final String BULK_ADD_EMPTY         = "bulk_add_empty";
+    public static final String BULK_ADD_FILE_INVALID  = "bulk_add_file_invalid";
 
     private static MessageSource messageSource;
 
