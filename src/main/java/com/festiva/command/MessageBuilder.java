@@ -31,27 +31,27 @@ public final class MessageBuilder {
     }
 
     public static final Map<String, String> LABEL_TO_COMMAND = Map.ofEntries(
-            Map.entry("➕ Add", "/add"),
-            Map.entry("🗑 Remove", "/remove"),
-            Map.entry("📋 List", "/list"),
-            Map.entry("🎂 Birthdays", "/birthdays"),
-            Map.entry("⏰ Upcoming", "/upcomingbirthdays"),
-            Map.entry("🏆 Jubilee", "/jubilee"),
-            Map.entry("✏️ Edit", "/edit"),
-            Map.entry("🌐 Language", "/language"),
-            Map.entry("❓ Help", "/help"),
-            Map.entry("🔍 Search", "/search"),
-            Map.entry("📊 Stats", "/stats"),
-            Map.entry("⚙️ Settings", "/settings")
+            Map.entry("\u2795 Add", "/add"),
+            Map.entry("\uD83D\uDDD1 Remove", "/remove"),
+            Map.entry("\uD83D\uDCCB List", "/list"),
+            Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
+            Map.entry("\uD83D\uDD14 Upcoming", "/upcomingbirthdays"),
+            Map.entry("\uD83C\uDFC6 Jubilee", "/jubilee"),
+            Map.entry("\uD83D\uDCDD Edit", "/edit"),
+            Map.entry("\uD83C\uDF10 Language", "/language"),
+            Map.entry("\uD83D\uDCD6 Help", "/help"),
+            Map.entry("\uD83D\uDD0D Search", "/search"),
+            Map.entry("\uD83D\uDCCA Stats", "/stats"),
+            Map.entry("\uD83D\uDD27 Settings", "/settings")
     );
 
     public static ReplyKeyboardMarkup mainMenu() {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
-                        new KeyboardRow(List.of(new KeyboardButton("➕ Add"), new KeyboardButton("🗑 Remove"), new KeyboardButton("📋 List"))),
-                        new KeyboardRow(List.of(new KeyboardButton("🎂 Birthdays"), new KeyboardButton("⏰ Upcoming"), new KeyboardButton("🏆 Jubilee"))),
-                        new KeyboardRow(List.of(new KeyboardButton("✏️ Edit"), new KeyboardButton("🔍 Search"), new KeyboardButton("📊 Stats"))),
-                        new KeyboardRow(List.of(new KeyboardButton("⚙️ Settings"), new KeyboardButton("🌐 Language"), new KeyboardButton("❓ Help")))
+                        new KeyboardRow(List.of(new KeyboardButton("\u2795 Add"), new KeyboardButton("\uD83D\uDDD1 Remove"), new KeyboardButton("\uD83D\uDCCB List"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDF82 Birthdays"), new KeyboardButton("\uD83D\uDD14 Upcoming"), new KeyboardButton("\uD83C\uDFC6 Jubilee"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCDD Edit"), new KeyboardButton("\uD83D\uDD0D Search"), new KeyboardButton("\uD83D\uDCCA Stats"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDD27 Settings"), new KeyboardButton("\uD83C\uDF10 Language"), new KeyboardButton("\uD83D\uDCD6 Help")))
                 ))
                 .resizeKeyboard(true)
                 .build();

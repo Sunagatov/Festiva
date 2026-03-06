@@ -11,6 +11,8 @@ public interface FriendMongoRepository extends MongoRepository<Friend, String> {
 
     List<Friend> findByTelegramUserId(long telegramUserId);
 
+    List<Friend> findByTelegramUserIdIn(List<Long> telegramUserIds);
+
     java.util.Optional<Friend> findByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
 
     boolean existsByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);

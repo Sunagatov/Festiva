@@ -93,8 +93,10 @@ public class ListCommandHandler implements CommandHandler {
         String daysLabel = daysUntil == 0
                 ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
                 : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
+        String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
         sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i> ");
+                .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i>")
+                .append(relLabel).append(" ");
         boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
         if (alreadyHadBirthday) {
             sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));

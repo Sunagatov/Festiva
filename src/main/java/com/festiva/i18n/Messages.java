@@ -7,6 +7,22 @@ public final class Messages {
     private Messages() {}
 
     // Keys
+    public static final String RELATIONSHIP_PICK    = "relationship_pick";
+    public static final String RELATIONSHIP_SKIP     = "relationship_skip";
+    public static final String CONFIRM_YES           = "confirm_yes";
+    public static final String CONFIRM_NO            = "confirm_no";
+    public static final String EDIT_FIELD_NAME_BTN   = "edit_field_name_btn";
+    public static final String EDIT_FIELD_DATE_BTN   = "edit_field_date_btn";
+    public static final String EDIT_NOTIFS_ON        = "edit_notifs_on";
+    public static final String EDIT_NOTIFS_OFF       = "edit_notifs_off";
+    public static final String NOTIFY_STATUS_ON      = "notify_status_on";
+    public static final String NOTIFY_STATUS_OFF     = "notify_status_off";
+    public static final String QUICK_ADD_ANOTHER     = "quick_add_another";
+    public static final String QUICK_LIST            = "quick_list";
+    public static final String SETTINGS_TZ_HEADER    = "settings_tz_header";
+    public static final String SETTINGS_TZ_SET       = "settings_tz_set";
+    public static final String LANG_EN_BTN            = "lang_en_btn";
+    public static final String LANG_RU_BTN            = "lang_ru_btn";
     public static final String EDIT_NOTIFY_TOGGLED   = "edit_notify_toggled";
     public static final String FRIEND_CAP            = "friend_cap";
     public static final String LIST_SORT_DATE        = "list_sort_date";
@@ -65,11 +81,14 @@ public final class Messages {
     public static final String DATE_PICK_MONTH       = "date_pick_month";
     public static final String DATE_PICK_DAY         = "date_pick_day";
     public static final String DATE_PICK_BACK        = "date_pick_back";
+    public static final String DATE_YEAR_EARLIER     = "date_year_earlier";
+    public static final String DATE_YEAR_LATER       = "date_year_later";
     public static final String JUBILEE_DAYS_LEFT     = "jubilee_days_left";
     public static final String JUBILEE_DAYS_TODAY    = "jubilee_days_today";
     public static final String LIST_UPCOMING_HEADER  = "list_upcoming_header";
     public static final String LIST_CELEBRATED_HEADER = "list_celebrated_header";
     public static final String UPCOMING_DAYS_FILTER  = "upcoming_days_filter";
+    public static final String UPCOMING_DAYS_SUFFIX  = "upcoming_days_suffix";
     public static final String EDIT_SELECT          = "edit_select";
     public static final String EDIT_CHOOSE_FIELD    = "edit_choose_field";
     public static final String EDIT_ENTER_NAME      = "edit_enter_name";
@@ -78,8 +97,8 @@ public final class Messages {
     public static final String YEARS_TURNS           = "years_turns";
 
     private static final Map<String, String> EN = Map.ofEntries(
-        Map.entry(WELCOME,               "👋 <b>Welcome to Festiva!</b>\nI'll help you never forget your friends' birthdays.\n\n👥 <b>Friends:</b>\n/list — list friends\n/add — add a friend\n/remove — remove a friend\n/edit — edit a friend\n\n🎂 <b>Birthdays:</b>\n/birthdays — by month\n/upcomingbirthdays — upcoming\n/jubilee — milestones\n\n🌐 /language — change language\n/cancel — cancel current operation"),
-        Map.entry(HELP,                  "📖 <b>Festiva commands:</b>\n\n👥 <b>Friends:</b>\n/list — list friends\n/add — add a friend\n/remove — remove a friend\n/edit — edit a friend\n\n🎂 <b>Birthdays:</b>\n/birthdays — by month\n/upcomingbirthdays — upcoming\n/jubilee — milestones\n\n🌐 /language — change language\n/cancel — cancel current operation"),
+        Map.entry(WELCOME,               "👋 <b>Welcome to Festiva!</b>\nI'll help you never forget your friends' birthdays.\n\n👥 <b>Friends:</b>\n/list — list friends\n/add — add a friend\n/remove — remove a friend\n/edit — edit a friend\n/search — search friends\n\n🎂 <b>Birthdays:</b>\n/birthdays — by month\n/upcomingbirthdays — upcoming\n/jubilee — milestones\n\n📊 /stats — your stats\n⚙️ /settings — notifications & timezone\n🌐 /language — change language\n/cancel — cancel current operation"),
+        Map.entry(HELP,                  "📖 <b>Festiva commands:</b>\n\n👥 <b>Friends:</b>\n/list — list friends\n/add — add a friend\n/remove — remove a friend\n/edit — edit a friend\n/search — search friends\n\n🎂 <b>Birthdays:</b>\n/birthdays — by month\n/upcomingbirthdays — upcoming\n/jubilee — milestones\n\n📊 /stats — your stats\n⚙️ /settings — notifications & timezone\n🌐 /language — change language\n/cancel — cancel current operation"),
         Map.entry(ENTER_NAME,            "Enter your friend's name:"),
         Map.entry(ENTER_DATE,            "Enter %s's birth date in DD.MM.YYYY format\nExample: 15.03.1990"),
         Map.entry(NAME_EMPTY,            "Name cannot be empty. Enter a name or /cancel."),
@@ -118,13 +137,15 @@ public final class Messages {
         Map.entry(MONTH_PARSE_ERROR,     "Error selecting month."),
         Map.entry(YEARS_OLD,             "%d years old"),
         Map.entry(BIRTHDAYS_PICK,        "<b>View birthdays</b>\n\nSelect a month:"),
-        Map.entry(NOTIFY_TODAY,          "🎂 Today is <b>%s</b>'s birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
-        Map.entry(NOTIFY_TOMORROW,       "🔔 Tomorrow is <b>%s</b>'s birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
-        Map.entry(NOTIFY_WEEK,           "📅 In one week it's <b>%s</b>'s birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
+        Map.entry(NOTIFY_TODAY,          "🎂 Today is <b>%s</b> %s's birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
+        Map.entry(NOTIFY_TOMORROW,       "🔔 Tomorrow is <b>%s</b> %s's birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
+        Map.entry(NOTIFY_WEEK,           "📅 In one week it's <b>%s</b> %s's birthday %s — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
         Map.entry(DATE_PICK_YEAR,        "Select <b>%s</b>'s birth year:"),
         Map.entry(DATE_PICK_MONTH,       "Select <b>%s</b>'s birth month:"),
         Map.entry(DATE_PICK_DAY,         "Select <b>%s</b>'s birth day:"),
         Map.entry(DATE_PICK_BACK,        "← Back"),
+        Map.entry(DATE_YEAR_EARLIER,      "◀ Earlier"),
+        Map.entry(DATE_YEAR_LATER,        "Later ▶"),
         Map.entry(JUBILEE_DAYS_LEFT,     "(in <b>%d</b>d)"),
         Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
         Map.entry(LIST_UPCOMING_HEADER,  "<b>Coming up:</b>\n"),
@@ -136,6 +157,7 @@ public final class Messages {
         Map.entry(EDIT_NAME_DONE,         "✅ Name updated to <b>%s</b>!"),
         Map.entry(EDIT_DATE_DONE,         "✅ Birth date for <b>%s</b> updated!"),
         Map.entry(UPCOMING_DAYS_FILTER,   "Show birthdays in the next:"),
+        Map.entry(UPCOMING_DAYS_SUFFIX,    "d"),
         Map.entry(FRIEND_CAP,             "⚠️ You've reached the limit of <b>%d</b> friends."),
         Map.entry(LIST_SORT_DATE,         "📅 By date"),
         Map.entry(LIST_SORT_NAME,         "🔤 By name"),
@@ -146,12 +168,28 @@ public final class Messages {
         Map.entry(SETTINGS_HEADER,        "⏰ <b>Notification time</b>\n\nChoose when to receive daily reminders:"),
         Map.entry(SETTINGS_HOUR_SET,      "✅ Reminders set to <b>%02d:00</b>"),
         Map.entry(START_ADD_FIRST,        "➕ Add your first friend"),
-        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Notifications for <b>%s</b>: <b>%s</b>")
+        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Notifications for <b>%s</b>: <b>%s</b>"),
+        Map.entry(RELATIONSHIP_PICK,        "Choose your relationship with <b>%s</b>:"),
+        Map.entry(RELATIONSHIP_SKIP,         "⏭ Skip"),
+        Map.entry(CONFIRM_YES,               "✅ Yes"),
+        Map.entry(CONFIRM_NO,                "❌ No"),
+        Map.entry(EDIT_FIELD_NAME_BTN,       "📝 Name"),
+        Map.entry(EDIT_FIELD_DATE_BTN,       "📅 Date"),
+        Map.entry(EDIT_NOTIFS_ON,            "🔔 Notifs ON"),
+        Map.entry(EDIT_NOTIFS_OFF,           "🔕 Notifs OFF"),
+        Map.entry(NOTIFY_STATUS_ON,          "ON 🔔"),
+        Map.entry(NOTIFY_STATUS_OFF,         "OFF 🔕"),
+        Map.entry(QUICK_ADD_ANOTHER,         "➕ Add another"),
+        Map.entry(QUICK_LIST,                "📋 List"),
+        Map.entry(SETTINGS_TZ_HEADER,       "🌍 <b>Timezone</b>\n\nChoose your timezone:"),
+        Map.entry(SETTINGS_TZ_SET,          "✅ Timezone set to <b>%s</b>"),
+        Map.entry(LANG_EN_BTN,               "🇬🇧 English"),
+        Map.entry(LANG_RU_BTN,               "🇷🇺 Русский")
     );
 
     private static final Map<String, String> RU = Map.ofEntries(
-        Map.entry(WELCOME,               "👋 <b>Добро пожаловать в Festiva!</b>\nЯ помогу вам не забыть дни рождения друзей.\n\n👥 <b>Друзья:</b>\n/list — список друзей\n/add — добавить друга\n/remove — удалить друга\n/edit — редактировать друга\n\n🎂 <b>Дни рождения:</b>\n/birthdays — по месяцам\n/upcomingbirthdays — ближайшие\n/jubilee — юбилейные\n\n🌐 /language — сменить язык\n/cancel — отменить текущую операцию"),
-        Map.entry(HELP,                  "📖 <b>Команды Festiva:</b>\n\n👥 <b>Друзья:</b>\n/list — список друзей\n/add — добавить друга\n/remove — удалить друга\n/edit — редактировать друга\n\n🎂 <b>Дни рождения:</b>\n/birthdays — по месяцам\n/upcomingbirthdays — ближайшие\n/jubilee — юбилейные\n\n🌐 /language — сменить язык\n/cancel — отменить текущую операцию"),
+        Map.entry(WELCOME,               "👋 <b>Добро пожаловать в Festiva!</b>\nЯ помогу вам не забыть дни рождения друзей.\n\n👥 <b>Друзья:</b>\n/list — список друзей\n/add — добавить друга\n/remove — удалить друга\n/edit — редактировать друга\n/search — поиск друзей\n\n🎂 <b>Дни рождения:</b>\n/birthdays — по месяцам\n/upcomingbirthdays — ближайшие\n/jubilee — юбилейные\n\n📊 /stats — ваша статистика\n⚙️ /settings — уведомления и часовой пояс\n🌐 /language — сменить язык\n/cancel — отменить текущую операцию"),
+        Map.entry(HELP,                  "📖 <b>Команды Festiva:</b>\n\n👥 <b>Друзья:</b>\n/list — список друзей\n/add — добавить друга\n/remove — удалить друга\n/edit — редактировать друга\n/search — поиск друзей\n\n🎂 <b>Дни рождения:</b>\n/birthdays — по месяцам\n/upcomingbirthdays — ближайшие\n/jubilee — юбилейные\n\n📊 /stats — ваша статистика\n⚙️ /settings — уведомления и часовой пояс\n🌐 /language — сменить язык\n/cancel — отменить текущую операцию"),
         Map.entry(ENTER_NAME,            "Введите имя друга:"),
         Map.entry(ENTER_DATE,            "Введите дату рождения %s в формате ДД.ММ.ГГГГ\nНапример: 15.03.1990"),
         Map.entry(NAME_EMPTY,            "Имя не может быть пустым. Введите имя или /cancel для отмены."),
@@ -190,13 +228,15 @@ public final class Messages {
         Map.entry(MONTH_PARSE_ERROR,     "Ошибка при выборе месяца."),
         Map.entry(YEARS_OLD,             "%d лет"),
         Map.entry(BIRTHDAYS_PICK,        "<b>Просмотр дней рождения</b>\n\nВыберите месяц:"),
-        Map.entry(NOTIFY_TODAY,          "🎂 Сегодня день рождения у <b>%s</b> %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
-        Map.entry(NOTIFY_TOMORROW,       "🔔 Завтра день рождения у <b>%s</b> %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
-        Map.entry(NOTIFY_WEEK,           "📅 Через неделю день рождения у <b>%s</b> %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
+        Map.entry(NOTIFY_TODAY,          "🎂 Сегодня день рождения у <b>%s</b> %s %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
+        Map.entry(NOTIFY_TOMORROW,       "🔔 Завтра день рождения у <b>%s</b> %s %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
+        Map.entry(NOTIFY_WEEK,           "📅 Через неделю день рождения у <b>%s</b> %s %s — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
         Map.entry(DATE_PICK_YEAR,        "Выберите год рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_MONTH,       "Выберите месяц рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_DAY,         "Выберите день рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_BACK,        "← Назад"),
+        Map.entry(DATE_YEAR_EARLIER,      "◀ Раньше"),
+        Map.entry(DATE_YEAR_LATER,        "Позже ▶"),
         Map.entry(JUBILEE_DAYS_LEFT,     "(через <b>%d</b> д)"),
         Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
         Map.entry(LIST_UPCOMING_HEADER,  "<b>Предстоящие:</b>\n"),
@@ -208,6 +248,7 @@ public final class Messages {
         Map.entry(EDIT_NAME_DONE,         "✅ Имя обновлено на <b>%s</b>!"),
         Map.entry(EDIT_DATE_DONE,         "✅ Дата рождения <b>%s</b> обновлена!"),
         Map.entry(UPCOMING_DAYS_FILTER,   "Показать дни рождения в ближайшие:"),
+        Map.entry(UPCOMING_DAYS_SUFFIX,    "д"),
         Map.entry(FRIEND_CAP,             "⚠️ Достигнут лимит в <b>%d</b> друзей."),
         Map.entry(LIST_SORT_DATE,         "📅 По дате"),
         Map.entry(LIST_SORT_NAME,         "🔤 По имени"),
@@ -218,7 +259,23 @@ public final class Messages {
         Map.entry(SETTINGS_HEADER,        "⏰ <b>Время уведомлений</b>\n\nВыберите время ежедневных напоминаний:"),
         Map.entry(SETTINGS_HOUR_SET,      "✅ Напоминания установлены на <b>%02d:00</b>"),
         Map.entry(START_ADD_FIRST,        "➕ Добавить первого друга"),
-        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Уведомления для <b>%s</b>: <b>%s</b>")
+        Map.entry(EDIT_NOTIFY_TOGGLED,     "🔔 Уведомления для <b>%s</b>: <b>%s</b>"),
+        Map.entry(RELATIONSHIP_PICK,        "Выберите отношение с <b>%s</b>:"),
+        Map.entry(RELATIONSHIP_SKIP,         "⏭ Пропустить"),
+        Map.entry(CONFIRM_YES,               "✅ Да"),
+        Map.entry(CONFIRM_NO,                "❌ Нет"),
+        Map.entry(EDIT_FIELD_NAME_BTN,       "📝 Имя"),
+        Map.entry(EDIT_FIELD_DATE_BTN,       "📅 Дата"),
+        Map.entry(EDIT_NOTIFS_ON,            "🔔 Увед. вкл"),
+        Map.entry(EDIT_NOTIFS_OFF,           "🔕 Увед. выкл"),
+        Map.entry(NOTIFY_STATUS_ON,          "вкл 🔔"),
+        Map.entry(NOTIFY_STATUS_OFF,         "выкл 🔕"),
+        Map.entry(QUICK_ADD_ANOTHER,         "➕ Добавить ещё"),
+        Map.entry(QUICK_LIST,                "📋 Список"),
+        Map.entry(SETTINGS_TZ_HEADER,       "🌍 <b>Часовой пояс</b>\n\nВыберите часовой пояс:"),
+        Map.entry(SETTINGS_TZ_SET,          "✅ Часовой пояс установлен: <b>%s</b>"),
+        Map.entry(LANG_EN_BTN,               "🇬🇧 English"),
+        Map.entry(LANG_RU_BTN,               "🇷🇺 Русский")
     );
 
     public static String get(Lang lang, String key) {

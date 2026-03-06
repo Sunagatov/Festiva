@@ -22,7 +22,7 @@ public final class DatePickerKeyboard {
 
     private DatePickerKeyboard() {}
 
-    public static InlineKeyboardMarkup yearKeyboard(int pageOffset) {
+    public static InlineKeyboardMarkup yearKeyboard(int pageOffset, Lang lang) {
         int currentYear = java.time.LocalDate.now().getYear();
         int startYear = currentYear - pageOffset;
         List<InlineKeyboardRow> rows = new ArrayList<>();
@@ -37,9 +37,9 @@ public final class DatePickerKeyboard {
         }
 
         InlineKeyboardRow nav = new InlineKeyboardRow();
-        nav.add(btn("◀ Earlier", DATE_YEAR_PAGE_PREFIX + (pageOffset + YEARS_PER_PAGE)));
+        nav.add(btn(com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_YEAR_EARLIER), DATE_YEAR_PAGE_PREFIX + (pageOffset + YEARS_PER_PAGE)));
         if (pageOffset >= YEARS_PER_PAGE) {
-            nav.add(btn("Later ▶", DATE_YEAR_PAGE_PREFIX + (pageOffset - YEARS_PER_PAGE)));
+            nav.add(btn(com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_YEAR_LATER), DATE_YEAR_PAGE_PREFIX + (pageOffset - YEARS_PER_PAGE)));
         }
         rows.add(nav);
 

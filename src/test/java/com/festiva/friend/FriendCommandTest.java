@@ -46,6 +46,7 @@ class FriendCommandTest extends IntegrationTestBase {
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_YEAR_PREFIX + "1990"));
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_MONTH_PREFIX + "6"));
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_DAY_PREFIX + "15"));
+        callbackQueryHandler.handle(callback(1L, "RELATIONSHIP_FRIEND"));
 
         Friend saved = friendService.getFriends(1L).getFirst();
         assertThat(saved.getName()).isEqualTo("Alice");

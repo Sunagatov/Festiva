@@ -31,7 +31,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
 
     @Override
     public Set<BotState> handledStates() {
-        return Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME, BotState.WAITING_FOR_ADD_FRIEND_DATE);
+        return Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME, BotState.WAITING_FOR_ADD_FRIEND_DATE, BotState.WAITING_FOR_ADD_FRIEND_RELATIONSHIP);
     }
 
     private static final int FRIEND_CAP = 100;
@@ -67,6 +67,6 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_DATE);
         return MessageBuilder.html(chatId,
                 Messages.get(lang, Messages.DATE_PICK_YEAR, name),
-                DatePickerKeyboard.yearKeyboard(0));
+                DatePickerKeyboard.yearKeyboard(0, lang));
     }
 }

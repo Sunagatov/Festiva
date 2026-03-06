@@ -7,6 +7,7 @@ import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
@@ -24,6 +25,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -31,17 +33,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CallbackQueryHandler {
 
-    private static final String MONTH_PREFIX    = "MONTH_";
-    private static final String REMOVE_PREFIX   = "REMOVE_";
-    private static final String CONFIRM_PREFIX  = "CONFIRM_REMOVE_";
-    private static final String CANCEL_REMOVE   = "CANCEL_REMOVE";
-    private static final String ACTION_ADD      = "ACTION_ADD";
-    private static final String EDIT_PREFIX     = "EDIT_";
+    private static final String MONTH_PREFIX      = "MONTH_";
+    private static final String REMOVE_PREFIX     = "REMOVE_";
+    private static final String CONFIRM_PREFIX    = "CONFIRM_REMOVE_";
+    private static final String CANCEL_REMOVE     = "CANCEL_REMOVE";
+    private static final String ACTION_ADD        = "ACTION_ADD";
+    private static final String EDIT_PREFIX       = "EDIT_";
     private static final String EDIT_FIELD_NAME   = "EDIT_FIELD_NAME_";
     private static final String EDIT_FIELD_DATE   = "EDIT_FIELD_DATE_";
     private static final String EDIT_FIELD_NOTIFY = "EDIT_FIELD_NOTIFY_";
-    private static final String LANG_PREFIX     = "LANG_";
-    private static final String CURRENT_MONTH   = "CURRENT";
+    private static final String LANG_PREFIX       = "LANG_";
+    private static final String CURRENT_MONTH     = "CURRENT";
+    private static final String RELATIONSHIP_PREFIX = "RELATIONSHIP_";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -68,7 +71,7 @@ public class CallbackQueryHandler {
             userStateService.setYearPageOffset(userId, offset);
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
-            markup = DatePickerKeyboard.yearKeyboard(offset);
+            markup = DatePickerKeyboard.yearKeyboard(offset, lang);
         } else if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PREFIX)) {
             int year = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_YEAR_PREFIX.length()));
             userStateService.setPendingYear(userId, year);
@@ -94,18 +97,37 @@ public class CallbackQueryHandler {
                 log.debug("friend.date.updated: userId={}, name={}", userId, name);
                 text = Messages.get(lang, Messages.EDIT_DATE_DONE, name);
             } else {
-                friendService.addFriend(userId, new Friend(name, birthDate));
-                userStateService.clearState(userId);
-                log.debug("friend.added: userId={}, name={}", userId, name);
-                text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+                // store date, ask for relationship
+                userStateService.setPendingYear(userId, year);
+                userStateService.setPendingMonth(userId, month);
+                userStateService.setPendingDay(userId, day);
+                userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_RELATIONSHIP);
+                text = Messages.get(lang, Messages.RELATIONSHIP_PICK, name);
+                markup = relationshipKeyboard(lang);
             }
+        } else if (data.startsWith(RELATIONSHIP_PREFIX)) {
+            String name = userStateService.getPendingName(userId);
+            Integer year = userStateService.getPendingYear(userId);
+            Integer month = userStateService.getPendingMonth(userId);
+            Integer day = userStateService.getPendingDay(userId);
+            LocalDate birthDate = LocalDate.of(year, month, day);
+            Relationship rel = "SKIP".equals(data.substring(RELATIONSHIP_PREFIX.length())) ? null
+                    : Relationship.valueOf(data.substring(RELATIONSHIP_PREFIX.length()));
+            friendService.addFriend(userId, new Friend(name, birthDate, rel));
+            userStateService.clearState(userId);
+            log.debug("friend.added: userId={}, name={}, relationship={}", userId, name, rel);
+            text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+            markup = InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
+                    InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData("ACTION_ADD").build(),
+                    InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData("LIST_SORT_DATE").build()
+            ))).build();
         } else if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR)) {
             int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_BACK_TO_YEAR.length() + 1));
             userStateService.setYearPageOffset(userId, offset);
             userStateService.setPendingYear(userId, null);
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
-            markup = DatePickerKeyboard.yearKeyboard(offset);
+            markup = DatePickerKeyboard.yearKeyboard(offset, lang);
         } else if (DatePickerKeyboard.DATE_BACK_TO_MONTH.equals(data)) {
             Integer year = userStateService.getPendingYear(userId);
             userStateService.setPendingMonth(userId, null);
@@ -115,8 +137,15 @@ public class CallbackQueryHandler {
         } else if (data.startsWith(SettingsCommandHandler.SETTINGS_HOUR_PREFIX)) {
             int hour = Integer.parseInt(data.substring(SettingsCommandHandler.SETTINGS_HOUR_PREFIX.length()));
             userStateService.setNotifyHour(userId, hour);
+            String tz = userStateService.getTimezone(userId);
             text = Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour);
-            markup = SettingsCommandHandler.hourKeyboard(hour);
+            markup = SettingsCommandHandler.combined(hour, tz);
+        } else if (data.startsWith(SettingsCommandHandler.SETTINGS_TZ_PREFIX)) {
+            String tz = data.substring(SettingsCommandHandler.SETTINGS_TZ_PREFIX.length());
+            userStateService.setTimezone(userId, tz);
+            int hour = userStateService.getNotifyHour(userId);
+            text = Messages.get(lang, Messages.SETTINGS_TZ_SET, tz);
+            markup = SettingsCommandHandler.combined(hour, tz);
         } else if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX)) {
             int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
             List<com.festiva.friend.entity.Friend> friends = friendService.getFriends(userId);
@@ -138,7 +167,8 @@ public class CallbackQueryHandler {
             boolean enabled = friendService.getFriends(userId).stream()
                     .filter(f -> f.getName().equalsIgnoreCase(name))
                     .findFirst().map(com.festiva.friend.entity.Friend::isNotifyEnabled).orElse(true);
-            text = Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, name, enabled ? "ON 🔔" : "OFF 🔕");
+            text = Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, name,
+                    Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF));
         } else if (data.startsWith(EDIT_FIELD_NAME)) {
             String name = data.substring(EDIT_FIELD_NAME.length());
             userStateService.setPendingName(userId, name);
@@ -150,7 +180,7 @@ public class CallbackQueryHandler {
             userStateService.setYearPageOffset(userId, 0);
             userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
             text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
-            markup = DatePickerKeyboard.yearKeyboard(0);
+            markup = DatePickerKeyboard.yearKeyboard(0, lang);
         } else if (data.startsWith(EDIT_PREFIX) && !data.startsWith(EDIT_FIELD_NAME) && !data.startsWith(EDIT_FIELD_DATE) && !data.startsWith(EDIT_FIELD_NOTIFY)) {
             String name = data.substring(EDIT_PREFIX.length());
             String currentDate = friendService.getFriends(userId).stream()
@@ -165,16 +195,16 @@ public class CallbackQueryHandler {
             markup = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(
                             new InlineKeyboardRow(
-                                    InlineKeyboardButton.builder().text("✏️ Name").callbackData(EDIT_FIELD_NAME + name).build(),
-                                    InlineKeyboardButton.builder().text("📅 Date").callbackData(EDIT_FIELD_DATE + name).build()),
+                                    InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_NAME_BTN)).callbackData(EDIT_FIELD_NAME + name).build(),
+                                    InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_DATE_BTN)).callbackData(EDIT_FIELD_DATE + name).build()),
                             new InlineKeyboardRow(
-                                    InlineKeyboardButton.builder().text(notifyOn ? "🔔 Notifs ON" : "🔕 Notifs OFF").callbackData(EDIT_FIELD_NOTIFY + name).build())
+                                    InlineKeyboardButton.builder().text(notifyOn ? Messages.get(lang, Messages.EDIT_NOTIFS_ON) : Messages.get(lang, Messages.EDIT_NOTIFS_OFF)).callbackData(EDIT_FIELD_NOTIFY + name).build())
                     ))
                     .build();
         } else if (data.startsWith(REMOVE_PREFIX)) {
             String name = data.substring(REMOVE_PREFIX.length());
             text = Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name);
-            markup = confirmKeyboard(name);
+            markup = confirmKeyboard(name, lang);
             userStateService.setPendingName(userId, name);
             userStateService.setState(userId, BotState.WAITING_FOR_REMOVE_CONFIRM);
         } else if (data.startsWith(CONFIRM_PREFIX)) {
@@ -198,11 +228,24 @@ public class CallbackQueryHandler {
         return builder.build();
     }
 
-    private InlineKeyboardMarkup confirmKeyboard(String name) {
+    private InlineKeyboardMarkup relationshipKeyboard(Lang lang) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        for (Relationship r : Relationship.values()) {
+            row.add(InlineKeyboardButton.builder().text(r.label(lang)).callbackData(RELATIONSHIP_PREFIX + r.name()).build());
+            if (row.size() == 3) { rows.add(row); row = new InlineKeyboardRow(); }
+        }
+        if (!row.isEmpty()) rows.add(row);
+        rows.add(new InlineKeyboardRow(
+                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.RELATIONSHIP_SKIP)).callbackData(RELATIONSHIP_PREFIX + "SKIP").build()));
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    private InlineKeyboardMarkup confirmKeyboard(String name, Lang lang) {
         return InlineKeyboardMarkup.builder()
                 .keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text("✅ Yes").callbackData(CONFIRM_PREFIX + name).build(),
-                        InlineKeyboardButton.builder().text("❌ No").callbackData(CANCEL_REMOVE).build()
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_YES)).callbackData(CONFIRM_PREFIX + name).build(),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_NO)).callbackData(CANCEL_REMOVE).build()
                 )))
                 .build();
     }

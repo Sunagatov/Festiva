@@ -59,7 +59,9 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, query));
         matches.forEach(f -> {
             long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
-            String daysLabel = days == 0 ? " \uD83C\uDF82" : " (in " + days + "d)";
+            String daysLabel = days == 0
+                    ? " 🎂"
+                    : " (" + days + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")";
             sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> ").append(f.getZodiac())
                     .append(" <i>").append(f.getName()).append("</i>")

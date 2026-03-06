@@ -75,7 +75,7 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
     public InlineKeyboardMarkup filterKeyboard(Lang lang, int activeDays) {
         InlineKeyboardRow row = new InlineKeyboardRow();
         for (int d : new int[]{7, 14, 30}) {
-            String label = (d == activeDays ? "✅ " : "") + d + "d";
+            String label = (d == activeDays ? "✅ " : "") + d + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX);
             row.add(InlineKeyboardButton.builder().text(label).callbackData(UPCOMING_DAYS_PREFIX + d).build());
         }
         return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();

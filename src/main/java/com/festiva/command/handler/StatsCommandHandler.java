@@ -49,8 +49,8 @@ public class StatsCommandHandler implements CommandHandler {
                 .map(f -> {
                     long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
                     return days == 0
-                            ? f.getName() + " \uD83C\uDF82"
-                            : f.getName() + " (in " + days + "d)";
+                            ? f.getName() + " 🎂"
+                            : f.getName() + " (" + days + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")";
                 })
                 .orElse("—");
 

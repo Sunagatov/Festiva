@@ -1,5 +1,6 @@
 package com.festiva.state;
 
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
@@ -17,8 +18,10 @@ public class UserStateService {
         String pendingName = null;
         Integer pendingYear = null;
         Integer pendingMonth = null;
+        Integer pendingDay = null;
         int yearPageOffset = 0;
-        Lang lang = null; // null = not yet loaded from DB
+        Lang lang = null;
+        Relationship pendingRelationship = null;
     }
 
     private final ConcurrentHashMap<Long, UserSession> sessions = new ConcurrentHashMap<>();
@@ -37,7 +40,9 @@ public class UserStateService {
         s.pendingName = null;
         s.pendingYear = null;
         s.pendingMonth = null;
+        s.pendingDay = null;
         s.yearPageOffset = 0;
+        s.pendingRelationship = null;
     }
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
@@ -52,6 +57,12 @@ public class UserStateService {
     public void setYearPageOffset(long userId, int offset) { session(userId).yearPageOffset = offset; }
     public int getYearPageOffset(long userId) { return session(userId).yearPageOffset; }
 
+    public void setPendingDay(long userId, Integer day) { session(userId).pendingDay = day; }
+    public Integer getPendingDay(long userId) { return session(userId).pendingDay; }
+
+    public void setPendingRelationship(long userId, Relationship r) { session(userId).pendingRelationship = r; }
+    public Relationship getPendingRelationship(long userId) { return session(userId).pendingRelationship; }
+
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);
         if (s.lang == null) {
@@ -65,7 +76,7 @@ public class UserStateService {
     public void setLanguage(long userId, Lang lang) {
         session(userId).lang = lang;
         UserPreference pref = userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, lang, 9));
+                .orElse(new UserPreference(userId, lang, 9, "Europe/Moscow"));
         pref.setLang(lang);
         userPreferenceRepository.save(pref);
     }
@@ -78,8 +89,21 @@ public class UserStateService {
 
     public void setNotifyHour(long userId, int hour) {
         UserPreference pref = userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), 9));
+                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
         pref.setNotifyHour(hour);
+        userPreferenceRepository.save(pref);
+    }
+
+    public String getTimezone(long userId) {
+        return userPreferenceRepository.findById(userId)
+                .map(UserPreference::getTimezone)
+                .orElse("Europe/Moscow");
+    }
+
+    public void setTimezone(long userId, String timezone) {
+        UserPreference pref = userPreferenceRepository.findById(userId)
+                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
+        pref.setTimezone(timezone);
         userPreferenceRepository.save(pref);
     }
 }

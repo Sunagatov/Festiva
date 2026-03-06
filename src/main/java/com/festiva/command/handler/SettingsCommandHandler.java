@@ -21,6 +21,22 @@ import java.util.List;
 public class SettingsCommandHandler implements CommandHandler {
 
     public static final String SETTINGS_HOUR_PREFIX = "SETTINGS_HOUR_";
+    public static final String SETTINGS_TZ_PREFIX   = "SETTINGS_TZ_";
+
+    private static final String[][] TIMEZONES = {
+        {"UTC",             "UTC"},
+        {"Europe/Moscow",   "Moscow"},
+        {"Europe/London",   "London"},
+        {"Europe/Berlin",   "Berlin"},
+        {"America/New_York","New York"},
+        {"America/Chicago", "Chicago"},
+        {"America/Denver",  "Denver"},
+        {"America/Los_Angeles", "LA"},
+        {"Asia/Dubai",      "Dubai"},
+        {"Asia/Almaty",     "Almaty"},
+        {"Asia/Tashkent",   "Tashkent"},
+        {"Asia/Tokyo",      "Tokyo"}
+    };
 
     private final UserStateService userStateService;
 
@@ -33,7 +49,29 @@ public class SettingsCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         int currentHour = userStateService.getNotifyHour(userId);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.SETTINGS_HEADER), hourKeyboard(currentHour));
+        String currentTz = userStateService.getTimezone(userId);
+        String text = Messages.get(lang, Messages.SETTINGS_HEADER) + "\n\n" +
+                      Messages.get(lang, Messages.SETTINGS_TZ_HEADER);
+        InlineKeyboardMarkup keyboard = combined(currentHour, currentTz);
+        return MessageBuilder.html(chatId, text, keyboard);
+    }
+
+    public static InlineKeyboardMarkup combined(int activeHour, String activeTz) {
+        List<InlineKeyboardRow> rows = new ArrayList<>(hourKeyboard(activeHour).getKeyboard());
+        rows.addAll(tzKeyboard(activeTz).getKeyboard());
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    public static InlineKeyboardMarkup tzKeyboard(String activeTz) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        for (String[] tz : TIMEZONES) {
+            String label = (tz[0].equals(activeTz) ? "✅ " : "") + tz[1];
+            row.add(InlineKeyboardButton.builder().text(label).callbackData(SETTINGS_TZ_PREFIX + tz[0]).build());
+            if (row.size() == 3) { rows.add(row); row = new InlineKeyboardRow(); }
+        }
+        if (!row.isEmpty()) rows.add(row);
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
     public static InlineKeyboardMarkup hourKeyboard(int activeHour) {

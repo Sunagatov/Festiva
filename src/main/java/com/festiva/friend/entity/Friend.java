@@ -23,10 +23,17 @@ public class Friend {
     private String name;
     private LocalDate birthDate;
     private boolean notifyEnabled = true;
+    private Relationship relationship;
 
     public Friend(String name, LocalDate birthDate) {
         this.name = name;
         this.birthDate = birthDate;
+    }
+
+    public Friend(String name, LocalDate birthDate, Relationship relationship) {
+        this.name = name;
+        this.birthDate = birthDate;
+        this.relationship = relationship;
     }
 
     public int getAge() {
