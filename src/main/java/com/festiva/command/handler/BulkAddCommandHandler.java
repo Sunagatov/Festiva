@@ -74,7 +74,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         }
 
         Set<String> existing = friendService.getFriends(userId).stream()
-                .map(f -> f.getName().toLowerCase())
+                .map(f -> f.getName().toLowerCase(java.util.Locale.ROOT))
                 .collect(Collectors.toSet());
 
         BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing);
@@ -125,7 +125,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 return reader.lines().collect(Collectors.toList());
             }
         } catch (Exception e) {
-            log.warn("bulk.add.file.download.failed: message={}", e.getMessage());
+            log.warn("bulk.add.file.download.failed: message={}", e.getMessage(), e);
             return null;
         }
     }

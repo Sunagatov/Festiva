@@ -44,11 +44,11 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        String query = update.getMessage().getText().trim().toLowerCase();
+        String query = update.getMessage().getText().trim().toLowerCase(java.util.Locale.ROOT);
         userStateService.clearState(userId);
 
         List<Friend> matches = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .filter(f -> f.getName().toLowerCase().contains(query))
+                .filter(f -> f.getName().toLowerCase(java.util.Locale.ROOT).contains(query))
                 .toList();
 
         if (matches.isEmpty()) {

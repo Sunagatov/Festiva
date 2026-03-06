@@ -55,7 +55,7 @@ public class ListCommandHandler implements CommandHandler {
     public String buildText(List<Friend> friends, Lang lang, boolean byDate) {
         LocalDate today = LocalDate.now();
         List<Friend> sorted = byDate ? friends
-                : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase())).toList();
+                : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase(java.util.Locale.ROOT))).toList();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
 
         if (byDate) {
