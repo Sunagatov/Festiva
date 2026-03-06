@@ -12,10 +12,8 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -114,15 +112,6 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
         } catch (TelegramApiException e) {
             log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public void sendDocument(long chatId, InputFile file, String caption) {
-        try {
-            telegramClient.execute(SendDocument.builder().chatId(chatId).document(file).caption(caption).build());
-        } catch (TelegramApiException e) {
-            log.error("bot.document.failed: chatId={}, message={}", chatId, e.getMessage(), e);
         }
     }
 }

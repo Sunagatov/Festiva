@@ -5,7 +5,6 @@ import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
-import com.festiva.notification.NotificationSender;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -42,7 +42,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
-    private final NotificationSender notificationSender;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -70,11 +69,19 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
     /** Called from CallbackQueryHandler when user picks CSV template. */
     public void sendCsvTemplate(long chatId, Lang lang) {
-        String csv = "name,birthday\nAlice,15.03.1990\nBob,22.07.1985\n";
-        InputFile file = new InputFile(
-                new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
-                "friends_template.csv");
-        notificationSender.sendDocument(chatId, file, Messages.get(lang, Messages.BULK_ADD_CSV_CAPTION));
+        try {
+            String csv = "name,birthday\nAlice,15.03.1990\nBob,22.07.1985\n";
+            InputFile file = new InputFile(
+                    new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
+                    "friends_template.csv");
+            telegramClient.execute(SendDocument.builder()
+                    .chatId(chatId)
+                    .document(file)
+                    .caption(Messages.get(lang, Messages.BULK_ADD_CSV_CAPTION))
+                    .build());
+        } catch (Exception e) {
+            log.warn("bulk.csv.template.failed: chatId={}, message={}", chatId, e.getMessage(), e);
+        }
     }
 
     /** Called from CallbackQueryHandler when user picks paste text. */
