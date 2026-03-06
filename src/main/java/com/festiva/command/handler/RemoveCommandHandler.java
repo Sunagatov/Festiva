@@ -9,6 +9,7 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -19,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RemoveCommandHandler implements StatefulCommandHandler {
@@ -71,11 +73,13 @@ public class RemoveCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (!friendService.friendExists(userId, name)) {
+            log.debug("friend.remove.not_found: userId={}, name={}", userId, name);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_NOT_FOUND, name));
         }
 
         friendService.deleteFriend(userId, name);
         userStateService.clearState(userId);
+        log.debug("friend.removed: userId={}, name={}", userId, name);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_REMOVED, name));
     }
 }

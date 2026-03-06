@@ -75,6 +75,15 @@ class FriendCommandTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("/remove non-existent friend via text state → returns not-found message")
+    void removeFriend_notFound_returnsNotFound() {
+        friendService.addFriend(8L, new Friend("Real", LocalDate.of(1990, 1, 1)));
+        commandRouter.route(update(8L, "/remove"));
+        var result = commandRouter.route(update(8L, "Ghost"));
+        assertThat(result.getText()).contains(Messages.get(L, Messages.FRIEND_NOT_FOUND, "Ghost"));
+    }
+
+    @Test
     @DisplayName("/add with unparseable date → returns date-format error")
     void addFriend_invalidDate_returnsError() {
         commandRouter.route(update(4L, "/add"));

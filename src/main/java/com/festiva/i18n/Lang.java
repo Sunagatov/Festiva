@@ -6,6 +6,6 @@ public enum Lang {
     EN, RU;
 
     public Locale locale() {
-        return this == EN ? Locale.ENGLISH : Locale.forLanguageTag("ru");
+        return this == EN ? Locale.ENGLISH : Locale.of("ru");
     }
 }

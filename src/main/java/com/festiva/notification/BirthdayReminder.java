@@ -31,24 +31,30 @@ public class BirthdayReminder {
 
     @Scheduled(cron = "0 0 9 * * *")
     public void checkBirthdays() {
-        log.info("Starting birthday check");
-        List<Long> userIds = friendService.getAllUserIds();
         LocalDate today = LocalDate.now();
+        log.info("reminder.check.start: date={}", today);
+        List<Long> userIds = friendService.getAllUserIds();
+        int[] notifiedCount = {0};
         userIds.forEach(userId ->
-                friendService.getFriends(userId).forEach(f -> checkAndNotify(userId, f, today))
+                friendService.getFriends(userId).forEach(f -> {
+                    if (checkAndNotify(userId, f, today)) notifiedCount[0]++;
+                })
         );
-        log.info("Birthday check completed for {} users", userIds.size());
+        log.info("reminder.check.done: userCount={}, notifiedCount={}", userIds.size(), notifiedCount[0]);
     }
 
-    private void checkAndNotify(long userId, Friend friend, LocalDate today) {
+    private boolean checkAndNotify(long userId, Friend friend, LocalDate today) {
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
         String key = TEMPLATE_KEYS.get(daysUntil);
-        if (key == null) return;
+        if (key == null) return false;
         try {
             notificationSender.send(userId,
                     Messages.get(userStateService.getLanguage(userId), key, friend.getName()));
+            log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
+            return true;
         } catch (RuntimeException e) {
-            log.error("Failed to send notification to userId={} for friend={}", userId, friend.getName(), e);
+            log.error("reminder.notify.failed: userId={}, friend={}, message={}", userId, friend.getName(), e.getMessage(), e);
+            return false;
         }
     }
 }

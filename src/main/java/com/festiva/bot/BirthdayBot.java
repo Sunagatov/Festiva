@@ -8,8 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
-import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
-import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,13 +22,14 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer, NotificationSender {
+public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, NotificationSender {
 
     private final String botToken;
     private final TelegramClient telegramClient;
     private final CommandRouter commandRouter;
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
+    private TelegramBotsLongPollingApplication botsApp;
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
@@ -40,6 +40,17 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
+    }
+
+    @PostConstruct
+    public void start() {
+        try {
+            botsApp = new TelegramBotsLongPollingApplication();
+            botsApp.registerBot(botToken, this);
+            log.info("bot.started");
+        } catch (TelegramApiException e) {
+            throw new RuntimeException("bot.start.failed", e);
+        }
     }
 
     @PostConstruct
@@ -59,28 +70,20 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
                             new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());
+            log.info("bot.commands.registered");
         } catch (TelegramApiException e) {
-            log.error("Failed to register bot commands", e);
+            log.error("bot.commands.register.failed: message={}", e.getMessage(), e);
         }
-    }
-
-    @Override
-    public String getBotToken() {
-        return botToken;
-    }
-
-    @Override
-    public LongPollingUpdateConsumer getUpdatesConsumer() {
-        return this;
     }
 
     @Override
     public void consume(Update update) {
         if (update == null) {
-            log.warn("Received null update");
+            log.warn("bot.update.null");
             return;
         }
         long startTime = System.currentTimeMillis();
+        String updateType = update.hasCallbackQuery() ? "callback" : update.hasMessage() ? "message" : "other";
         try {
             if (update.hasCallbackQuery()) {
                 EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
@@ -92,7 +95,7 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
             metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
         } catch (TelegramApiException | RuntimeException e) {
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
-            log.error("Error processing update: updateId={}", update.getUpdateId(), e);
+            log.error("bot.update.failed: updateId={}, type={}, message={}", update.getUpdateId(), updateType, e.getMessage(), e);
         }
     }
 
@@ -101,7 +104,7 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
         try {
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
         } catch (TelegramApiException e) {
-            log.error("Failed to send notification to userId={}", telegramUserId, e);
+            log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
         }
     }
 }

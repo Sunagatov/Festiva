@@ -50,7 +50,7 @@ public class CallbackQueryHandler {
         } else if (data.startsWith(MONTH_PREFIX)) {
             text = handleMonth(userId, data, lang);
         } else {
-            log.debug("Unknown callback data: {}", data);
+            log.debug("callback.unknown: data={}", data);
             return null;
         }
 
@@ -66,9 +66,10 @@ public class CallbackQueryHandler {
         try {
             Lang lang = Lang.valueOf(code);
             userStateService.setLanguage(userId, lang);
+            log.debug("callback.language.changed: userId={}, lang={}", userId, lang);
             return Messages.get(lang, Messages.LANGUAGE_SET);
         } catch (IllegalArgumentException e) {
-            log.warn("Unknown language code: {}", code, e);
+            log.warn("callback.language.unknown: code={}, reason={}", code, e.getMessage());
             return Messages.get(userStateService.getLanguage(userId), Messages.UNKNOWN_COMMAND);
         }
     }
@@ -79,6 +80,7 @@ public class CallbackQueryHandler {
         }
         friendService.deleteFriend(userId, name);
         userStateService.clearState(userId);
+        log.debug("callback.friend.removed: userId={}, name={}", userId, name);
         return Messages.get(lang, Messages.FRIEND_REMOVED, name);
     }
 
@@ -91,7 +93,7 @@ public class CallbackQueryHandler {
             try {
                 month = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                log.error("Failed to parse month from callback data: {}", data, e);
+                log.warn("callback.month.parse.failed: data={}, reason={}", data, e.getMessage());
                 return Messages.get(lang, Messages.MONTH_PARSE_ERROR);
             }
         }

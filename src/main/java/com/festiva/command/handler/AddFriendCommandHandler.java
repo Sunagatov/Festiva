@@ -9,6 +9,7 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Set;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AddFriendCommandHandler implements StatefulCommandHandler {
@@ -75,6 +77,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         String name = userStateService.getPendingName(userId);
 
         if (name == null) {
+            log.warn("friend.add.session.lost: userId={}", userId);
             userStateService.clearState(userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ADD_ERROR));
         }
@@ -83,6 +86,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         try {
             birthDate = LocalDate.parse(update.getMessage().getText().trim(), MessageBuilder.DATE_FORMATTER);
         } catch (DateTimeParseException e) {
+            log.debug("friend.add.date.invalid: userId={}, input={}", userId, update.getMessage().getText().trim());
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.DATE_FORMAT_ERROR));
         }
 
@@ -92,6 +96,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
 
         friendService.addFriend(userId, new Friend(name, birthDate));
         userStateService.clearState(userId);
+        log.debug("friend.added: userId={}, name={}", userId, name);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_ADDED, name));
     }
 }

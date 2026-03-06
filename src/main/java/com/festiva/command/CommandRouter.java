@@ -2,6 +2,7 @@ package com.festiva.command;
 
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class CommandRouter {
 
@@ -43,11 +45,18 @@ public class CommandRouter {
         String command = text.split("[\\s@]")[0];
         BotState state = userStateService.getState(userId);
 
-        if ("/cancel".equals(command)) return handlers.get("/cancel").handle(update);
+        if ("/cancel".equals(command)) {
+            log.debug("router.command: userId={}, command={}", userId, command);
+            return handlers.get("/cancel").handle(update);
+        }
 
         StatefulCommandHandler statefulHandler = statefulHandlers.get(state);
-        if (statefulHandler != null) return statefulHandler.handleState(update);
+        if (statefulHandler != null) {
+            log.debug("router.state: userId={}, state={}, input={}", userId, state, text);
+            return statefulHandler.handleState(update);
+        }
 
+        log.debug("router.command: userId={}, command={}", userId, command);
         return handlers.getOrDefault(command, defaultHandler).handle(update);
     }
 }

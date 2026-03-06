@@ -21,6 +21,13 @@ telegram:
     token: ${TELEGRAM_BOT_TOKEN}
     username: ${TELEGRAM_BOT_USERNAME}
 
+logging:
+  level:
+    org.telegram.telegrambots: INFO
+  group:
+    festiva: com.festiva
+    telegram: org.telegram.telegrambots
+
 kafka:
   enabled: ${APP_KAFKA_ENABLED:false}
   topic: festiva.bot.metric

@@ -35,7 +35,7 @@ public class FestivaMetricsSender implements MetricsSender {
 
         this.producer = new KafkaProducer<>(buildProperties(bootstrapServers, apiKey, apiSecret));
         this.topic = topic;
-        log.info("Kafka Metrics Producer initialized with topic: {}", topic);
+        log.info("metrics.kafka.initialized: topic={}", topic);
     }
 
     private static Properties buildProperties(String bootstrapServers, String apiKey, String apiSecret) {
@@ -60,10 +60,10 @@ public class FestivaMetricsSender implements MetricsSender {
         try {
             String json = buildJson(update, status, processingTimeMillis);
             producer.send(new ProducerRecord<>(topic, json), (metadata, ex) -> {
-                if (ex != null) log.error("Failed to send metrics to Kafka", ex);
+                if (ex != null) log.error("metrics.kafka.send.failed: message={}", ex.getMessage(), ex);
             });
         } catch (RuntimeException e) {
-            log.error("Failed to build metrics payload", e);
+            log.error("metrics.payload.build.failed: message={}", e.getMessage(), e);
         }
     }
 
@@ -99,7 +99,7 @@ public class FestivaMetricsSender implements MetricsSender {
         try {
             return OBJECT_MAPPER.writeValueAsString(metrics);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize metrics", e);
+            log.error("metrics.serialize.failed: message={}", e.getMessage(), e);
             return "{}";
         }
     }
@@ -119,6 +119,6 @@ public class FestivaMetricsSender implements MetricsSender {
     @PreDestroy
     public void close() {
         producer.close(Duration.ofSeconds(10));
-        log.info("Kafka producer closed");
+        log.info("metrics.kafka.closed");
     }
 }

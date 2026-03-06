@@ -19,7 +19,7 @@
     </parent>
 
     <properties>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <java.version>25</java.version>
         <telegrambots.version>9.0.0</telegrambots.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
@@ -58,7 +58,7 @@
         <!-- Telegram Bots -->
         <dependency>
             <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
+            <artifactId>telegrambots-longpolling</artifactId>
             <version>${telegrambots.version}</version>
         </dependency>
         <dependency>
@@ -131,7 +131,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
                 <configuration>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>-Dnet.bytebuddy.experimental=true -DDOCKER_HOST=unix:///var/run/docker.sock -Ddocker.api.version=1.44</argLine>
+                    <environmentVariables>
+                        <DOCKER_HOST>unix:///var/run/docker.sock</DOCKER_HOST>
+                        <DOCKER_API_VERSION>1.44</DOCKER_API_VERSION>
+                        <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
+                        <TESTCONTAINERS_HOST_OVERRIDE>localhost</TESTCONTAINERS_HOST_OVERRIDE>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>

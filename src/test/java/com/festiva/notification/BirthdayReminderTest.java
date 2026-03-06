@@ -12,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -60,5 +62,13 @@ class BirthdayReminderTest extends IntegrationTestBase {
         friendService.addFriend(13L, new Friend("Dave", LocalDate.now().plusDays(10).minusYears(20)));
         birthdayReminder.checkBirthdays();
         verify(birthdayBot, never()).send(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("notification failure → does not propagate exception")
+    void notificationFailure_doesNotPropagateException() {
+        friendService.addFriend(14L, new Friend("FailFriend", LocalDate.now().minusYears(25)));
+        doThrow(new RuntimeException("send failed")).when(birthdayBot).send(eq(14L), anyString());
+        assertThatCode(() -> birthdayReminder.checkBirthdays()).doesNotThrowAnyException();
     }
 }

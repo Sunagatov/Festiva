@@ -6,10 +6,12 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CancelCommandHandler implements CommandHandler {
@@ -27,7 +29,10 @@ public class CancelCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         boolean active = userStateService.getState(userId) != BotState.IDLE;
 
-        if (active) userStateService.clearState(userId);
+        if (active) {
+            userStateService.clearState(userId);
+            log.debug("session.cancelled: userId={}", userId);
+        }
 
         String key = active ? Messages.CANCEL_ACTIVE : Messages.CANCEL_IDLE;
         return MessageBuilder.html(chatId, Messages.get(userStateService.getLanguage(userId), key));
