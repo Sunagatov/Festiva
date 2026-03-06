@@ -24,12 +24,14 @@ public final class Messages {
     public static final String LIST_WILL_TURN        = "list_will_turn";
     public static final String LIST_DAYS_TODAY       = "list_days_today";
     public static final String LIST_DAYS_LEFT        = "list_days_left";
+    public static final String REMOVE_EMPTY_ADD     = "remove_empty_add";
     public static final String SELECT_REMOVE         = "select_remove";
     public static final String CONFIRM_REMOVE_ASK    = "confirm_remove_ask";
     public static final String CONFIRM_REMOVE_CANCEL = "confirm_remove_cancel";
     public static final String BIRTHDAYS_HEADER      = "birthdays_header";
     public static final String BIRTHDAYS_NONE        = "birthdays_none";
     public static final String CURRENT_MONTH         = "current_month";
+    public static final String UPCOMING_TODAY        = "upcoming_today";
     public static final String UPCOMING_HEADER       = "upcoming_header";
     public static final String UPCOMING_NONE         = "upcoming_none";
     public static final String UPCOMING_TURNS        = "upcoming_turns";
@@ -56,6 +58,11 @@ public final class Messages {
     public static final String JUBILEE_DAYS_TODAY    = "jubilee_days_today";
     public static final String LIST_UPCOMING_HEADER  = "list_upcoming_header";
     public static final String LIST_CELEBRATED_HEADER = "list_celebrated_header";
+    public static final String EDIT_SELECT          = "edit_select";
+    public static final String EDIT_CHOOSE_FIELD    = "edit_choose_field";
+    public static final String EDIT_ENTER_NAME      = "edit_enter_name";
+    public static final String EDIT_NAME_DONE       = "edit_name_done";
+    public static final String EDIT_DATE_DONE       = "edit_date_done";
     public static final String YEARS_TURNS           = "years_turns";
 
     private static final Map<String, String> EN = Map.ofEntries(
@@ -85,6 +92,8 @@ public final class Messages {
         Map.entry(UPCOMING_HEADER,       "<b>Upcoming birthdays:</b>\n\n"),
         Map.entry(UPCOMING_NONE,         "<b>No birthdays in the next %d days.</b>"),
         Map.entry(UPCOMING_TURNS,        "(turns <b>%d</b>, days left — <b>%d</b>)"),
+        Map.entry(UPCOMING_TODAY,         "🎂 <b>TODAY!</b> turns <b>%d</b>"),
+        Map.entry(REMOVE_EMPTY_ADD,       "➕ Add a friend"),
         Map.entry(JUBILEE_HEADER,        "<b>Milestone birthdays</b>\n\n"),
         Map.entry(JUBILEE_NONE,          "<b>No upcoming milestone birthdays.</b>"),
         Map.entry(JUBILEE_TURNS,         "(turns <b>%d</b>)"),
@@ -97,9 +106,9 @@ public final class Messages {
         Map.entry(MONTH_PARSE_ERROR,     "Error selecting month."),
         Map.entry(YEARS_OLD,             "%d years old"),
         Map.entry(BIRTHDAYS_PICK,        "<b>View birthdays</b>\n\nSelect a month:"),
-        Map.entry(NOTIFY_TODAY,          "🎂 Today is <b>%s</b>'s birthday — turning <b>%d</b>!"),
-        Map.entry(NOTIFY_TOMORROW,       "🔔 Tomorrow is <b>%s</b>'s birthday — turning <b>%d</b>!"),
-        Map.entry(NOTIFY_WEEK,           "📅 In one week it's <b>%s</b>'s birthday — turning <b>%d</b>!"),
+        Map.entry(NOTIFY_TODAY,          "🎂 Today is <b>%s</b>'s birthday — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
+        Map.entry(NOTIFY_TOMORROW,       "🔔 Tomorrow is <b>%s</b>'s birthday — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
+        Map.entry(NOTIFY_WEEK,           "📅 In one week it's <b>%s</b>'s birthday — turning <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Open Festiva</a>"),
         Map.entry(DATE_PICK_YEAR,        "Select <b>%s</b>'s birth year:"),
         Map.entry(DATE_PICK_MONTH,       "Select <b>%s</b>'s birth month:"),
         Map.entry(DATE_PICK_DAY,         "Select <b>%s</b>'s birth day:"),
@@ -108,7 +117,12 @@ public final class Messages {
         Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
         Map.entry(LIST_UPCOMING_HEADER,  "<b>Coming up:</b>\n"),
         Map.entry(LIST_CELEBRATED_HEADER, "\n<b>Already celebrated:</b>\n"),
-        Map.entry(YEARS_TURNS,           "turns <b>%d</b>")
+        Map.entry(YEARS_TURNS,           "turns <b>%d</b>"),
+        Map.entry(EDIT_SELECT,            "Select a friend to edit:"),
+        Map.entry(EDIT_CHOOSE_FIELD,      "Edit <b>%s</b> — what would you like to change?"),
+        Map.entry(EDIT_ENTER_NAME,        "Enter a new name for <b>%s</b>:"),
+        Map.entry(EDIT_NAME_DONE,         "✅ Name updated to <b>%s</b>!"),
+        Map.entry(EDIT_DATE_DONE,         "✅ Birth date for <b>%s</b> updated!")
     );
 
     private static final Map<String, String> RU = Map.ofEntries(
@@ -138,6 +152,8 @@ public final class Messages {
         Map.entry(UPCOMING_HEADER,       "<b>Ближайшие дни рождения:</b>\n\n"),
         Map.entry(UPCOMING_NONE,         "<b>В ближайшие %d дней нет дней рождения.</b>"),
         Map.entry(UPCOMING_TURNS,        "(исполнится <b>%d</b>, дней до дня рождения — <b>%d</b>)"),
+        Map.entry(UPCOMING_TODAY,         "🎂 <b>СЕГОДНЯ!</b> исполняется <b>%d</b>"),
+        Map.entry(REMOVE_EMPTY_ADD,       "➕ Добавить друга"),
         Map.entry(JUBILEE_HEADER,        "<b>Юбилейные дни рождения</b>\n\n"),
         Map.entry(JUBILEE_NONE,          "<b>В ближайшее время нет юбилейных дней рождения.</b>"),
         Map.entry(JUBILEE_TURNS,         "(исполнится <b>%d</b> лет)"),
@@ -150,9 +166,9 @@ public final class Messages {
         Map.entry(MONTH_PARSE_ERROR,     "Ошибка при выборе месяца."),
         Map.entry(YEARS_OLD,             "%d лет"),
         Map.entry(BIRTHDAYS_PICK,        "<b>Просмотр дней рождения</b>\n\nВыберите месяц:"),
-        Map.entry(NOTIFY_TODAY,          "🎂 Сегодня день рождения у <b>%s</b> — исполняется <b>%d</b>!"),
-        Map.entry(NOTIFY_TOMORROW,       "🔔 Завтра день рождения у <b>%s</b> — исполняется <b>%d</b>!"),
-        Map.entry(NOTIFY_WEEK,           "📅 Через неделю день рождения у <b>%s</b> — исполняется <b>%d</b>!"),
+        Map.entry(NOTIFY_TODAY,          "🎂 Сегодня день рождения у <b>%s</b> — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
+        Map.entry(NOTIFY_TOMORROW,       "🔔 Завтра день рождения у <b>%s</b> — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
+        Map.entry(NOTIFY_WEEK,           "📅 Через неделю день рождения у <b>%s</b> — исполняется <b>%d</b>!\n👉 <a href=\"https://t.me/%s\">Открыть Festiva</a>"),
         Map.entry(DATE_PICK_YEAR,        "Выберите год рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_MONTH,       "Выберите месяц рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_DAY,         "Выберите день рождения <b>%s</b>:"),
@@ -161,7 +177,12 @@ public final class Messages {
         Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
         Map.entry(LIST_UPCOMING_HEADER,  "<b>Предстоящие:</b>\n"),
         Map.entry(LIST_CELEBRATED_HEADER, "\n<b>Уже отметили:</b>\n"),
-        Map.entry(YEARS_TURNS,           "исполнится <b>%d</b>")
+        Map.entry(YEARS_TURNS,           "исполнится <b>%d</b>"),
+        Map.entry(EDIT_SELECT,            "Выберите друга для редактирования:"),
+        Map.entry(EDIT_CHOOSE_FIELD,      "Редактировать <b>%s</b> — что изменить?"),
+        Map.entry(EDIT_ENTER_NAME,        "Введите новое имя для <b>%s</b>:"),
+        Map.entry(EDIT_NAME_DONE,         "✅ Имя обновлено на <b>%s</b>!"),
+        Map.entry(EDIT_DATE_DONE,         "✅ Дата рождения <b>%s</b> обновлена!")
     );
 
     public static String get(Lang lang, String key) {

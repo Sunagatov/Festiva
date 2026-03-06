@@ -28,12 +28,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CallbackQueryHandler {
 
-    private static final String MONTH_PREFIX   = "MONTH_";
-    private static final String REMOVE_PREFIX  = "REMOVE_";
-    private static final String CONFIRM_PREFIX = "CONFIRM_REMOVE_";
-    private static final String CANCEL_REMOVE  = "CANCEL_REMOVE";
-    private static final String LANG_PREFIX    = "LANG_";
-    private static final String CURRENT_MONTH  = "CURRENT";
+    private static final String MONTH_PREFIX    = "MONTH_";
+    private static final String REMOVE_PREFIX   = "REMOVE_";
+    private static final String CONFIRM_PREFIX  = "CONFIRM_REMOVE_";
+    private static final String CANCEL_REMOVE   = "CANCEL_REMOVE";
+    private static final String ACTION_ADD      = "ACTION_ADD";
+    private static final String EDIT_PREFIX     = "EDIT_";
+    private static final String EDIT_FIELD_NAME = "EDIT_FIELD_NAME_";
+    private static final String EDIT_FIELD_DATE = "EDIT_FIELD_DATE_";
+    private static final String LANG_PREFIX     = "LANG_";
+    private static final String CURRENT_MONTH   = "CURRENT";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -78,10 +82,17 @@ public class CallbackQueryHandler {
             Integer month = userStateService.getPendingMonth(userId);
             String name = userStateService.getPendingName(userId);
             LocalDate birthDate = LocalDate.of(year, month, day);
-            friendService.addFriend(userId, new Friend(name, birthDate));
-            userStateService.clearState(userId);
-            log.debug("friend.added: userId={}, name={}", userId, name);
-            text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+            if (userStateService.getState(userId) == BotState.WAITING_FOR_EDIT_DATE) {
+                friendService.updateFriendDate(userId, name, birthDate);
+                userStateService.clearState(userId);
+                log.debug("friend.date.updated: userId={}, name={}", userId, name);
+                text = Messages.get(lang, Messages.EDIT_DATE_DONE, name);
+            } else {
+                friendService.addFriend(userId, new Friend(name, birthDate));
+                userStateService.clearState(userId);
+                log.debug("friend.added: userId={}, name={}", userId, name);
+                text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+            }
         } else if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR)) {
             int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_BACK_TO_YEAR.length() + 1));
             userStateService.setYearPageOffset(userId, offset);
@@ -95,8 +106,32 @@ public class CallbackQueryHandler {
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_MONTH, name);
             markup = DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId));
+        } else if (ACTION_ADD.equals(data)) {
+            userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_NAME);
+            text = Messages.get(lang, Messages.ENTER_NAME);
         } else if (data.startsWith(LANG_PREFIX)) {
             text = handleLanguage(userId, data.substring(LANG_PREFIX.length()));
+        } else if (data.startsWith(EDIT_FIELD_NAME)) {
+            String name = data.substring(EDIT_FIELD_NAME.length());
+            userStateService.setPendingName(userId, name);
+            userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
+            text = Messages.get(lang, Messages.EDIT_ENTER_NAME, name);
+        } else if (data.startsWith(EDIT_FIELD_DATE)) {
+            String name = data.substring(EDIT_FIELD_DATE.length());
+            userStateService.setPendingName(userId, name);
+            userStateService.setYearPageOffset(userId, 0);
+            userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
+            text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
+            markup = DatePickerKeyboard.yearKeyboard(0);
+        } else if (data.startsWith(EDIT_PREFIX) && !data.startsWith(EDIT_FIELD_NAME) && !data.startsWith(EDIT_FIELD_DATE)) {
+            String name = data.substring(EDIT_PREFIX.length());
+            text = Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name);
+            markup = InlineKeyboardMarkup.builder()
+                    .keyboard(List.of(new InlineKeyboardRow(
+                            InlineKeyboardButton.builder().text("✏️ Name").callbackData(EDIT_FIELD_NAME + name).build(),
+                            InlineKeyboardButton.builder().text("📅 Date").callbackData(EDIT_FIELD_DATE + name).build()
+                    )))
+                    .build();
         } else if (data.startsWith(REMOVE_PREFIX)) {
             String name = data.substring(REMOVE_PREFIX.length());
             text = Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name);

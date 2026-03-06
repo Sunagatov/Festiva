@@ -8,6 +8,7 @@ import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,9 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class BirthdayReminder {
+
+    @Value("${telegram.bot.username}")
+    private String botUsername;
 
     private static final Map<Long, String> TEMPLATE_KEYS = Map.of(
             0L, Messages.NOTIFY_TODAY,
@@ -56,7 +60,7 @@ public class BirthdayReminder {
         String key = TEMPLATE_KEYS.get(daysUntil);
         if (key == null) return false;
         try {
-            notificationSender.send(userId, Messages.get(lang, key, friend.getName(), friend.getNextAge()));
+            notificationSender.send(userId, Messages.get(lang, key, friend.getName(), friend.getNextAge(), botUsername));
             log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
             return true;
         } catch (RuntimeException e) {

@@ -50,6 +50,13 @@ public class CommandRouter {
             return handlers.getOrDefault(command, defaultHandler).handle(update);
         }
 
+        String mappedCommand = MessageBuilder.LABEL_TO_COMMAND.get(text);
+        if (mappedCommand != null) {
+            log.debug("router.label: userId={}, label={}, command={}", userId, text, mappedCommand);
+            userStateService.clearState(userId);
+            return handlers.getOrDefault(mappedCommand, defaultHandler).handle(update);
+        }
+
         StatefulCommandHandler statefulHandler = statefulHandlers.get(state);
         if (statefulHandler != null) {
             log.debug("router.state: userId={}, state={}, input={}", userId, state, text);

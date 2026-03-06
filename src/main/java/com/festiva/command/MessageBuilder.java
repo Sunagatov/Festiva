@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class MessageBuilder {
 
@@ -29,12 +30,24 @@ public final class MessageBuilder {
         return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).replyMarkup(markup).build();
     }
 
+    public static final Map<String, String> LABEL_TO_COMMAND = Map.of(
+            "➕ Add", "/add",
+            "🗑 Remove", "/remove",
+            "📋 List", "/list",
+            "🎂 Birthdays", "/birthdays",
+            "⏰ Upcoming", "/upcomingbirthdays",
+            "🏆 Jubilee", "/jubilee",
+            "✏️ Edit", "/edit",
+            "🌐 Language", "/language",
+            "❓ Help", "/help"
+    );
+
     public static ReplyKeyboardMarkup mainMenu() {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
-                        new KeyboardRow(List.of(new KeyboardButton("/add"), new KeyboardButton("/remove"), new KeyboardButton("/list"))),
-                        new KeyboardRow(List.of(new KeyboardButton("/birthdays"), new KeyboardButton("/upcomingbirthdays"), new KeyboardButton("/jubilee"))),
-                        new KeyboardRow(List.of(new KeyboardButton("/language"), new KeyboardButton("/help")))
+                        new KeyboardRow(List.of(new KeyboardButton("➕ Add"), new KeyboardButton("🗑 Remove"), new KeyboardButton("📋 List"))),
+                        new KeyboardRow(List.of(new KeyboardButton("🎂 Birthdays"), new KeyboardButton("⏰ Upcoming"), new KeyboardButton("🏆 Jubilee"))),
+                        new KeyboardRow(List.of(new KeyboardButton("✏️ Edit"), new KeyboardButton("🌐 Language"), new KeyboardButton("❓ Help")))
                 ))
                 .resizeKeyboard(true)
                 .build();

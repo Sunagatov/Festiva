@@ -29,6 +29,16 @@ public class FriendService {
         friendRepository.deleteByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
     }
 
+    public void updateFriendName(long telegramUserId, String oldName, String newName) {
+        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, oldName)
+                .ifPresent(f -> { f.setName(newName); friendRepository.save(f); });
+    }
+
+    public void updateFriendDate(long telegramUserId, String name, java.time.LocalDate date) {
+        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
+                .ifPresent(f -> { f.setBirthDate(date); friendRepository.save(f); });
+    }
+
     public List<Friend> getFriends(long telegramUserId) {
         return friendRepository.findByTelegramUserId(telegramUserId);
     }

@@ -68,7 +68,7 @@ public class ListCommandHandler implements CommandHandler {
                 ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
                 : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
         sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                .append("</b> <i>").append(f.getName()).append("</i> ");
+                .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i> ");
         boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
         if (alreadyHadBirthday) {
             sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));

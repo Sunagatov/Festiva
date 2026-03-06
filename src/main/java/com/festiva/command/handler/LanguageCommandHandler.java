@@ -34,8 +34,8 @@ public class LanguageCommandHandler implements CommandHandler {
 
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                 .keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text("🇬🇧 English").callbackData("LANG_" + Lang.EN.name()).build(),
-                        InlineKeyboardButton.builder().text("🇷🇺 Русский").callbackData("LANG_" + Lang.RU.name()).build()
+                        InlineKeyboardButton.builder().text(lang == Lang.EN ? "✅ 🇬🇧 English" : "🇬🇧 English").callbackData("LANG_" + Lang.EN.name()).build(),
+                        InlineKeyboardButton.builder().text(lang == Lang.RU ? "✅ 🇷🇺 Русский" : "🇷🇺 Русский").callbackData("LANG_" + Lang.RU.name()).build()
                 )))
                 .build();
 
