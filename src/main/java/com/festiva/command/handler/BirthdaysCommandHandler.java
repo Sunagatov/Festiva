@@ -2,6 +2,7 @@ package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
+import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -13,10 +14,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
     private static final int COLUMNS_PER_ROW = 4;
     private static final int TOTAL_MONTHS = 12;
 
+    private final FriendService friendService;
     private final UserStateService userStateService;
 
     @Override
@@ -37,13 +42,17 @@ public class BirthdaysCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         var lang = userStateService.getLanguage(userId);
+        int currentMonth = LocalDate.now().getMonthValue();
+
+        Map<Integer, Long> countByMonth = friendService.getFriends(userId).stream()
+                .collect(Collectors.groupingBy(f -> f.getBirthDate().getMonthValue(), Collectors.counting()));
 
         return MessageBuilder.html(chatId,
                 Messages.get(lang, Messages.BIRTHDAYS_PICK),
-                InlineKeyboardMarkup.builder().keyboard(buildKeyboard(lang)).build());
+                InlineKeyboardMarkup.builder().keyboard(buildKeyboard(lang, currentMonth, countByMonth)).build());
     }
 
-    private List<InlineKeyboardRow> buildKeyboard(Lang lang) {
+    private List<InlineKeyboardRow> buildKeyboard(Lang lang, int currentMonth, Map<Integer, Long> countByMonth) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         rows.add(new InlineKeyboardRow(button(Messages.get(lang, Messages.CURRENT_MONTH), "MONTH_CURRENT")));
 
@@ -51,8 +60,10 @@ public class BirthdaysCommandHandler implements CommandHandler {
             InlineKeyboardRow row = new InlineKeyboardRow();
             for (int col = 0; col < COLUMNS_PER_ROW && m + col <= TOTAL_MONTHS; col++) {
                 int month = m + col;
-                String name = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
-                String label = Character.toUpperCase(name.charAt(0)) + name.substring(1).replace(".", "");
+                String raw = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
+                String name = Character.toUpperCase(raw.charAt(0)) + raw.substring(1).replace(".", "");
+                long count = countByMonth.getOrDefault(month, 0L);
+                String label = (month == currentMonth ? "📍 " : "") + name + (count > 0 ? " (" + count + ")" : "");
                 row.add(button(label, "MONTH_" + month));
             }
             rows.add(row);

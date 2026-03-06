@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -21,15 +24,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
-    private static final int DAYS_LIMIT = 30;
+    public static final String UPCOMING_DAYS_PREFIX = "UPCOMING_DAYS_";
+    private static final int DEFAULT_DAYS = 30;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
 
     @Override
-    public String command() {
-        return "/upcomingbirthdays";
-    }
+    public String command() { return "/upcomingbirthdays"; }
 
     @Override
     public SendMessage handle(Update update) {
@@ -37,10 +39,10 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         List<Friend> friends = friendService.getFriends(userId);
-        return MessageBuilder.html(chatId, buildText(friends, lang));
+        return MessageBuilder.html(chatId, buildText(friends, lang, DEFAULT_DAYS), filterKeyboard(lang, DEFAULT_DAYS));
     }
 
-    private String buildText(List<Friend> friends, Lang lang) {
+    public String buildText(List<Friend> friends, Lang lang, int daysLimit) {
         LocalDate today = LocalDate.now();
         record Entry(Friend friend, LocalDate next, long days) {}
 
@@ -49,12 +51,12 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
                     LocalDate next = f.nextBirthday(today);
                     return new Entry(f, next, ChronoUnit.DAYS.between(today, next));
                 })
-                .filter(e -> e.days() >= 0 && e.days() <= DAYS_LIMIT)
+                .filter(e -> e.days() >= 0 && e.days() <= daysLimit)
                 .sorted(Comparator.comparing(Entry::next))
                 .toList();
 
         if (upcoming.isEmpty()) {
-            return Messages.get(lang, Messages.UPCOMING_NONE, DAYS_LIMIT);
+            return Messages.get(lang, Messages.UPCOMING_NONE, daysLimit);
         }
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER));
@@ -68,5 +70,14 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
                     .append(suffix).append("\n");
         });
         return sb.toString();
+    }
+
+    public InlineKeyboardMarkup filterKeyboard(Lang lang, int activeDays) {
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        for (int d : new int[]{7, 14, 30}) {
+            String label = (d == activeDays ? "✅ " : "") + d + "d";
+            row.add(InlineKeyboardButton.builder().text(label).callbackData(UPCOMING_DAYS_PREFIX + d).build());
+        }
+        return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
 }

@@ -2,6 +2,7 @@ package com.festiva.bot;
 
 import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
+import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
@@ -41,6 +42,7 @@ public class CallbackQueryHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UpcomingBirthdaysCommandHandler upcomingHandler;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
         if (callbackQuery == null) return null;
@@ -106,6 +108,11 @@ public class CallbackQueryHandler {
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_MONTH, name);
             markup = DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId));
+        } else if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX)) {
+            int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
+            List<com.festiva.friend.entity.Friend> friends = friendService.getFriends(userId);
+            text = upcomingHandler.buildText(friends, lang, days);
+            markup = upcomingHandler.filterKeyboard(lang, days);
         } else if (ACTION_ADD.equals(data)) {
             userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_NAME);
             text = Messages.get(lang, Messages.ENTER_NAME);
@@ -125,7 +132,12 @@ public class CallbackQueryHandler {
             markup = DatePickerKeyboard.yearKeyboard(0);
         } else if (data.startsWith(EDIT_PREFIX) && !data.startsWith(EDIT_FIELD_NAME) && !data.startsWith(EDIT_FIELD_DATE)) {
             String name = data.substring(EDIT_PREFIX.length());
-            text = Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name);
+            String currentDate = friendService.getFriends(userId).stream()
+                    .filter(f -> f.getName().equalsIgnoreCase(name))
+                    .findFirst()
+                    .map(f -> f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+                    .orElse("?");
+            text = Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate);
             markup = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(new InlineKeyboardRow(
                             InlineKeyboardButton.builder().text("✏️ Name").callbackData(EDIT_FIELD_NAME + name).build(),

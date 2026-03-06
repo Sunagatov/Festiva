@@ -52,7 +52,7 @@ public class RemoveCommandHandler implements CommandHandler {
         List<InlineKeyboardRow> rows = friends.stream()
                 .map(f -> new InlineKeyboardRow(
                         InlineKeyboardButton.builder()
-                                .text(f.getName())
+                                .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
                                 .callbackData("REMOVE_" + f.getName())
                                 .build()))
                 .toList();

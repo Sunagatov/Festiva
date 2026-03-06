@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -37,6 +41,16 @@ public class ListCommandHandler implements CommandHandler {
         String text = friends.isEmpty()
                 ? Messages.get(lang, Messages.FRIENDS_EMPTY)
                 : buildText(friends, lang);
+        if (friends.isEmpty()) {
+            InlineKeyboardMarkup addButton = InlineKeyboardMarkup.builder()
+                    .keyboard(List.of(new InlineKeyboardRow(
+                            InlineKeyboardButton.builder()
+                                    .text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
+                                    .callbackData("ACTION_ADD")
+                                    .build())))
+                    .build();
+            return MessageBuilder.html(chatId, text, addButton);
+        }
         return MessageBuilder.html(chatId, text);
     }
 

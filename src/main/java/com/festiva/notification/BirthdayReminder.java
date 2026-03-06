@@ -60,7 +60,7 @@ public class BirthdayReminder {
         String key = TEMPLATE_KEYS.get(daysUntil);
         if (key == null) return false;
         try {
-            notificationSender.send(userId, Messages.get(lang, key, friend.getName(), friend.getNextAge(), botUsername));
+            notificationSender.send(userId, Messages.get(lang, key, friend.getName(), friend.getZodiac(), friend.getNextAge(), botUsername));
             log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
             return true;
         } catch (RuntimeException e) {
