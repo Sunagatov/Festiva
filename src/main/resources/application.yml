@@ -1,8 +1,8 @@
 spring:
   data:
     mongodb:
-      uri: mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST}/?retryWrites=true&w=majority&appName=FestivaDatabase&readPreference=primary
-      database: ${MONGO_DATABASE_NAME}
+      uri: ${MONGO_URI:mongodb://localhost:27017}
+      database: ${MONGO_DATABASE_NAME:FestivaDatabase}
 
 management:
   endpoints:

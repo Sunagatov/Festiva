@@ -2,16 +2,39 @@ networks:
   festiva-network:
     name: festiva-network
 
+volumes:
+  mongo-data:
+
 services:
+
+  mongo:
+    image: mongo:8-jammy
+    container_name: festiva-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - festiva-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   bot:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: festiva-bot
-    env_file: .env
+    env_file: .env.local
+    environment:
+      MONGO_URI: mongodb://mongo:27017
     ports:
       - '8080:8080'
+    depends_on:
+      mongo:
+        condition: service_healthy
     networks:
       - festiva-network
     healthcheck:

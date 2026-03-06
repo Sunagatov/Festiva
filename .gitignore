@@ -1,5 +1,7 @@
 .amazonq/
 .env
+.env.local
+.env.cloud
 local.env
 
 # IntelliJ
