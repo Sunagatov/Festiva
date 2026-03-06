@@ -46,7 +46,10 @@ public final class DatePickerKeyboard {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
-    public static InlineKeyboardMarkup monthKeyboard(Lang lang) {
+    public static final String DATE_BACK_TO_YEAR  = "DATE_BACK_YEAR";
+    public static final String DATE_BACK_TO_MONTH = "DATE_BACK_MONTH";
+
+    public static InlineKeyboardMarkup monthKeyboard(Lang lang, int yearPageOffset) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         for (int m = 1; m <= 12; m += 4) {
             InlineKeyboardRow row = new InlineKeyboardRow();
@@ -58,10 +61,13 @@ public final class DatePickerKeyboard {
             }
             rows.add(row);
         }
+        rows.add(new InlineKeyboardRow(btn(
+                com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_PICK_BACK),
+                DATE_BACK_TO_YEAR + "_" + yearPageOffset)));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
-    public static InlineKeyboardMarkup dayKeyboard(int year, int month) {
+    public static InlineKeyboardMarkup dayKeyboard(int year, int month, Lang lang) {
         int daysInMonth = YearMonth.of(year, month).lengthOfMonth();
         List<InlineKeyboardRow> rows = new ArrayList<>();
         for (int d = 1; d <= daysInMonth; d += 7) {
@@ -72,6 +78,9 @@ public final class DatePickerKeyboard {
             }
             rows.add(row);
         }
+        rows.add(new InlineKeyboardRow(btn(
+                com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_PICK_BACK),
+                DATE_BACK_TO_MONTH)));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 

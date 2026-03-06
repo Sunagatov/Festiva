@@ -58,7 +58,8 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         }
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER));
-        upcoming.forEach(e -> sb.append("– <b>").append(e.next().format(MessageBuilder.DATE_FORMATTER))
+        upcoming.forEach(e -> sb.append("– <b>")
+                .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))
                 .append("</b> <i>").append(e.friend().getName()).append("</i> ")
                 .append(Messages.get(lang, Messages.UPCOMING_TURNS, e.friend().getNextAge(), e.days()))
                 .append("\n"));

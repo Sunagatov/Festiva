@@ -41,23 +41,40 @@ public class ListCommandHandler implements CommandHandler {
     }
 
     private String buildText(List<Friend> friends, Lang lang) {
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
         LocalDate today = LocalDate.now();
-        for (Friend f : friends) {
-            long daysUntil = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
-            String daysLabel = daysUntil == 0
-                    ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
-                    : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
-            sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                    .append("</b> <i>").append(f.getName()).append("</i> ");
-            boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
-            if (alreadyHadBirthday) {
-                sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));
-            } else {
-                sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(), f.getNextAge()));
-            }
-            sb.append(daysLabel).append("\n");
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
+
+        List<Friend> upcoming = friends.stream()
+                .filter(f -> !f.getBirthDate().withYear(today.getYear()).isBefore(today))
+                .toList();
+        List<Friend> celebrated = friends.stream()
+                .filter(f -> f.getBirthDate().withYear(today.getYear()).isBefore(today))
+                .toList();
+
+        if (!upcoming.isEmpty()) {
+            sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER));
+            upcoming.forEach(f -> appendFriend(sb, f, today, lang));
+        }
+        if (!celebrated.isEmpty()) {
+            sb.append(Messages.get(lang, Messages.LIST_CELEBRATED_HEADER));
+            celebrated.forEach(f -> appendFriend(sb, f, today, lang));
         }
         return sb.toString();
+    }
+
+    private void appendFriend(StringBuilder sb, Friend f, LocalDate today, Lang lang) {
+        long daysUntil = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
+        String daysLabel = daysUntil == 0
+                ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
+                : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
+        sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+                .append("</b> <i>").append(f.getName()).append("</i> ");
+        boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
+        if (alreadyHadBirthday) {
+            sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));
+        } else {
+            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(), f.getNextAge()));
+        }
+        sb.append(daysLabel).append("\n");
     }
 }

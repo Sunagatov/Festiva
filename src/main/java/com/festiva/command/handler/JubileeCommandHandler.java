@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
@@ -54,11 +55,18 @@ public class JubileeCommandHandler implements CommandHandler {
             return Messages.get(lang, Messages.JUBILEE_NONE);
         }
 
+        LocalDate today = LocalDate.now();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER));
-        jubilee.forEach(f -> sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                .append("</b> <i>").append(f.getName()).append("</i> ")
-                .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge()))
-                .append("\n"));
+        jubilee.forEach(f -> {
+            long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
+            String daysLabel = days == 0
+                    ? " " + Messages.get(lang, Messages.JUBILEE_DAYS_TODAY)
+                    : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
+            sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+                    .append("</b> <i>").append(f.getName()).append("</i> ")
+                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge()))
+                    .append(daysLabel).append("\n");
+        });
         return sb.toString();
     }
 }

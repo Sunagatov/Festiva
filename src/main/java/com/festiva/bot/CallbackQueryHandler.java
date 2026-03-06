@@ -64,14 +64,14 @@ public class CallbackQueryHandler {
             userStateService.setPendingYear(userId, year);
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_MONTH, name);
-            markup = DatePickerKeyboard.monthKeyboard(lang);
+            markup = DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId));
         } else if (data.startsWith(DatePickerKeyboard.DATE_MONTH_PREFIX)) {
             int month = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_MONTH_PREFIX.length()));
             userStateService.setPendingMonth(userId, month);
             Integer year = userStateService.getPendingYear(userId);
             String name = userStateService.getPendingName(userId);
             text = Messages.get(lang, Messages.DATE_PICK_DAY, name);
-            markup = DatePickerKeyboard.dayKeyboard(year, month);
+            markup = DatePickerKeyboard.dayKeyboard(year, month, lang);
         } else if (data.startsWith(DatePickerKeyboard.DATE_DAY_PREFIX)) {
             int day = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_DAY_PREFIX.length()));
             Integer year = userStateService.getPendingYear(userId);
@@ -82,6 +82,19 @@ public class CallbackQueryHandler {
             userStateService.clearState(userId);
             log.debug("friend.added: userId={}, name={}", userId, name);
             text = Messages.get(lang, Messages.FRIEND_ADDED, name);
+        } else if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR)) {
+            int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_BACK_TO_YEAR.length() + 1));
+            userStateService.setYearPageOffset(userId, offset);
+            userStateService.setPendingYear(userId, null);
+            String name = userStateService.getPendingName(userId);
+            text = Messages.get(lang, Messages.DATE_PICK_YEAR, name);
+            markup = DatePickerKeyboard.yearKeyboard(offset);
+        } else if (DatePickerKeyboard.DATE_BACK_TO_MONTH.equals(data)) {
+            Integer year = userStateService.getPendingYear(userId);
+            userStateService.setPendingMonth(userId, null);
+            String name = userStateService.getPendingName(userId);
+            text = Messages.get(lang, Messages.DATE_PICK_MONTH, name);
+            markup = DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId));
         } else if (data.startsWith(LANG_PREFIX)) {
             text = handleLanguage(userId, data.substring(LANG_PREFIX.length()));
         } else if (data.startsWith(REMOVE_PREFIX)) {
@@ -168,9 +181,17 @@ public class CallbackQueryHandler {
         }
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
-        filtered.forEach(f -> sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                .append("</b> ").append(f.getName())
-                .append(" (<i>").append(Messages.get(lang, Messages.YEARS_OLD, f.getAge())).append("</i>)\n"));
+        LocalDate today = LocalDate.now();
+        filtered.forEach(f -> {
+            LocalDate next = f.nextBirthday(today);
+            boolean isFuture = !next.isBefore(today);
+            String ageLabel = isFuture
+                    ? Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge())
+                    : Messages.get(lang, Messages.YEARS_OLD, f.getAge());
+            sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+                    .append("</b> ").append(f.getName())
+                    .append(" (<i>").append(ageLabel).append("</i>)\n");
+        });
         return sb.toString();
     }
 }

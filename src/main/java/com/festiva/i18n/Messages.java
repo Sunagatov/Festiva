@@ -51,6 +51,12 @@ public final class Messages {
     public static final String DATE_PICK_YEAR        = "date_pick_year";
     public static final String DATE_PICK_MONTH       = "date_pick_month";
     public static final String DATE_PICK_DAY         = "date_pick_day";
+    public static final String DATE_PICK_BACK        = "date_pick_back";
+    public static final String JUBILEE_DAYS_LEFT     = "jubilee_days_left";
+    public static final String JUBILEE_DAYS_TODAY    = "jubilee_days_today";
+    public static final String LIST_UPCOMING_HEADER  = "list_upcoming_header";
+    public static final String LIST_CELEBRATED_HEADER = "list_celebrated_header";
+    public static final String YEARS_TURNS           = "years_turns";
 
     private static final Map<String, String> EN = Map.ofEntries(
         Map.entry(WELCOME,               "👋 <b>Welcome to Festiva!</b>\nI'll help you never forget your friends' birthdays.\n\n👥 <b>Friends:</b>\n/list — list friends\n/add — add a friend\n/remove — remove a friend\n\n🎂 <b>Birthdays:</b>\n/birthdays — by month\n/upcomingbirthdays — upcoming\n/jubilee — milestones\n\n🌐 /language — change language\n/cancel — cancel current operation"),
@@ -96,7 +102,13 @@ public final class Messages {
         Map.entry(NOTIFY_WEEK,           "📅 In one week it's <b>%s</b>'s birthday — turning <b>%d</b>!"),
         Map.entry(DATE_PICK_YEAR,        "Select <b>%s</b>'s birth year:"),
         Map.entry(DATE_PICK_MONTH,       "Select <b>%s</b>'s birth month:"),
-        Map.entry(DATE_PICK_DAY,         "Select <b>%s</b>'s birth day:")
+        Map.entry(DATE_PICK_DAY,         "Select <b>%s</b>'s birth day:"),
+        Map.entry(DATE_PICK_BACK,        "← Back"),
+        Map.entry(JUBILEE_DAYS_LEFT,     "(in <b>%d</b>d)"),
+        Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
+        Map.entry(LIST_UPCOMING_HEADER,  "<b>Coming up:</b>\n"),
+        Map.entry(LIST_CELEBRATED_HEADER, "\n<b>Already celebrated:</b>\n"),
+        Map.entry(YEARS_TURNS,           "turns <b>%d</b>")
     );
 
     private static final Map<String, String> RU = Map.ofEntries(
@@ -143,7 +155,13 @@ public final class Messages {
         Map.entry(NOTIFY_WEEK,           "📅 Через неделю день рождения у <b>%s</b> — исполняется <b>%d</b>!"),
         Map.entry(DATE_PICK_YEAR,        "Выберите год рождения <b>%s</b>:"),
         Map.entry(DATE_PICK_MONTH,       "Выберите месяц рождения <b>%s</b>:"),
-        Map.entry(DATE_PICK_DAY,         "Выберите день рождения <b>%s</b>:")
+        Map.entry(DATE_PICK_DAY,         "Выберите день рождения <b>%s</b>:"),
+        Map.entry(DATE_PICK_BACK,        "← Назад"),
+        Map.entry(JUBILEE_DAYS_LEFT,     "(через <b>%d</b> д)"),
+        Map.entry(JUBILEE_DAYS_TODAY,    "🎂"),
+        Map.entry(LIST_UPCOMING_HEADER,  "<b>Предстоящие:</b>\n"),
+        Map.entry(LIST_CELEBRATED_HEADER, "\n<b>Уже отметили:</b>\n"),
+        Map.entry(YEARS_TURNS,           "исполнится <b>%d</b>")
     );
 
     public static String get(Lang lang, String key) {

@@ -43,10 +43,10 @@ public class UserStateService {
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
     public String getPendingName(long userId) { return session(userId).pendingName; }
 
-    public void setPendingYear(long userId, int year) { session(userId).pendingYear = year; }
+    public void setPendingYear(long userId, Integer year) { session(userId).pendingYear = year; }
     public Integer getPendingYear(long userId) { return session(userId).pendingYear; }
 
-    public void setPendingMonth(long userId, int month) { session(userId).pendingMonth = month; }
+    public void setPendingMonth(long userId, Integer month) { session(userId).pendingMonth = month; }
     public Integer getPendingMonth(long userId) { return session(userId).pendingMonth; }
 
     public void setYearPageOffset(long userId, int offset) { session(userId).yearPageOffset = offset; }
