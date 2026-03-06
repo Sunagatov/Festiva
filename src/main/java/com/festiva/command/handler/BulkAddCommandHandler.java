@@ -1,11 +1,11 @@
 package com.festiva.command.handler;
 
-import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.notification.NotificationSender;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +14,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -32,9 +36,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BulkAddCommandHandler implements StatefulCommandHandler {
 
+    public static final String CALLBACK_PASTE = "BULK_PASTE";
+    public static final String CALLBACK_CSV   = "BULK_CSV";
+
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
+    private final NotificationSender notificationSender;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -50,6 +58,27 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
+
+        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_PASTE_BTN)).callbackData(CALLBACK_PASTE).build(),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_CSV_BTN)).callbackData(CALLBACK_CSV).build()
+                ))).build();
+
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_CHOOSE), keyboard);
+    }
+
+    /** Called from CallbackQueryHandler when user picks CSV template. */
+    public void sendCsvTemplate(long chatId, Lang lang) {
+        String csv = "name,birthday\nAlice,15.03.1990\nBob,22.07.1985\n";
+        InputFile file = new InputFile(
+                new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
+                "friends_template.csv");
+        notificationSender.sendDocument(chatId, file, Messages.get(lang, Messages.BULK_ADD_CSV_CAPTION));
+    }
+
+    /** Called from CallbackQueryHandler when user picks paste text. */
+    public SendMessage promptPaste(long chatId, long userId, Lang lang) {
         userStateService.setState(userId, BotState.WAITING_FOR_BULK_ADD);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_PROMPT));
     }

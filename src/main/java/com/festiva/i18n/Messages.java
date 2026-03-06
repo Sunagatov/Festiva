@@ -99,6 +99,10 @@ public final class Messages {
     public static final String BULK_ADD_ERRORS        = "bulk_add_errors";
     public static final String BULK_ADD_EMPTY         = "bulk_add_empty";
     public static final String BULK_ADD_FILE_INVALID  = "bulk_add_file_invalid";
+    public static final String BULK_ADD_CHOOSE         = "bulk_add_choose";
+    public static final String BULK_ADD_PASTE_BTN      = "bulk_add_paste_btn";
+    public static final String BULK_ADD_CSV_BTN        = "bulk_add_csv_btn";
+    public static final String BULK_ADD_CSV_CAPTION    = "bulk_add_csv_caption";
 
     private static MessageSource messageSource;
 

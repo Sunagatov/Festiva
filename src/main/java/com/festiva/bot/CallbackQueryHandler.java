@@ -2,6 +2,7 @@ package com.festiva.bot;
 
 import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
+import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.ListCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
@@ -15,6 +16,7 @@ import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
@@ -50,6 +52,7 @@ public class CallbackQueryHandler {
     private final UserStateService userStateService;
     private final UpcomingBirthdaysCommandHandler upcomingHandler;
     private final ListCommandHandler listHandler;
+    private final BulkAddCommandHandler bulkAddHandler;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
         if (callbackQuery == null) return null;
@@ -159,6 +162,11 @@ public class CallbackQueryHandler {
         } else if (ACTION_ADD.equals(data)) {
             userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_NAME);
             text = Messages.get(lang, Messages.ENTER_NAME);
+        } else if (BulkAddCommandHandler.CALLBACK_PASTE.equals(data)) {
+            return toEdit(bulkAddHandler.promptPaste(chatId, userId, lang), messageId);
+        } else if (BulkAddCommandHandler.CALLBACK_CSV.equals(data)) {
+            bulkAddHandler.sendCsvTemplate(chatId, lang);
+            return null;
         } else if (data.startsWith(LANG_PREFIX)) {
             text = handleLanguage(userId, data.substring(LANG_PREFIX.length()));
         } else if (data.startsWith(EDIT_FIELD_NOTIFY)) {
@@ -310,5 +318,14 @@ public class CallbackQueryHandler {
                     .append(" (<i>").append(ageLabel).append("</i>)\n");
         });
         return sb.toString();
+    }
+
+    private EditMessageText toEdit(SendMessage msg, int messageId) {
+        return EditMessageText.builder()
+                .chatId(msg.getChatId())
+                .messageId(messageId)
+                .parseMode("HTML")
+                .text(msg.getText())
+                .build();
     }
 }
