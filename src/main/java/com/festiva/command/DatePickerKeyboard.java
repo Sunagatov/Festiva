@@ -19,6 +19,8 @@ public final class DatePickerKeyboard {
     public static final String DATE_YEAR_PAGE_PREFIX = "DATE_YEAR_PAGE_";
 
     private static final int YEARS_PER_PAGE = 8;
+    public static final int DEFAULT_YEAR_OFFSET =
+            java.time.LocalDate.now().getYear() - 1995 - YEARS_PER_PAGE + 1;
 
     private DatePickerKeyboard() {}
 

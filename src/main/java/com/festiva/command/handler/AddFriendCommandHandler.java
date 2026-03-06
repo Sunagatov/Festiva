@@ -64,10 +64,10 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         }
 
         userStateService.setPendingName(userId, name);
-        userStateService.setYearPageOffset(userId, 0);
+        userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_DATE);
         return MessageBuilder.html(chatId,
                 Messages.get(lang, Messages.DATE_PICK_YEAR, name),
-                DatePickerKeyboard.yearKeyboard(0, lang));
+                DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 }

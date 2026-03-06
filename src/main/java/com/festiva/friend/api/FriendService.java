@@ -55,12 +55,15 @@ public class FriendService {
                 });
     }
 
-    public void toggleFriendNotify(long telegramUserId, String name) {
+    public boolean toggleFriendNotify(long telegramUserId, String name) {
+        var ref = new Object() { boolean newValue = true; };
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
                 .ifPresent(f -> {
                     f.setNotifyEnabled(!f.isNotifyEnabled());
                     friendRepository.save(f);
+                    ref.newValue = f.isNotifyEnabled();
                 });
+        return ref.newValue;
     }
 
     public List<Friend> getFriends(long telegramUserId) {

@@ -40,6 +40,7 @@ public class CommandRouter {
     public SendMessage route(Update update) {
         if (!update.hasMessage()) return null;
         if (!update.getMessage().hasText() && !update.getMessage().hasDocument()) return null;
+        if (update.getMessage().getFrom() == null) return null;
 
         long userId = update.getMessage().getFrom().getId();
         BotState state = userStateService.getState(userId);

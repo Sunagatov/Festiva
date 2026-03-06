@@ -59,9 +59,9 @@ public class ListCommandHandler implements CommandHandler {
 
         if (byDate) {
             List<Friend> upcoming = pageFriends.stream()
-                    .filter(f -> !f.getBirthDate().withYear(today.getYear()).isBefore(today)).toList();
+                    .filter(f -> f.nextBirthday(today).getYear() == today.getYear()).toList();
             List<Friend> celebrated = pageFriends.stream()
-                    .filter(f -> f.getBirthDate().withYear(today.getYear()).isBefore(today)).toList();
+                    .filter(f -> f.nextBirthday(today).getYear() > today.getYear()).toList();
             if (!upcoming.isEmpty()) {
                 sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER));
                 upcoming.forEach(f -> appendFriend(sb, f, today, lang));
@@ -124,7 +124,7 @@ public class ListCommandHandler implements CommandHandler {
         sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                 .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i>")
                 .append(relLabel).append(" ");
-        boolean alreadyHadBirthday = f.getBirthDate().withYear(today.getYear()).isBefore(today);
+        boolean alreadyHadBirthday = f.nextBirthday(today).getYear() > today.getYear();
         if (alreadyHadBirthday) {
             sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));
         } else {

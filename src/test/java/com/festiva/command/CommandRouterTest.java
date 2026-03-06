@@ -85,6 +85,18 @@ class CommandRouterTest {
         assertThat(router.route(update)).isNull();
     }
 
+    @Test
+    @DisplayName("returns null for channel posts where getFrom() is null")
+    void channelPost_nullFrom_returnsNull() {
+        Message message = mock(Message.class);
+        when(message.getFrom()).thenReturn(null);
+        when(message.hasText()).thenReturn(true);
+        Update update = mock(Update.class);
+        when(update.hasMessage()).thenReturn(true);
+        when(update.getMessage()).thenReturn(message);
+        assertThat(router.route(update)).isNull();
+    }
+
     // --- helpers ---
 
     private Update update(String text) {

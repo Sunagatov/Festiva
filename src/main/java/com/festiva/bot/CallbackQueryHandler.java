@@ -128,9 +128,11 @@ public class CallbackQueryHandler {
 
     private Result handleMonthPick(String data, long userId, Lang lang) {
         int month = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_MONTH_PREFIX.length()));
+        Integer year = userStateService.getPendingYear(userId);
+        if (year == null) return new Result(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         userStateService.setPendingMonth(userId, month);
         return new Result(Messages.get(lang, Messages.DATE_PICK_DAY, userStateService.getPendingName(userId)),
-                DatePickerKeyboard.dayKeyboard(userStateService.getPendingYear(userId), month, lang));
+                DatePickerKeyboard.dayKeyboard(year, month, lang));
     }
 
     private Result handleDayPick(String data, long userId, Lang lang) {
@@ -138,7 +140,11 @@ public class CallbackQueryHandler {
         Integer year = userStateService.getPendingYear(userId);
         Integer month = userStateService.getPendingMonth(userId);
         String name = userStateService.getPendingName(userId);
+        if (year == null || month == null || name == null)
+            return new Result(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         LocalDate birthDate = LocalDate.of(year, month, day);
+        if (birthDate.isAfter(LocalDate.now()))
+            return new Result(Messages.get(lang, Messages.DATE_FUTURE_ERROR), null);
         if (userStateService.getState(userId) == BotState.WAITING_FOR_EDIT_DATE) {
             friendService.updateFriendDate(userId, name, birthDate);
             userStateService.clearState(userId);
@@ -173,9 +179,13 @@ public class CallbackQueryHandler {
         Integer year = userStateService.getPendingYear(userId);
         Integer month = userStateService.getPendingMonth(userId);
         Integer day = userStateService.getPendingDay(userId);
+        if (year == null || month == null || day == null || name == null)
+            return new Result(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         LocalDate birthDate = LocalDate.of(year, month, day);
         Relationship rel = "SKIP".equals(data.substring(RELATIONSHIP_PREFIX.length())) ? null
                 : Relationship.valueOf(data.substring(RELATIONSHIP_PREFIX.length()));
+        if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP)
+            return new Result(Messages.get(lang, Messages.FRIEND_CAP, FriendService.FRIEND_CAP), null);
         friendService.addFriend(userId, new Friend(name, birthDate, rel));
         userStateService.clearState(userId);
         log.debug("friend.added: userId={}, name={}, relationship={}", userId, name, rel);
@@ -197,6 +207,7 @@ public class CallbackQueryHandler {
 
     private Result handleEditRelationship(String data, long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
+        if (name == null) return new Result(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         String value = data.substring(EDIT_REL_PREFIX.length());
         Relationship rel = "SKIP".equals(value) ? null : Relationship.valueOf(value);
         friendService.updateFriendRelationship(userId, name, rel);
@@ -279,10 +290,7 @@ public class CallbackQueryHandler {
 
     private Result handleEditNotify(String data, long userId, Lang lang) {
         String name = data.substring(EDIT_FIELD_NOTIFY.length());
-        friendService.toggleFriendNotify(userId, name);
-        boolean enabled = friendService.getFriends(userId).stream()
-                .filter(f -> f.getName().equalsIgnoreCase(name))
-                .findFirst().map(Friend::isNotifyEnabled).orElse(true);
+        boolean enabled = friendService.toggleFriendNotify(userId, name);
         return new Result(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, name,
                 Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)), null);
     }
@@ -297,14 +305,12 @@ public class CallbackQueryHandler {
     private Result handleEditFieldDate(String data, long userId, Lang lang) {
         String name = data.substring(EDIT_FIELD_DATE.length());
         userStateService.setPendingName(userId, name);
-        userStateService.setYearPageOffset(userId, 0);
+        userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
-        return new Result(Messages.get(lang, Messages.DATE_PICK_YEAR, name), DatePickerKeyboard.yearKeyboard(0, lang));
+        return new Result(Messages.get(lang, Messages.DATE_PICK_YEAR, name), DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 
     private Result handleEditSelect(String data, long userId, Lang lang) {
-        if (data.startsWith(EDIT_FIELD_NAME) || data.startsWith(EDIT_FIELD_DATE)
-                || data.startsWith(EDIT_FIELD_NOTIFY) || data.startsWith(EDIT_FIELD_REL)) return null;
         String name = data.substring(EDIT_PREFIX.length());
         Friend found = friendService.getFriends(userId).stream()
                 .filter(f -> f.getName().equalsIgnoreCase(name))
@@ -368,9 +374,9 @@ public class CallbackQueryHandler {
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
         LocalDate today = LocalDate.now();
         filtered.forEach(f -> {
-            boolean isFuture = !f.nextBirthday(today).isBefore(today);
-            String ageLabel = isFuture ? Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge())
-                    : Messages.get(lang, Messages.YEARS_OLD, f.getAge());
+            boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
+            String ageLabel = alreadyCelebrated ? Messages.get(lang, Messages.YEARS_OLD, f.getAge())
+                    : Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge());
             sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> ").append(f.getName())
                     .append(" (<i>").append(ageLabel).append("</i>)\n");

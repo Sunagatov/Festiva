@@ -170,7 +170,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             String url = "https://api.telegram.org/file/bot" + botToken + "/" + tgFile.getFilePath();
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(URI.create(url).toURL().openStream(), StandardCharsets.UTF_8))) {
-                return reader.lines().collect(Collectors.toList());
+                return reader.lines().toList();
             }
         } catch (Exception e) {
             log.warn("bulk.add.file.download.failed: message={}", e.getMessage(), e);

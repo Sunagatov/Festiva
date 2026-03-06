@@ -47,6 +47,10 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         String query = update.getMessage().getText().trim().toLowerCase(java.util.Locale.ROOT);
         userStateService.clearState(userId);
 
+        if (query.isBlank()) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_PROMPT));
+        }
+
         List<Friend> matches = friendService.getFriendsSortedByDayMonth(userId).stream()
                 .filter(f -> f.getName().toLowerCase(java.util.Locale.ROOT).contains(query))
                 .toList();
