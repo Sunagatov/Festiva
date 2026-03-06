@@ -37,7 +37,7 @@ class ListCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
-        SendMessage result = handler.handle(update(1L));
+        SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
     }
@@ -50,7 +50,7 @@ class ListCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
 
-        String text = handler.handle(update(1L)).getText();
+        String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Alice");
         assertThat(text).containsPattern("turned.*30|30.*turned");
@@ -64,18 +64,18 @@ class ListCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
 
-        String text = handler.handle(update(1L)).getText();
+        String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Bob");
         assertThat(text).containsPattern("turns.*30|30.*turns");
     }
 
-    private Update update(long userId) {
+    private Update update() {
         User user = mock(User.class);
-        when(user.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
-        when(message.getChatId()).thenReturn(userId);
+        when(message.getChatId()).thenReturn(1L);
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);
         return update;

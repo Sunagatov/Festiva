@@ -34,8 +34,7 @@ class CommandRouterTest {
         cancelHandler   = handler("/cancel",  "cancelled");
         startHandler    = handler("/start",   "started");
         defaultHandler  = handler(null,       "default");
-        statefulHandler = statefulHandler("stateful",
-                Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME));
+        statefulHandler = statefulHandler(Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME));
 
         router = new CommandRouter(stateService,
                 List.of(cancelHandler, startHandler, statefulHandler, defaultHandler));
@@ -45,7 +44,7 @@ class CommandRouterTest {
     @DisplayName("/cancel is always routed first, even when user is in a stateful state")
     void cancel_takesHighestPriority() {
         stateService.setState(1L, BotState.WAITING_FOR_ADD_FRIEND_NAME);
-        SendMessage result = router.route(update(1L, "/cancel"));
+        SendMessage result = router.route(update("/cancel"));
         assertThat(result.getText()).isEqualTo("cancelled");
     }
 
@@ -53,28 +52,28 @@ class CommandRouterTest {
     @DisplayName("stateful handler is invoked when user has a matching active state")
     void statefulHandler_invokedForMatchingState() {
         stateService.setState(1L, BotState.WAITING_FOR_ADD_FRIEND_NAME);
-        SendMessage result = router.route(update(1L, "some text"));
+        SendMessage result = router.route(update("some text"));
         assertThat(result.getText()).isEqualTo("stateful");
     }
 
     @Test
     @DisplayName("command handler is invoked by exact command match when state is IDLE")
     void commandHandler_invokedByExactMatch() {
-        SendMessage result = router.route(update(1L, "/start"));
+        SendMessage result = router.route(update("/start"));
         assertThat(result.getText()).isEqualTo("started");
     }
 
     @Test
     @DisplayName("@botname suffix is stripped before routing — /start@mybot routes to /start")
     void command_botnameSuffixIsStripped() {
-        SendMessage result = router.route(update(1L, "/start@mybot"));
+        SendMessage result = router.route(update("/start@mybot"));
         assertThat(result.getText()).isEqualTo("started");
     }
 
     @Test
     @DisplayName("unknown command falls through to default handler")
     void unknownCommand_routesToDefault() {
-        SendMessage result = router.route(update(1L, "/unknown"));
+        SendMessage result = router.route(update("/unknown"));
         assertThat(result.getText()).isEqualTo("default");
     }
 
@@ -88,12 +87,12 @@ class CommandRouterTest {
 
     // --- helpers ---
 
-    private Update update(long userId, String text) {
+    private Update update(String text) {
         User user = mock(User.class);
-        when(user.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
-        when(message.getChatId()).thenReturn(userId);
+        when(message.getChatId()).thenReturn(1L);
         when(message.getText()).thenReturn(text);
         when(message.hasText()).thenReturn(true);
         Update update = mock(Update.class);
@@ -109,11 +108,11 @@ class CommandRouterTest {
         return h;
     }
 
-    private StatefulCommandHandler statefulHandler(String responseText, Set<BotState> states) {
+    private StatefulCommandHandler statefulHandler(Set<BotState> states) {
         StatefulCommandHandler h = mock(StatefulCommandHandler.class);
         when(h.command()).thenReturn("/add");
         when(h.handledStates()).thenReturn(states);
-        when(h.handleState(any())).thenReturn(SendMessage.builder().chatId(1L).text(responseText).build());
+        when(h.handleState(any())).thenReturn(SendMessage.builder().chatId(1L).text("stateful").build());
         return h;
     }
 }

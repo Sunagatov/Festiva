@@ -26,6 +26,7 @@ public class FestivaMetricsSender implements MetricsSender {
     private final String topic;
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    @SuppressWarnings("unused")
     public FestivaMetricsSender(
             @Value("${kafka.bootstrap-servers}") String bootstrapServers,
             @Value("${kafka.api-key}") String apiKey,
@@ -106,8 +107,8 @@ public class FestivaMetricsSender implements MetricsSender {
     private String extractUserName(User user) {
         String username = user.getUserName();
         if (username != null && !username.isBlank()) return username;
-        String full = ((user.getFirstName() != null ? user.getFirstName() : "") +
-                       (user.getLastName()  != null ? " " + user.getLastName() : "")).trim();
+        String full = (user.getFirstName() +
+                       (user.getLastName() != null ? " " + user.getLastName() : "")).trim();
         return full.isBlank() ? "unknown" : full;
     }
 

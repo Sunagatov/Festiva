@@ -42,7 +42,7 @@ class FriendCommandTest extends IntegrationTestBase {
 
         assertThat(result.getText()).contains("Alice");
 
-        Friend saved = friendService.getFriends(1L).get(0);
+        Friend saved = friendService.getFriends(1L).getFirst();
         assertThat(saved.getName()).isEqualTo("Alice");
         assertThat(saved.getBirthDate()).isEqualTo(LocalDate.of(1990, 6, 15));
     }

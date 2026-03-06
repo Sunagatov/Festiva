@@ -1,4 +1,4 @@
-<div align="center">
+<div style="text-align: center;">
   <br>
   <h1>🎂 Festiva</h1>
   <p><strong>A Telegram birthday reminder bot — never forget a friend's birthday again.</strong></p>
@@ -41,14 +41,16 @@ mvn test
 
 ## 🤔 What is this?
 
-Festiva is a Telegram bot that helps you manage and receive birthday reminders for your friends. Add friends with their birth dates, get notified on the day, the day before, and a week in advance. Supports Russian and English, milestone (jubilee) birthday highlights, and month-by-month birthday browsing.
+Festiva is a Telegram bot that helps you manage and receive birthday reminders for your friends. Add friends with their birthdates, get notified on the day, the day before, and a week in advance. Supports Russian and English, milestone (jubilee) birthday highlights, and month-by-month birthday browsing.
+
+**🔔 Automatic reminders** fire daily at 09:00 for birthdays today, tomorrow, and in 7 days.
 
 ---
 
 ## 🛠️ Tech Stack
 
 | 📂 Category | 🔧 Technology |
-|---|---|
+|-------------|---------------|
 | 💻 Language | Java 25 |
 | 🏗️ Framework | Spring Boot 4.0, Spring Scheduling, Spring Actuator |
 | 🗄️ Database | MongoDB Atlas, Spring Data MongoDB |
@@ -62,9 +64,9 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 ## ✨ Features
 
 | 🎯 Command | 📝 Description |
-|---|---|
+|------------|----------------|
 | `/start` | Welcome message and command overview |
-| `/add` | Add a friend with their birth date |
+| `/add` | Add a friend with their birthdate |
 | `/remove` | Remove a friend |
 | `/list` | List all friends sorted by birthday |
 | `/birthdays` | Browse birthdays by month |
@@ -72,8 +74,6 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 | `/jubilee` | Upcoming milestone birthdays (multiples of 5) |
 | `/language` | Switch between 🇬🇧 English and 🇷🇺 Russian |
 | `/cancel` | Cancel the current operation |
-
-**🔔 Automatic reminders** fire daily at 09:00 for birthdays today, tomorrow, and in 7 days.
 
 ---
 
@@ -111,7 +111,7 @@ docker run --rm -p 8080:8080 \
 ## ⚙️ Environment Variables
 
 | Variable | Required | Description |
-|---|---|---|
+|----------|----------|-------------|
 | `MONGO_USERNAME` | ✅ | MongoDB Atlas username |
 | `MONGO_PASSWORD` | ✅ | MongoDB Atlas password |
 | `MONGO_HOST` | ✅ | MongoDB Atlas host |
@@ -130,7 +130,7 @@ docker run --rm -p 8080:8080 \
 🎉 Contributions are welcome.
 
 | 🎯 Situation | 🚀 Action |
-|---|---|
+|--------------|----------|
 | 🐛 Found a bug | [Open an issue](https://github.com/Sunagatov/Festiva/issues/new) with the `bug` label |
 | 💡 Want a feature | Start a [Discussion](https://github.com/Sunagatov/Festiva/discussions) first |
 | 👨‍💻 Ready to code | Pick a [`good first issue`](https://github.com/Sunagatov/Festiva/issues?q=is%3Aopen+label%3A%22good+first+issue%22), comment "I'm on it" |

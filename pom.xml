@@ -24,7 +24,29 @@
         <telegrambots.version>9.0.0</telegrambots.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <lombok.version>1.18.38</lombok.version>
+        <jackson.version>2.21.1</jackson.version>
+        <jackson-2-bom.version>2.21.1</jackson-2-bom.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>3.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.28.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot Starter -->

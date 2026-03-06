@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public interface FriendMongoRepository extends MongoRepository<Friend, String> {
 
     List<Friend> findByTelegramUserId(long telegramUserId);

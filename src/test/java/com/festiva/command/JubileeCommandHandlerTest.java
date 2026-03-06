@@ -39,7 +39,7 @@ class JubileeCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        assertThat(handler.handle(update(1L)).getText()).contains("Alice");
+        assertThat(handler.handle(update()).getText()).contains("Alice");
     }
 
     @Test
@@ -51,7 +51,7 @@ class JubileeCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        String text = handler.handle(update(1L)).getText();
+        String text = handler.handle(update()).getText();
 
         assertThat(text).doesNotContain("Bob");
         assertThat(text).contains(Messages.get(Lang.EN, Messages.JUBILEE_NONE));
@@ -63,16 +63,16 @@ class JubileeCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
-        assertThat(handler.handle(update(1L)).getText())
+        assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
     }
 
-    private Update update(long userId) {
+    private Update update() {
         User user = mock(User.class);
-        when(user.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
-        when(message.getChatId()).thenReturn(userId);
+        when(message.getChatId()).thenReturn(1L);
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);
         return update;

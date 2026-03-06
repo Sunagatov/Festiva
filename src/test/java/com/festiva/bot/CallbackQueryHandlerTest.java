@@ -44,7 +44,7 @@ class CallbackQueryHandlerTest {
     @Test
     @DisplayName("LANG_EN callback — sets language to EN and returns confirmation")
     void langCallback_setsLanguageAndReturnsConfirmation() {
-        EditMessageText result = handler.handle(callback(1L, "LANG_EN"));
+        EditMessageText result = handler.handle(callback("LANG_EN"));
         verify(userStateService).setLanguage(1L, Lang.EN);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.LANGUAGE_SET));
     }
@@ -53,7 +53,7 @@ class CallbackQueryHandlerTest {
     @DisplayName("LANG_RU callback — sets language to RU and returns RU confirmation")
     void langCallback_ru_setsRuLanguage() {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
-        EditMessageText result = handler.handle(callback(1L, "LANG_RU"));
+        EditMessageText result = handler.handle(callback("LANG_RU"));
         verify(userStateService).setLanguage(1L, Lang.RU);
         assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.LANGUAGE_SET));
     }
@@ -61,7 +61,7 @@ class CallbackQueryHandlerTest {
     @Test
     @DisplayName("LANG_INVALID callback — returns unknown command message, does not crash")
     void langCallback_invalid_returnsUnknownCommand() {
-        EditMessageText result = handler.handle(callback(1L, "LANG_INVALID"));
+        EditMessageText result = handler.handle(callback("LANG_INVALID"));
         verify(userStateService, never()).setLanguage(anyLong(), any());
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.UNKNOWN_COMMAND));
     }
@@ -70,7 +70,7 @@ class CallbackQueryHandlerTest {
     @DisplayName("REMOVE_ callback — deletes friend and returns removed confirmation")
     void removeCallback_deletesFriendAndConfirms() {
         when(friendService.friendExists(1L, "Alice")).thenReturn(true);
-        EditMessageText result = handler.handle(callback(1L, "REMOVE_Alice"));
+        EditMessageText result = handler.handle(callback("REMOVE_Alice"));
         verify(friendService).deleteFriend(1L, "Alice");
         assertThat(result.getText()).contains("Alice");
     }
@@ -79,7 +79,7 @@ class CallbackQueryHandlerTest {
     @DisplayName("REMOVE_ callback — friend not found returns not-found message")
     void removeCallback_friendNotFound() {
         when(friendService.friendExists(1L, "Ghost")).thenReturn(false);
-        EditMessageText result = handler.handle(callback(1L, "REMOVE_Ghost"));
+        EditMessageText result = handler.handle(callback("REMOVE_Ghost"));
         verify(friendService, never()).deleteFriend(anyLong(), anyString());
         assertThat(result.getText()).contains("Ghost");
     }
@@ -91,7 +91,7 @@ class CallbackQueryHandlerTest {
         Friend dec  = new Friend("Bob",   LocalDate.of(1990, 12, 1));
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(june, dec));
 
-        EditMessageText result = handler.handle(callback(1L, "MONTH_6"));
+        EditMessageText result = handler.handle(callback("MONTH_6"));
 
         assertThat(result.getText()).contains("Alice").doesNotContain("Bob");
     }
@@ -100,7 +100,7 @@ class CallbackQueryHandlerTest {
     @DisplayName("MONTH_CURRENT callback — resolves to current month, returns no-birthdays message")
     void monthCallback_current_resolvesWithoutError() {
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
-        EditMessageText result = handler.handle(callback(1L, "MONTH_CURRENT"));
+        EditMessageText result = handler.handle(callback("MONTH_CURRENT"));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BIRTHDAYS_NONE,
                 Month.of(LocalDate.now().getMonthValue())
                         .getDisplayName(TextStyle.FULL_STANDALONE, Lang.EN.locale())));
@@ -109,7 +109,7 @@ class CallbackQueryHandlerTest {
     @Test
     @DisplayName("unknown callback prefix — returns null")
     void unknownCallback_returnsNull() {
-        assertThat(handler.handle(callback(1L, "UNKNOWN_data"))).isNull();
+        assertThat(handler.handle(callback("UNKNOWN_data"))).isNull();
     }
 
     @Test
@@ -120,12 +120,12 @@ class CallbackQueryHandlerTest {
 
     // --- helper ---
 
-    private CallbackQuery callback(long userId, String data) {
+    private CallbackQuery callback(String data) {
         User user = mock(User.class);
-        when(user.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(1L);
 
         MaybeInaccessibleMessage message = mock(MaybeInaccessibleMessage.class);
-        when(message.getChatId()).thenReturn(userId);
+        when(message.getChatId()).thenReturn(1L);
         when(message.getMessageId()).thenReturn(1);
 
         CallbackQuery cq = mock(CallbackQuery.class);

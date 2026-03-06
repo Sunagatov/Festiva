@@ -12,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
@@ -39,7 +38,7 @@ class UpcomingBirthdaysCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        assertThat(handler.handle(update(1L)).getText()).contains("Alice");
+        assertThat(handler.handle(update()).getText()).contains("Alice");
     }
 
     @Test
@@ -50,7 +49,7 @@ class UpcomingBirthdaysCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        String text = handler.handle(update(1L)).getText();
+        String text = handler.handle(update()).getText();
 
         assertThat(text).doesNotContain("Bob");
         assertThat(text).contains(Messages.get(Lang.EN, Messages.UPCOMING_NONE, 30));
@@ -62,16 +61,16 @@ class UpcomingBirthdaysCommandHandlerTest {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
-        assertThat(handler.handle(update(1L)).getText())
+        assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.EN, Messages.UPCOMING_NONE, 30));
     }
 
-    private Update update(long userId) {
+    private Update update() {
         User user = mock(User.class);
-        when(user.getId()).thenReturn(userId);
+        when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
-        when(message.getChatId()).thenReturn(userId);
+        when(message.getChatId()).thenReturn(1L);
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);
         return update;
