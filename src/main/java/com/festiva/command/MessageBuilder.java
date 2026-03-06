@@ -42,12 +42,19 @@ public final class MessageBuilder {
             "❓ Help", "/help"
     );
 
+    public static final Map<String, String> LABEL_TO_COMMAND_EXTRA = Map.of(
+            "🔍 Search", "/search",
+            "📊 Stats", "/stats",
+            "⚙️ Settings", "/settings"
+    );
+
     public static ReplyKeyboardMarkup mainMenu() {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
                         new KeyboardRow(List.of(new KeyboardButton("➕ Add"), new KeyboardButton("🗑 Remove"), new KeyboardButton("📋 List"))),
                         new KeyboardRow(List.of(new KeyboardButton("🎂 Birthdays"), new KeyboardButton("⏰ Upcoming"), new KeyboardButton("🏆 Jubilee"))),
-                        new KeyboardRow(List.of(new KeyboardButton("✏️ Edit"), new KeyboardButton("🌐 Language"), new KeyboardButton("❓ Help")))
+                        new KeyboardRow(List.of(new KeyboardButton("✏️ Edit"), new KeyboardButton("🔍 Search"), new KeyboardButton("📊 Stats"))),
+                        new KeyboardRow(List.of(new KeyboardButton("⚙️ Settings"), new KeyboardButton("🌐 Language"), new KeyboardButton("❓ Help")))
                 ))
                 .resizeKeyboard(true)
                 .build();

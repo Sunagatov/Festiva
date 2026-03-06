@@ -16,4 +16,5 @@ public class UserPreference {
     @Id
     private long telegramUserId;
     private Lang lang;
+    private int notifyHour = 9;
 }

@@ -2,29 +2,47 @@ package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
+import com.festiva.friend.api.FriendService;
+import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class StartCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
+    private final FriendService friendService;
 
     @Override
-    public String command() {
-        return "/start";
-    }
+    public String command() { return "/start"; }
 
     @Override
     public SendMessage handle(Update update) {
+        long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.WELCOME),
-                MessageBuilder.mainMenu());
+        Lang lang = userStateService.getLanguage(userId);
+        String welcome = Messages.get(lang, Messages.WELCOME);
+
+        if (friendService.getFriends(userId).isEmpty()) {
+            InlineKeyboardMarkup onboarding = InlineKeyboardMarkup.builder()
+                    .keyboard(List.of(new InlineKeyboardRow(
+                            InlineKeyboardButton.builder()
+                                    .text(Messages.get(lang, Messages.START_ADD_FIRST))
+                                    .callbackData("ACTION_ADD")
+                                    .build())))
+                    .build();
+            return MessageBuilder.html(chatId, welcome, onboarding);
+        }
+        return MessageBuilder.html(chatId, welcome, MessageBuilder.mainMenu());
     }
 }

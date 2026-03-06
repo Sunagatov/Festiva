@@ -36,18 +36,25 @@ public class BirthdayReminder {
     private final NotificationSender notificationSender;
     private final UserPreferenceRepository userPreferenceRepository;
 
-    @Scheduled(cron = "0 0 9 * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void checkBirthdays() {
+        checkBirthdaysForHour(java.time.LocalTime.now().getHour());
+    }
+
+    void checkBirthdaysForHour(int currentHour) {
         LocalDate today = LocalDate.now();
-        log.info("reminder.check.start: date={}", today);
+        log.info("reminder.check.start: date={}, hour={}", today, currentHour);
         List<Long> userIds = friendService.getAllUserIds();
 
-        Map<Long, Lang> langByUser = userPreferenceRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(UserPreference::getTelegramUserId, UserPreference::getLang));
+        Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
 
         int[] notifiedCount = {0};
         userIds.forEach(userId -> {
-            Lang lang = langByUser.getOrDefault(userId, Lang.RU);
+            UserPreference pref = prefByUser.get(userId);
+            int notifyHour = pref != null ? pref.getNotifyHour() : 9;
+            if (notifyHour != currentHour) return;
+            Lang lang = pref != null ? pref.getLang() : Lang.RU;
             friendService.getFriends(userId).forEach(f -> {
                 if (checkAndNotify(userId, f, today, lang)) notifiedCount[0]++;
             });

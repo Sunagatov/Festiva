@@ -7,6 +7,16 @@ public final class Messages {
     private Messages() {}
 
     // Keys
+    public static final String FRIEND_CAP            = "friend_cap";
+    public static final String LIST_SORT_DATE        = "list_sort_date";
+    public static final String LIST_SORT_NAME        = "list_sort_name";
+    public static final String SEARCH_PROMPT         = "search_prompt";
+    public static final String SEARCH_RESULTS        = "search_results";
+    public static final String SEARCH_NONE           = "search_none";
+    public static final String STATS_HEADER          = "stats_header";
+    public static final String SETTINGS_HEADER       = "settings_header";
+    public static final String SETTINGS_HOUR_SET     = "settings_hour_set";
+    public static final String START_ADD_FIRST       = "start_add_first";
     public static final String WELCOME               = "welcome";
     public static final String HELP                  = "help";
     public static final String ENTER_NAME            = "enter_name";
@@ -124,7 +134,17 @@ public final class Messages {
         Map.entry(EDIT_ENTER_NAME,        "Enter a new name for <b>%s</b>:"),
         Map.entry(EDIT_NAME_DONE,         "✅ Name updated to <b>%s</b>!"),
         Map.entry(EDIT_DATE_DONE,         "✅ Birth date for <b>%s</b> updated!"),
-        Map.entry(UPCOMING_DAYS_FILTER,   "Show birthdays in the next:")
+        Map.entry(UPCOMING_DAYS_FILTER,   "Show birthdays in the next:"),
+        Map.entry(FRIEND_CAP,             "⚠️ You've reached the limit of <b>%d</b> friends."),
+        Map.entry(LIST_SORT_DATE,         "📅 By date"),
+        Map.entry(LIST_SORT_NAME,         "🔤 By name"),
+        Map.entry(SEARCH_PROMPT,          "Enter a name to search:"),
+        Map.entry(SEARCH_RESULTS,         "🔍 <b>Search results for \u201c%s\u201d:</b>\n\n"),
+        Map.entry(SEARCH_NONE,            "🔍 No friends found matching \u201c%s\u201d."),
+        Map.entry(STATS_HEADER,           "📊 <b>Your Festiva stats</b>\n\n👥 Friends: <b>%d</b>\n🎂 Next birthday: %s\n📅 This month: <b>%d</b>\n🏆 Upcoming jubilees: <b>%d</b>"),
+        Map.entry(SETTINGS_HEADER,        "⏰ <b>Notification time</b>\n\nChoose when to receive daily reminders:"),
+        Map.entry(SETTINGS_HOUR_SET,      "✅ Reminders set to <b>%02d:00</b>"),
+        Map.entry(START_ADD_FIRST,        "➕ Add your first friend")
     );
 
     private static final Map<String, String> RU = Map.ofEntries(
@@ -185,7 +205,17 @@ public final class Messages {
         Map.entry(EDIT_ENTER_NAME,        "Введите новое имя для <b>%s</b>:"),
         Map.entry(EDIT_NAME_DONE,         "✅ Имя обновлено на <b>%s</b>!"),
         Map.entry(EDIT_DATE_DONE,         "✅ Дата рождения <b>%s</b> обновлена!"),
-        Map.entry(UPCOMING_DAYS_FILTER,   "Показать дни рождения в ближайшие:")
+        Map.entry(UPCOMING_DAYS_FILTER,   "Показать дни рождения в ближайшие:"),
+        Map.entry(FRIEND_CAP,             "⚠️ Достигнут лимит в <b>%d</b> друзей."),
+        Map.entry(LIST_SORT_DATE,         "📅 По дате"),
+        Map.entry(LIST_SORT_NAME,         "🔤 По имени"),
+        Map.entry(SEARCH_PROMPT,          "Введите имя для поиска:"),
+        Map.entry(SEARCH_RESULTS,         "🔍 <b>Результаты по «%s\u00bb:</b>\n\n"),
+        Map.entry(SEARCH_NONE,            "🔍 Друзья по «%s\u00bb не найдены."),
+        Map.entry(STATS_HEADER,           "📊 <b>Ваша статистика</b>\n\n👥 Друзья: <b>%d</b>\n🎂 Следующий ДР: %s\n📅 В этом месяце: <b>%d</b>\n🏆 Юбилеи: <b>%d</b>"),
+        Map.entry(SETTINGS_HEADER,        "⏰ <b>Время уведомлений</b>\n\nВыберите время ежедневных напоминаний:"),
+        Map.entry(SETTINGS_HOUR_SET,      "✅ Напоминания установлены на <b>%02d:00</b>"),
+        Map.entry(START_ADD_FIRST,        "➕ Добавить первого друга")
     );
 
     public static String get(Lang lang, String key) {

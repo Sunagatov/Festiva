@@ -64,6 +64,22 @@ public class UserStateService {
 
     public void setLanguage(long userId, Lang lang) {
         session(userId).lang = lang;
-        userPreferenceRepository.save(new UserPreference(userId, lang));
+        UserPreference pref = userPreferenceRepository.findById(userId)
+                .orElse(new UserPreference(userId, lang, 9));
+        pref.setLang(lang);
+        userPreferenceRepository.save(pref);
+    }
+
+    public int getNotifyHour(long userId) {
+        return userPreferenceRepository.findById(userId)
+                .map(UserPreference::getNotifyHour)
+                .orElse(9);
+    }
+
+    public void setNotifyHour(long userId, int hour) {
+        UserPreference pref = userPreferenceRepository.findById(userId)
+                .orElse(new UserPreference(userId, getLanguage(userId), 9));
+        pref.setNotifyHour(hour);
+        userPreferenceRepository.save(pref);
     }
 }

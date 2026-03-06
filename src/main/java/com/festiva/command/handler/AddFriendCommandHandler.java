@@ -34,12 +34,18 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         return Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME, BotState.WAITING_FOR_ADD_FRIEND_DATE);
     }
 
+    private static final int FRIEND_CAP = 100;
+
     @Override
     public SendMessage handle(Update update) {
+        long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
+        Lang lang = userStateService.getLanguage(userId);
+        if (friendService.getFriends(userId).size() >= FRIEND_CAP) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_CAP, FRIEND_CAP));
+        }
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_NAME);
-        return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.ENTER_NAME));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.ENTER_NAME));
     }
 
     @Override

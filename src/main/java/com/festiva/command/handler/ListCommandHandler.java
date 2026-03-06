@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 
 @Component
@@ -38,9 +39,6 @@ public class ListCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
-        String text = friends.isEmpty()
-                ? Messages.get(lang, Messages.FRIENDS_EMPTY)
-                : buildText(friends, lang);
         if (friends.isEmpty()) {
             InlineKeyboardMarkup addButton = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(new InlineKeyboardRow(
@@ -49,31 +47,45 @@ public class ListCommandHandler implements CommandHandler {
                                     .callbackData("ACTION_ADD")
                                     .build())))
                     .build();
-            return MessageBuilder.html(chatId, text, addButton);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), addButton);
         }
-        return MessageBuilder.html(chatId, text);
+        return MessageBuilder.html(chatId, buildText(friends, lang, true), sortKeyboard(lang, true));
     }
 
-    private String buildText(List<Friend> friends, Lang lang) {
+    public String buildText(List<Friend> friends, Lang lang, boolean byDate) {
         LocalDate today = LocalDate.now();
+        List<Friend> sorted = byDate ? friends
+                : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase())).toList();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
 
-        List<Friend> upcoming = friends.stream()
-                .filter(f -> !f.getBirthDate().withYear(today.getYear()).isBefore(today))
-                .toList();
-        List<Friend> celebrated = friends.stream()
-                .filter(f -> f.getBirthDate().withYear(today.getYear()).isBefore(today))
-                .toList();
-
-        if (!upcoming.isEmpty()) {
-            sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER));
-            upcoming.forEach(f -> appendFriend(sb, f, today, lang));
-        }
-        if (!celebrated.isEmpty()) {
-            sb.append(Messages.get(lang, Messages.LIST_CELEBRATED_HEADER));
-            celebrated.forEach(f -> appendFriend(sb, f, today, lang));
+        if (byDate) {
+            List<Friend> upcoming = sorted.stream()
+                    .filter(f -> !f.getBirthDate().withYear(today.getYear()).isBefore(today)).toList();
+            List<Friend> celebrated = sorted.stream()
+                    .filter(f -> f.getBirthDate().withYear(today.getYear()).isBefore(today)).toList();
+            if (!upcoming.isEmpty()) {
+                sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER));
+                upcoming.forEach(f -> appendFriend(sb, f, today, lang));
+            }
+            if (!celebrated.isEmpty()) {
+                sb.append(Messages.get(lang, Messages.LIST_CELEBRATED_HEADER));
+                celebrated.forEach(f -> appendFriend(sb, f, today, lang));
+            }
+        } else {
+            sorted.forEach(f -> appendFriend(sb, f, today, lang));
         }
         return sb.toString();
+    }
+
+    public InlineKeyboardMarkup sortKeyboard(Lang lang, boolean byDate) {
+        return InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                        .text((byDate ? "✅ " : "") + Messages.get(lang, Messages.LIST_SORT_DATE))
+                        .callbackData("LIST_SORT_DATE").build(),
+                InlineKeyboardButton.builder()
+                        .text((!byDate ? "✅ " : "") + Messages.get(lang, Messages.LIST_SORT_NAME))
+                        .callbackData("LIST_SORT_NAME").build()
+        ))).build();
     }
 
     private void appendFriend(StringBuilder sb, Friend f, LocalDate today, Lang lang) {
