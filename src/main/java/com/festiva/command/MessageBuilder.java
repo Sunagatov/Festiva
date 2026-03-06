@@ -32,6 +32,7 @@ public final class MessageBuilder {
 
     public static final Map<String, String> LABEL_TO_COMMAND = Map.ofEntries(
             Map.entry("\u2795 Add", "/add"),
+            Map.entry("\u2795 Add Many", "/addmany"),
             Map.entry("\uD83D\uDDD1 Remove", "/remove"),
             Map.entry("\uD83D\uDCCB List", "/list"),
             Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
