@@ -23,9 +23,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.festiva.i18n.MessagesTestSupport;
+
 @DisplayName("ListCommandHandler")
 @ExtendWith(MockitoExtension.class)
-class ListCommandHandlerTest {
+class ListCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("UpcomingBirthdaysCommandHandler")
 @ExtendWith(MockitoExtension.class)
-class UpcomingBirthdaysCommandHandlerTest {
+class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;

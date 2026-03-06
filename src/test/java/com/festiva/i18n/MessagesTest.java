@@ -7,8 +7,10 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.festiva.i18n.MessagesTestSupport;
+
 @DisplayName("Messages")
-class MessagesTest {
+class MessagesTest extends MessagesTestSupport {
 
     @ParameterizedTest(name = "{0}")
     @EnumSource(Lang.class)

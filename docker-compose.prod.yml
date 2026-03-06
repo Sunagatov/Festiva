@@ -9,7 +9,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: festiva-bot
-    env_file: .env.cloud
+    env_file: .env.prod
     ports:
       - '8080:8080'
     networks:

@@ -7,9 +7,13 @@ volumes:
 
 services:
 
+  # ── Infrastructure (always available) ──────────────────────────────────────
+
   mongo:
     image: mongo:8
     container_name: festiva-mongo
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE_NAME:-FestivaDatabase}
     ports:
       - '27017:27017'
     volumes:
@@ -22,12 +26,15 @@ services:
       timeout: 5s
       retries: 10
 
+  # ── Bot (profile: bot) ─────────────────────────────────────────────────────
+
   bot:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: festiva-bot
-    env_file: .env.local
+    profiles: [bot]
+    env_file: .env
     environment:
       MONGO_URI: mongodb://mongo:27017
     ports:

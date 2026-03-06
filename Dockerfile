@@ -4,6 +4,7 @@
 FROM maven:3.9-eclipse-temurin-25-alpine AS build
 
 ARG MAVEN_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+ARG VERSION=1.0
 
 WORKDIR /app
 COPY pom.xml ./
@@ -36,7 +37,10 @@ RUN java -XX:ArchiveClassesAtExit=app-cds.jsa \
 # =============================================================================
 FROM eclipse-temurin:25-jre-alpine
 
+ARG VERSION=1.0
+
 LABEL maintainer="Zufar Sunagatov" \
+      version="${VERSION}" \
       description="Festiva — Telegram birthday reminder bot"
 
 WORKDIR /app

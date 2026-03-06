@@ -1,5 +1,47 @@
-target/
+# Version control
 .git/
+.gitignore
+
+# IDE
 .idea/
+.vscode/
 *.iml
+
+# Amazon Q rules
+.amazonq/
+
+# CI/CD (not needed in image)
+.github/
+
+# Docker override files
+docker-compose*.yml
+docker-compose*.yaml
+
+# Environment files (injected at runtime)
+.env.*
+.env
+local.env
+
+# Test sources (not needed in image)
+src/test/
+
+# Maven build output and metadata
+target/
+**/pom.xml.versionsBackup
+**/pom.xml.tag
+**/pom.xml.releaseBackup
+**/pom.xml.next
+**/pom.xml.backup
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Docs and markdown
+docs/
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
 *.log

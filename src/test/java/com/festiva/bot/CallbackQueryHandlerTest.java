@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("CallbackQueryHandler")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class CallbackQueryHandlerTest {
+class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;

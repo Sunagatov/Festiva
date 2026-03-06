@@ -31,17 +31,26 @@ public class FriendService {
 
     public void updateFriendName(long telegramUserId, String oldName, String newName) {
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, oldName)
-                .ifPresent(f -> { f.setName(newName); friendRepository.save(f); });
+                .ifPresent(f -> {
+                    f.setName(newName);
+                    friendRepository.save(f);
+                });
     }
 
     public void updateFriendDate(long telegramUserId, String name, java.time.LocalDate date) {
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> { f.setBirthDate(date); friendRepository.save(f); });
+                .ifPresent(f -> {
+                    f.setBirthDate(date);
+                    friendRepository.save(f);
+                });
     }
 
     public void toggleFriendNotify(long telegramUserId, String name) {
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> { f.setNotifyEnabled(!f.isNotifyEnabled()); friendRepository.save(f); });
+                .ifPresent(f -> {
+                    f.setNotifyEnabled(!f.isNotifyEnabled());
+                    friendRepository.save(f);
+                });
     }
 
     public List<Friend> getFriends(long telegramUserId) {
