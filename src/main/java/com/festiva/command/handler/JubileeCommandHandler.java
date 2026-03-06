@@ -21,8 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JubileeCommandHandler implements CommandHandler {
 
-    private static final int JUBILEE_INTERVAL = 5;
-
     private final FriendService friendService;
     private final UserStateService userStateService;
 
@@ -48,7 +46,7 @@ public class JubileeCommandHandler implements CommandHandler {
 
     private String buildText(List<Friend> friends, Lang lang) {
         List<Friend> jubilee = friends.stream()
-                .filter(f -> f.getNextAge() % JUBILEE_INTERVAL == 0)
+                .filter(f -> f.getNextAge() > 0 && f.getNextAge() % FriendService.JUBILEE_INTERVAL == 0)
                 .toList();
 
         if (jubilee.isEmpty()) {

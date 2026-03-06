@@ -31,8 +31,8 @@ public final class MessageBuilder {
     }
 
     public static final Map<String, String> LABEL_TO_COMMAND = Map.ofEntries(
-            Map.entry("\u2795 Add", "/add"),
-            Map.entry("\u2795 Add Many", "/addmany"),
+            Map.entry("➕ Add", "/add"),
+            Map.entry("➕ Add Many", "/addmany"),
             Map.entry("\uD83D\uDDD1 Remove", "/remove"),
             Map.entry("\uD83D\uDCCB List", "/list"),
             Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
@@ -49,7 +49,7 @@ public final class MessageBuilder {
     public static ReplyKeyboardMarkup mainMenu() {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
-                        new KeyboardRow(List.of(new KeyboardButton("\u2795 Add"), new KeyboardButton("\uD83D\uDDD1 Remove"), new KeyboardButton("\uD83D\uDCCB List"))),
+                        new KeyboardRow(List.of(new KeyboardButton("➕ Add"), new KeyboardButton("\uD83D\uDDD1 Remove"), new KeyboardButton("\uD83D\uDCCB List"))),
                         new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDF82 Birthdays"), new KeyboardButton("\uD83D\uDD14 Upcoming"), new KeyboardButton("\uD83C\uDFC6 Jubilee"))),
                         new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCDD Edit"), new KeyboardButton("\uD83D\uDD0D Search"), new KeyboardButton("\uD83D\uDCCA Stats"))),
                         new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDD27 Settings"), new KeyboardButton("\uD83C\uDF10 Language"), new KeyboardButton("\uD83D\uDCD6 Help")))

@@ -40,7 +40,7 @@ public final class BulkAddParser {
         }
 
         // skip header if first row looks like a header
-        int start = rows.get(0).toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
+        int start = rows.getFirst().toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
         List<String> data = rows.subList(start, rows.size());
 
         if (data.size() > MAX_ENTRIES) {
@@ -59,6 +59,7 @@ public final class BulkAddParser {
             }
 
             String name = parts[0].trim();
+            if (name.startsWith("\"") && name.endsWith("\"")) name = name.substring(1, name.length() - 1).trim();
             String dateStr = parts[1].trim();
 
             if (name.isBlank()) {

@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -119,11 +120,22 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_EMPTY));
         }
 
-        result.valid().forEach(f -> friendService.addFriend(userId, f));
-        userStateService.clearState(userId);
-        log.debug("bulk.add.done: userId={}, added={}, errors={}", userId, result.valid().size(), result.errors().size());
+        int currentCount = existing.size();
+        List<com.festiva.friend.entity.Friend> toAdd = result.valid();
+        List<String> errors = new ArrayList<>(result.errors());
+        if (currentCount + toAdd.size() > FriendService.FRIEND_CAP) {
+            int allowed = Math.max(0, FriendService.FRIEND_CAP - currentCount);
+            if (allowed < toAdd.size()) {
+                errors.add(Messages.get(lang, Messages.BULK_CAP_EXCEEDED, allowed, FriendService.FRIEND_CAP));
+                toAdd = toAdd.subList(0, allowed);
+            }
+        }
 
-        return MessageBuilder.html(chatId, buildResponse(lang, result));
+        toAdd.forEach(f -> friendService.addFriend(userId, f));
+        userStateService.clearState(userId);
+        log.debug("bulk.add.done: userId={}, added={}, errors={}", userId, toAdd.size(), errors.size());
+
+        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(toAdd, errors)));
     }
 
     private String buildResponse(Lang lang, BulkAddParser.ParseResult result) {

@@ -6,6 +6,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -40,6 +41,11 @@ public class BirthdayReminder {
     private final NotificationSender notificationSender;
     private final UserPreferenceRepository userPreferenceRepository;
 
+    @PostConstruct
+    public void checkBirthdaysOnStartup() {
+        checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
+    }
+
     @Scheduled(cron = "0 0 * * * *", zone = "UTC")
     public void checkBirthdays() {
         checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
@@ -60,7 +66,7 @@ public class BirthdayReminder {
             MDC.put("userId", String.valueOf(userId));
             try {
                 UserPreference pref = prefByUser.get(userId);
-                int notifyHour = pref != null ? pref.getNotifyHour() : 9;
+                int notifyHour = pref != null && pref.getNotifyHour() > 0 ? pref.getNotifyHour() : 9;
                 String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
                 Lang lang = pref != null ? pref.getLang() : Lang.RU;
                 ZoneId zone;
@@ -91,7 +97,7 @@ public class BirthdayReminder {
         try {
             notificationSender.send(userId, Messages.get(lang, key,
                     friend.getName(),
-                    friend.getRelationship() != null ? friend.getRelationship().label(lang) : "",
+                    friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                     friend.getZodiac(),
                     friend.getNextAge(),
                     botUsername));

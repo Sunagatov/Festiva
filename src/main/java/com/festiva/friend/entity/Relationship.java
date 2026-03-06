@@ -35,7 +35,4 @@ public enum Relationship {
     public String label(Lang lang) {
         return lang == Lang.EN ? labelEn : labelRu;
     }
-
-    // backward compat — used in /list display
-    public String getLabel(Lang lang) { return label(lang); }
 }

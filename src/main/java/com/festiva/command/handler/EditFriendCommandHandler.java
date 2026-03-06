@@ -1,6 +1,5 @@
 package com.festiva.command.handler;
 
-import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
@@ -65,6 +64,9 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         String oldName = userStateService.getPendingName(userId);
 
         if (newName.isBlank()) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
+        }
+        if (newName.length() > 100) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (friendService.friendExists(userId, newName)) {

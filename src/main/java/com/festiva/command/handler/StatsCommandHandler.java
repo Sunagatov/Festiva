@@ -21,8 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatsCommandHandler implements CommandHandler {
 
-    private static final int JUBILEE_INTERVAL = 5;
-
     private final FriendService friendService;
     private final UserStateService userStateService;
 
@@ -42,7 +40,7 @@ public class StatsCommandHandler implements CommandHandler {
                 .filter(f -> f.getBirthDate().getMonthValue() == today.getMonthValue())
                 .count();
         int jubilees = (int) friends.stream()
-                .filter(f -> f.getNextAge() % JUBILEE_INTERVAL == 0)
+                .filter(f -> f.getNextAge() > 0 && f.getNextAge() % FriendService.JUBILEE_INTERVAL == 0)
                 .count();
         String nextBirthday = friends.stream()
                 .min(Comparator.comparing(f -> ChronoUnit.DAYS.between(today, f.nextBirthday(today))))

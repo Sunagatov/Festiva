@@ -12,6 +12,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendService {
 
+    public static final int FRIEND_CAP = 100;
+    public static final int JUBILEE_INTERVAL = 5;
     private static final int LEAP_YEAR = 2000; // leap year so Feb 29 sorts correctly
 
     private final FriendMongoRepository friendRepository;
@@ -41,6 +43,14 @@ public class FriendService {
         friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
                 .ifPresent(f -> {
                     f.setBirthDate(date);
+                    friendRepository.save(f);
+                });
+    }
+
+    public void updateFriendRelationship(long telegramUserId, String name, com.festiva.friend.entity.Relationship relationship) {
+        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
+                .ifPresent(f -> {
+                    f.setRelationship(relationship);
                     friendRepository.save(f);
                 });
     }

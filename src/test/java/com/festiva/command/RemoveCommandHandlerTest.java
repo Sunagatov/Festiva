@@ -46,7 +46,7 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         when(friendService.getFriendsSortedByDayMonth(1L))
                 .thenReturn(List.of(new Friend("Alice", LocalDate.of(1990, 1, 1))));
 
-        SendMessage result = handler.handle(update("/remove"));
+        SendMessage result = handler.handle(update());
 
         assertThat(result.getReplyMarkup()).isNotNull();
     }
@@ -56,18 +56,17 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     void handle_noFriends_returnsFriendsEmpty() {
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
-        SendMessage result = handler.handle(update("/remove"));
+        SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
     }
 
-    private Update update(String text) {
+    private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
         when(message.getChatId()).thenReturn(1L);
-        when(message.getText()).thenReturn(text);
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);
         return update;

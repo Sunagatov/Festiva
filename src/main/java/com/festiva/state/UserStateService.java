@@ -1,6 +1,5 @@
 package com.festiva.state;
 
-import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
@@ -21,7 +20,6 @@ public class UserStateService {
         Integer pendingDay = null;
         int yearPageOffset = 0;
         Lang lang = null;
-        Relationship pendingRelationship = null;
     }
 
     private final ConcurrentHashMap<Long, UserSession> sessions = new ConcurrentHashMap<>();
@@ -42,7 +40,6 @@ public class UserStateService {
         s.pendingMonth = null;
         s.pendingDay = null;
         s.yearPageOffset = 0;
-        s.pendingRelationship = null;
     }
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
@@ -59,9 +56,6 @@ public class UserStateService {
 
     public void setPendingDay(long userId, Integer day) { session(userId).pendingDay = day; }
     public Integer getPendingDay(long userId) { return session(userId).pendingDay; }
-
-    public void setPendingRelationship(long userId, Relationship r) { session(userId).pendingRelationship = r; }
-    public Relationship getPendingRelationship(long userId) { return session(userId).pendingRelationship; }
 
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);

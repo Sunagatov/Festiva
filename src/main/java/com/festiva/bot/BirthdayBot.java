@@ -6,9 +6,7 @@ import com.festiva.notification.NotificationSender;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -30,7 +28,6 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final CommandRouter commandRouter;
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
-    private TelegramBotsLongPollingApplication botsApp;
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
@@ -47,8 +44,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     @PostConstruct
     public void start() {
         try {
-            botsApp = new TelegramBotsLongPollingApplication();
-            botsApp.registerBot(botToken, this);
+            new TelegramBotsLongPollingApplication().registerBot(botToken, this);
             log.info("bot.started");
         } catch (TelegramApiException e) {
             throw new RuntimeException("bot.start.failed", e);
@@ -74,6 +70,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                             new BotCommand("language",          "Language / Язык"),
                             new BotCommand("help",              "Help / Помощь"),
                             new BotCommand("addmany",           "Bulk add / Добавить несколько"),
+                            new BotCommand("export",            "Export / Экспорт"),
                             new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());
