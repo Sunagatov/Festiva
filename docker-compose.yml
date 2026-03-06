@@ -1,0 +1,22 @@
+networks:
+  festiva-network:
+    name: festiva-network
+
+services:
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: festiva-bot
+    env_file: .env
+    ports:
+      - '8080:8080'
+    networks:
+      - festiva-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
