@@ -107,11 +107,11 @@ public final class Messages {
     }
 
     public static String get(Lang lang, String key) {
-        return messageSource.getMessage(key, null, key, lang.locale());
+        return messageSource.getMessage(key, null, key, lang.locale()).replace("\\n", "\n");
     }
 
     public static String get(Lang lang, String key, Object... args) {
-        String pattern = messageSource.getMessage(key, null, key, lang.locale());
+        String pattern = messageSource.getMessage(key, null, key, lang.locale()).replace("\\n", "\n");
         return String.format(pattern, args);
     }
 }
