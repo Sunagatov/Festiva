@@ -1,5 +1,6 @@
 package com.festiva.metrics;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -15,14 +16,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "kafka", name = "enabled", havingValue = "true")
 public class FestivaMetricsSender implements MetricsSender {
-
-    private static final Duration SEND_TIMEOUT = Duration.ofSeconds(5);
 
     private final KafkaProducer<String, String> producer;
     private final String topic;
@@ -34,6 +32,12 @@ public class FestivaMetricsSender implements MetricsSender {
             @Value("${kafka.api-secret}") String apiSecret,
             @Value("${kafka.topic}") String topic) {
 
+        this.producer = new KafkaProducer<>(buildProperties(bootstrapServers, apiKey, apiSecret));
+        this.topic = topic;
+        log.info("Kafka Metrics Producer initialized with topic: {}", topic);
+    }
+
+    private static Properties buildProperties(String bootstrapServers, String apiKey, String apiSecret) {
         Properties props = new Properties();
         props.put("bootstrap.servers", bootstrapServers);
         props.put("security.protocol", "SASL_SSL");
@@ -47,20 +51,18 @@ public class FestivaMetricsSender implements MetricsSender {
         props.put("retries", 3);
         props.put("request.timeout.ms", 30000);
         props.put("delivery.timeout.ms", 60000);
-
-        this.producer = new KafkaProducer<>(props);
-        this.topic = topic;
-        log.info("Kafka Metrics Producer initialized with topic: {}", topic);
+        return props;
     }
 
     @Override
     public void sendMetrics(Update update, String status, long processingTimeMillis) {
         try {
             String json = buildJson(update, status, processingTimeMillis);
-            producer.send(new ProducerRecord<>(topic, json))
-                    .get(SEND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            log.error("Failed to send metrics to Kafka", e);
+            producer.send(new ProducerRecord<>(topic, json), (metadata, ex) -> {
+                if (ex != null) log.error("Failed to send metrics to Kafka", ex);
+            });
+        } catch (RuntimeException e) {
+            log.error("Failed to build metrics payload", e);
         }
     }
 
@@ -69,16 +71,17 @@ public class FestivaMetricsSender implements MetricsSender {
         String userName = "unknown";
         long userId = 0L;
 
+        User user = null;
         if (update.hasMessage() && update.getMessage().getFrom() != null) {
-            User user = update.getMessage().getFrom();
+            user = update.getMessage().getFrom();
             String text = update.getMessage().getText();
             command = (text != null && text.startsWith("/")) ? text.split("\\s+")[0] : "text_message";
-            userId = user.getId();
-            userName = extractUserName(user);
         } else if (update.hasCallbackQuery() && update.getCallbackQuery().getFrom() != null) {
-            User user = update.getCallbackQuery().getFrom();
-            userId = user.getId();
+            user = update.getCallbackQuery().getFrom();
             command = update.getCallbackQuery().getData();
+        }
+        if (user != null) {
+            userId = user.getId();
             userName = extractUserName(user);
         }
 
@@ -93,19 +96,16 @@ public class FestivaMetricsSender implements MetricsSender {
 
         try {
             return objectMapper.writeValueAsString(metrics);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             log.error("Failed to serialize metrics", e);
             return "{}";
         }
     }
 
     private String extractUserName(User user) {
-        if (user.getUserName() != null && !user.getUserName().isEmpty()) {
-            return user.getUserName();
-        }
-        String first = user.getFirstName() != null ? user.getFirstName() : "";
-        String last = user.getLastName() != null ? " " + user.getLastName() : "";
-        String full = (first + last).trim();
+        if (user.getUserName() != null && !user.getUserName().isEmpty()) return user.getUserName();
+        String full = ((user.getFirstName() != null ? user.getFirstName() : "") +
+                       (user.getLastName()  != null ? " " + user.getLastName() : "")).trim();
         return full.isEmpty() ? "unknown" : full;
     }
 

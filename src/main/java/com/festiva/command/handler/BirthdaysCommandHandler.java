@@ -1,6 +1,11 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
+import com.festiva.command.MessageBuilder;
+import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
+import com.festiva.state.UserStateService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -12,10 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class BirthdaysCommandHandler implements CommandHandler {
 
     private static final int COLUMNS_PER_ROW = 4;
     private static final int TOTAL_MONTHS = 12;
+
+    private final UserStateService userStateService;
 
     @Override
     public String command() {
@@ -24,17 +32,18 @@ public class BirthdaysCommandHandler implements CommandHandler {
 
     @Override
     public SendMessage handle(Update update) {
-        return SendMessage.builder()
-                .chatId(update.getMessage().getChatId())
-                .parseMode("HTML")
-                .text("<b>Просмотр дней рождения</b>\n\nВыберите месяц, чтобы увидеть список дней рождения:")
-                .replyMarkup(InlineKeyboardMarkup.builder().keyboard(buildKeyboard()).build())
-                .build();
+        long chatId = update.getMessage().getChatId();
+        long userId = update.getMessage().getFrom().getId();
+        var lang = userStateService.getLanguage(userId);
+
+        return MessageBuilder.html(chatId,
+                Messages.get(lang, Messages.BIRTHDAYS_PICK),
+                InlineKeyboardMarkup.builder().keyboard(buildKeyboard(lang)).build());
     }
 
-    private List<InlineKeyboardRow> buildKeyboard() {
+    private List<InlineKeyboardRow> buildKeyboard(Lang lang) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
-        rows.add(new InlineKeyboardRow(button("Текущий месяц", "MONTH_CURRENT")));
+        rows.add(new InlineKeyboardRow(button(Messages.get(lang, Messages.CURRENT_MONTH), "MONTH_CURRENT")));
 
         InlineKeyboardRow row = new InlineKeyboardRow();
         for (int m = 1; m <= TOTAL_MONTHS; m++) {

@@ -1,14 +1,19 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
+import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
+import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Component
@@ -16,9 +21,9 @@ import java.util.List;
 public class JubileeCommandHandler implements CommandHandler {
 
     private static final int JUBILEE_INTERVAL = 5;
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final FriendService friendService;
+    private final UserStateService userStateService;
 
     @Override
     public String command() {
@@ -28,24 +33,31 @@ public class JubileeCommandHandler implements CommandHandler {
     @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        List<Friend> friends = friendService.getFriendsSortedByUpcomingBirthday(update.getMessage().getFrom().getId());
-        String text = friends.isEmpty() ? "<b>Список пользователей пуст.</b>" : buildText(friends);
-        return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).build();
+        long userId = update.getMessage().getFrom().getId();
+        Lang lang = userStateService.getLanguage(userId);
+        List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId).stream()
+                .sorted(Comparator.comparing(f -> f.nextBirthday(LocalDate.now())))
+                .toList();
+        String text = friends.isEmpty()
+                ? Messages.get(lang, Messages.FRIENDS_EMPTY)
+                : buildText(friends, lang);
+        return MessageBuilder.html(chatId, text);
     }
 
-    private String buildText(List<Friend> friends) {
+    private String buildText(List<Friend> friends, Lang lang) {
         List<Friend> jubilee = friends.stream()
                 .filter(f -> f.getNextAge() % JUBILEE_INTERVAL == 0)
                 .toList();
 
         if (jubilee.isEmpty()) {
-            return "<b>В ближайшее время нет юбилейных дней рождения.</b>";
+            return Messages.get(lang, Messages.JUBILEE_NONE);
         }
 
-        StringBuilder sb = new StringBuilder("<b>Юбилейные дни рождения</b>\n\n");
-        jubilee.forEach(f -> sb.append("– <b>").append(f.getBirthDate().format(DATE_FORMATTER))
-                .append("</b> <i>").append(f.getName())
-                .append("</i> (исполнится <b>").append(f.getNextAge()).append("</b> лет)\n"));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER));
+        jubilee.forEach(f -> sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+                .append("</b> <i>").append(f.getName()).append("</i> ")
+                .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge()))
+                .append("\n"));
         return sb.toString();
     }
 }

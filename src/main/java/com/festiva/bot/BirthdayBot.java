@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
@@ -46,18 +47,19 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
         try {
             telegramClient.execute(SetMyCommands.builder()
                     .commands(List.of(
-                            new BotCommand("start", "Запустить бота"),
-                            new BotCommand("list", "Список друзей"),
-                            new BotCommand("add", "Добавить друга"),
-                            new BotCommand("remove", "Удалить друга"),
-                            new BotCommand("birthdays", "Дни рождения по месяцам"),
-                            new BotCommand("upcomingbirthdays", "Ближайшие дни рождения"),
-                            new BotCommand("jubilee", "Юбилейные дни рождения"),
-                            new BotCommand("help", "Список команд"),
-                            new BotCommand("cancel", "Отменить текущую операцию")
+                            new BotCommand("start",             "Start / Запустить"),
+                            new BotCommand("list",              "Friends / Друзья"),
+                            new BotCommand("add",               "Add friend / Добавить друга"),
+                            new BotCommand("remove",            "Remove friend / Удалить друга"),
+                            new BotCommand("birthdays",         "By month / По месяцам"),
+                            new BotCommand("upcomingbirthdays", "Upcoming / Ближайшие"),
+                            new BotCommand("jubilee",           "Milestones / Юбилеи"),
+                            new BotCommand("help",              "Help / Помощь"),
+                            new BotCommand("language",          "🌐 Language / Язык"),
+                            new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());
-        } catch (Exception e) {
+        } catch (TelegramApiException e) {
             log.error("Failed to register bot commands", e);
         }
     }
@@ -88,7 +90,7 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
                 if (response != null) telegramClient.execute(response);
             }
             metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
-        } catch (Exception e) {
+        } catch (TelegramApiException | RuntimeException e) {
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
             log.error("Error processing update: updateId={}", update.getUpdateId(), e);
         }
@@ -97,8 +99,8 @@ public class BirthdayBot implements SpringLongPollingBot, LongPollingSingleThrea
     @Override
     public void send(long telegramUserId, String text) {
         try {
-            telegramClient.execute(SendMessage.builder().chatId(telegramUserId).text(text).build());
-        } catch (Exception e) {
+            telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
+        } catch (TelegramApiException e) {
             log.error("Failed to send notification to userId={}", telegramUserId, e);
         }
     }

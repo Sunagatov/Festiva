@@ -1,6 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
+import com.festiva.command.MessageBuilder;
+import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +24,12 @@ public class CancelCommandHandler implements CommandHandler {
     @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long userId = update.getMessage().getFrom().getId();
+        long userId = update.getMessage().getFrom().getId();
         boolean active = userStateService.getState(userId) != BotState.IDLE;
 
         if (active) userStateService.clearState(userId);
 
-        String text = active
-                ? "<b><i>Текущая команда отменена. Чем ещё могу помочь? Отправьте /help для списка команд.</i></b>"
-                : "<b><i>Нет активной команды для отмены. Я и так ничего не делал. Zzzzz...</i></b>";
-
-        return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).build();
+        String key = active ? Messages.CANCEL_ACTIVE : Messages.CANCEL_IDLE;
+        return MessageBuilder.html(chatId, Messages.get(userStateService.getLanguage(userId), key));
     }
 }

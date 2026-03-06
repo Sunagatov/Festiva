@@ -7,11 +7,14 @@ spring:
 management:
   endpoints:
     web:
+      base-path: /
       exposure:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always
+      probes:
+        enabled: true
 
 telegram:
   bot:
@@ -19,8 +22,8 @@ telegram:
     username: ${TELEGRAM_BOT_USERNAME}
 
 kafka:
-  enabled: ${APP_KAFKA_ENABLED:false}  # Включение/отключение функционала метрик
-  topic: festiva.bot.metric           # Имя топика для метрик
-  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-  api-key: ${KAFKA_API_KEY}
-  api-secret: ${KAFKA_API_SECRET}
+  enabled: ${APP_KAFKA_ENABLED:false}
+  topic: festiva.bot.metric
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+  api-key: ${KAFKA_API_KEY:}
+  api-secret: ${KAFKA_API_SECRET:}

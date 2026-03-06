@@ -2,6 +2,8 @@ package com.festiva.notification;
 
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.i18n.Messages;
+import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,35 +19,36 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BirthdayReminder {
 
-    private static final Map<Long, String> TEMPLATES = Map.of(
-            0L, "Сегодня день рождения у вашего друга %s!",
-            1L, "Завтра день рождения у вашего друга %s!",
-            7L, "Через неделю день рождения у вашего друга %s!"
+    private static final Map<Long, String> TEMPLATE_KEYS = Map.of(
+            0L, Messages.NOTIFY_TODAY,
+            1L, Messages.NOTIFY_TOMORROW,
+            7L, Messages.NOTIFY_WEEK
     );
 
     private final FriendService friendService;
     private final NotificationSender notificationSender;
+    private final UserStateService userStateService;
 
     @Scheduled(cron = "0 0 9 * * *")
     public void checkBirthdays() {
         log.info("Starting birthday check");
         List<Long> userIds = friendService.getAllUserIds();
-        userIds.forEach(userId -> {
-            try {
-                friendService.getFriends(userId).forEach(f -> checkAndNotify(userId, f));
-            } catch (Exception e) {
-                log.error("Error processing notifications for user: {}", userId, e);
-            }
-        });
+        userIds.forEach(userId ->
+                friendService.getFriendsSortedByDayMonth(userId).forEach(f -> checkAndNotify(userId, f))
+        );
         log.info("Birthday check completed for {} users", userIds.size());
     }
 
     private void checkAndNotify(long userId, Friend friend) {
         LocalDate today = LocalDate.now();
-        long daysUntil = ChronoUnit.DAYS.between(today, FriendService.nextBirthday(friend.getBirthDate(), today));
-        String template = TEMPLATES.get(daysUntil);
-        if (template != null) {
-            notificationSender.send(userId, String.format(template, friend.getName()));
+        long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
+        String key = TEMPLATE_KEYS.get(daysUntil);
+        if (key == null) return;
+        try {
+            notificationSender.send(userId,
+                    Messages.get(userStateService.getLanguage(userId), key, friend.getName()));
+        } catch (RuntimeException e) {
+            log.error("Failed to send notification to userId={} for friend={}", userId, friend.getName(), e);
         }
     }
 }

@@ -1,32 +1,32 @@
 package com.festiva.state;
 
+import com.festiva.i18n.Lang;
 import org.springframework.stereotype.Service;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserStateService {
 
-    private final ConcurrentHashMap<Long, BotState> userStates = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, String> pendingNames = new ConcurrentHashMap<>();
-
-    public BotState getState(Long userId) {
-        return userStates.getOrDefault(userId, BotState.IDLE);
+    private static class UserSession {
+        BotState state = BotState.IDLE;
+        String pendingName = null;
+        Lang lang = Lang.RU;
     }
 
-    public void setState(Long userId, BotState state) {
-        userStates.put(userId, state);
+    private final ConcurrentHashMap<Long, UserSession> sessions = new ConcurrentHashMap<>();
+
+    private UserSession session(long userId) {
+        return sessions.computeIfAbsent(userId, k -> new UserSession());
     }
 
-    public void clearState(Long userId) {
-        userStates.put(userId, BotState.IDLE);
-        pendingNames.remove(userId);
-    }
+    public BotState getState(long userId) { return session(userId).state; }
+    public void setState(long userId, BotState state) { session(userId).state = state; }
+    public void clearState(long userId) { UserSession s = session(userId); s.state = BotState.IDLE; s.pendingName = null; }
 
-    public void setPendingName(Long userId, String name) {
-        pendingNames.put(userId, name);
-    }
+    public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
+    public String getPendingName(long userId) { return session(userId).pendingName; }
 
-    public String getPendingName(Long userId) {
-        return pendingNames.get(userId);
-    }
+    public Lang getLanguage(long userId) { return session(userId).lang; }
+    public void setLanguage(long userId, Lang lang) { session(userId).lang = lang; }
 }

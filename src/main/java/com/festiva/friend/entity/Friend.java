@@ -32,10 +32,13 @@ public class Friend {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
+    public LocalDate nextBirthday(LocalDate from) {
+        LocalDate next = birthDate.withYear(from.getYear());
+        return next.isBefore(from) ? next.plusYears(1) : next;
+    }
+
     public int getNextAge() {
         LocalDate today = LocalDate.now();
-        LocalDate nextBirthday = birthDate.withYear(today.getYear());
-        if (!nextBirthday.isAfter(today)) nextBirthday = nextBirthday.plusYears(1);
-        return Period.between(birthDate, nextBirthday).getYears();
+        return Period.between(birthDate, nextBirthday(today)).getYears();
     }
 }

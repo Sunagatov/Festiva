@@ -1,8 +1,11 @@
 package com.festiva.command.handler;
 
-import com.festiva.command.CommandHandler;
+import com.festiva.command.MessageBuilder;
+import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +17,11 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
-public class RemoveCommandHandler implements CommandHandler {
+public class RemoveCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -28,13 +32,19 @@ public class RemoveCommandHandler implements CommandHandler {
     }
 
     @Override
+    public Set<BotState> handledStates() {
+        return Set.of(BotState.WAITING_FOR_REMOVE_FRIEND_INPUT);
+    }
+
+    @Override
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long userId = update.getMessage().getFrom().getId();
+        long userId = update.getMessage().getFrom().getId();
+        Lang lang = userStateService.getLanguage(userId);
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
-            return response(chatId, "Список друзей пуст.", null);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY));
         }
 
         List<InlineKeyboardRow> rows = friends.stream()
@@ -46,30 +56,26 @@ public class RemoveCommandHandler implements CommandHandler {
                 .toList();
 
         userStateService.setState(userId, BotState.WAITING_FOR_REMOVE_FRIEND_INPUT);
-        return response(chatId, "Выберите друга для удаления:",
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.SELECT_REMOVE),
                 InlineKeyboardMarkup.builder().keyboard(rows).build());
     }
 
-    public SendMessage handleAwaitingInput(Update update) {
+    @Override
+    public SendMessage handleState(Update update) {
         long chatId = update.getMessage().getChatId();
-        Long userId = update.getMessage().getFrom().getId();
+        long userId = update.getMessage().getFrom().getId();
+        Lang lang = userStateService.getLanguage(userId);
         String name = update.getMessage().getText().trim();
 
         if (name.isEmpty()) {
-            return response(chatId, "Имя не может быть пустым. Введите имя или /cancel.", null);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (!friendService.friendExists(userId, name)) {
-            return response(chatId, "Друг \"" + name + "\" не найден. Введите другое имя или /cancel.", null);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_NOT_FOUND, name));
         }
 
         friendService.deleteFriend(userId, name);
         userStateService.clearState(userId);
-        return response(chatId, "✅ \"" + name + "\" удалён!", null);
-    }
-
-    private SendMessage response(long chatId, String text, InlineKeyboardMarkup markup) {
-        SendMessage.SendMessageBuilder builder = SendMessage.builder().chatId(chatId).text(text);
-        if (markup != null) builder.replyMarkup(markup);
-        return builder.build();
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_REMOVED, name));
     }
 }
