@@ -24,13 +24,13 @@ public final class DatePickerKeyboard {
 
     public static InlineKeyboardMarkup yearKeyboard(int pageOffset, Lang lang) {
         int currentYear = java.time.LocalDate.now().getYear();
-        int startYear = currentYear - pageOffset;
+        int startYear = currentYear - pageOffset - YEARS_PER_PAGE + 1;
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
         for (int i = 0; i < YEARS_PER_PAGE; i += 4) {
             InlineKeyboardRow row = new InlineKeyboardRow();
             for (int j = 0; j < 4 && i + j < YEARS_PER_PAGE; j++) {
-                int year = startYear - i - j;
+                int year = startYear + i + j;
                 row.add(btn(String.valueOf(year), DATE_YEAR_PREFIX + year));
             }
             rows.add(row);

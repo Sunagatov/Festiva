@@ -68,7 +68,7 @@ public class BirthdayReminder {
                 UserPreference pref = prefByUser.get(userId);
                 int notifyHour = pref != null && pref.getNotifyHour() > 0 ? pref.getNotifyHour() : 9;
                 String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
-                Lang lang = pref != null ? pref.getLang() : Lang.RU;
+                Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : Lang.RU;
                 ZoneId zone;
                 try {
                     zone = ZoneId.of(tz);

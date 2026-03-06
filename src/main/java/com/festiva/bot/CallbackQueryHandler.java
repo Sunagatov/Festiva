@@ -181,8 +181,8 @@ public class CallbackQueryHandler {
         log.debug("friend.added: userId={}, name={}, relationship={}", userId, name, rel);
         return new Result(Messages.get(lang, Messages.FRIEND_ADDED, name),
                 InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(ACTION_ADD).build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData(LIST_SORT_DATE + "_0").build()
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData(LIST_SORT_DATE + "_0").build(),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(ACTION_ADD).build()
                 ))).build());
     }
 
@@ -306,13 +306,11 @@ public class CallbackQueryHandler {
         if (data.startsWith(EDIT_FIELD_NAME) || data.startsWith(EDIT_FIELD_DATE)
                 || data.startsWith(EDIT_FIELD_NOTIFY) || data.startsWith(EDIT_FIELD_REL)) return null;
         String name = data.substring(EDIT_PREFIX.length());
-        List<Friend> friends = friendService.getFriends(userId);
-        String currentDate = friends.stream()
+        Friend found = friendService.getFriends(userId).stream()
                 .filter(f -> f.getName().equalsIgnoreCase(name))
-                .findFirst().map(f -> f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).orElse("?");
-        boolean notifyOn = friends.stream()
-                .filter(f -> f.getName().equalsIgnoreCase(name))
-                .findFirst().map(Friend::isNotifyEnabled).orElse(true);
+                .findFirst().orElse(null);
+        String currentDate = found != null ? found.getBirthDate().format(MessageBuilder.DATE_FORMATTER) : "?";
+        boolean notifyOn = found == null || found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
                 new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_NAME_BTN)).callbackData(EDIT_FIELD_NAME + name).build(),

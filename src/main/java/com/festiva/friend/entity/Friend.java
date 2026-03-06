@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.Year;
 
 @Data
 @Document(collection = "friends")
@@ -42,7 +43,12 @@ public class Friend {
 
     public LocalDate nextBirthday(LocalDate from) {
         LocalDate next = birthDate.withYear(from.getYear());
-        return next.isBefore(from) ? next.plusYears(1) : next;
+        if (next.isBefore(from)) next = next.plusYears(1);
+        if (birthDate.getMonthValue() == 2 && birthDate.getDayOfMonth() == 29 && next.getDayOfMonth() == 28) {
+            while (!Year.isLeap(next.getYear())) next = next.plusYears(1);
+            next = next.withDayOfMonth(29);
+        }
+        return next;
     }
 
     public int getNextAge() {

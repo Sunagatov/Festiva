@@ -25,11 +25,12 @@ class FriendTest {
     }
 
     @Test
-    @DisplayName("nextBirthday() — Feb 29 from a non-leap year advances past that year")
+    @DisplayName("nextBirthday() — Feb 29 from a non-leap year returns the correct Feb 29 in next leap year")
     void nextBirthday_leapDay_fromNonLeapYear() {
         Friend leapFriend = new Friend("Leap", LocalDate.of(2000, 2, 29));
-        LocalDate from = LocalDate.of(2023, 3, 1);
-        assertThat(leapFriend.nextBirthday(from).getYear()).isGreaterThan(2023);
+        assertThat(leapFriend.nextBirthday(LocalDate.of(2023, 3, 1))).isEqualTo(LocalDate.of(2024, 2, 29));
+        assertThat(leapFriend.nextBirthday(LocalDate.of(2024, 3, 1))).isEqualTo(LocalDate.of(2028, 2, 29));
+        assertThat(leapFriend.nextBirthday(LocalDate.of(2025, 1, 1))).isEqualTo(LocalDate.of(2028, 2, 29));
     }
 
     @Test

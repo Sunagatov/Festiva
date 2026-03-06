@@ -44,7 +44,10 @@ public class ExportCommandHandler implements CommandHandler {
 
         StringBuilder csv = new StringBuilder("name,birthday\n");
         friends.forEach(f -> {
-            String name = f.getName().contains(",") ? "\"" + f.getName() + "\"" : f.getName();
+            String n = f.getName();
+            String name = (n.contains(",") || n.contains("\""))
+                    ? "\"" + n.replace("\"", "\"\"") + "\""
+                    : n;
             csv.append(name).append(",")
                     .append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).append("\n");
         });

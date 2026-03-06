@@ -67,7 +67,7 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (newName.length() > 100) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
         if (friendService.friendExists(userId, newName)) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, newName));

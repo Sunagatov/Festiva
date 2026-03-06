@@ -59,7 +59,8 @@ public final class BulkAddParser {
             }
 
             String name = parts[0].trim();
-            if (name.startsWith("\"") && name.endsWith("\"")) name = name.substring(1, name.length() - 1).trim();
+            if (name.startsWith("\"") && name.endsWith("\""))
+                name = name.substring(1, name.length() - 1).replace("\"\"", "\"").trim();
             String dateStr = parts[1].trim();
 
             if (name.isBlank()) {

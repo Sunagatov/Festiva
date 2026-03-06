@@ -18,7 +18,7 @@ class MessagesTest extends MessagesTestSupport {
     void get_allKeysResolveForBothLangs(Lang lang) {
         for (String key : new String[]{
                 Messages.WELCOME, Messages.HELP, Messages.ENTER_NAME, Messages.ENTER_DATE,
-                Messages.NAME_EMPTY, Messages.NAME_EXISTS, Messages.DATE_FORMAT_ERROR,
+                Messages.NAME_EMPTY, Messages.NAME_TOO_LONG, Messages.NAME_EXISTS, Messages.DATE_FORMAT_ERROR,
                 Messages.DATE_FUTURE_ERROR, Messages.FRIEND_ADDED, Messages.FRIEND_NOT_FOUND,
                 Messages.FRIEND_REMOVED, Messages.FRIENDS_EMPTY, Messages.CANCEL_ACTIVE,
                 Messages.CANCEL_IDLE, Messages.UNKNOWN_COMMAND, Messages.NOTIFY_TODAY,

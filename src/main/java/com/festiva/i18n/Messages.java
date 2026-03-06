@@ -38,6 +38,7 @@ public final class Messages {
     public static final String ENTER_NAME             = "enter_name";
     public static final String ENTER_DATE             = "enter_date";
     public static final String NAME_EMPTY             = "name_empty";
+    public static final String NAME_TOO_LONG          = "name_too_long";
     public static final String NAME_EXISTS            = "name_exists";
     public static final String DATE_FORMAT_ERROR      = "date_format_error";
     public static final String DATE_FUTURE_ERROR      = "date_future_error";

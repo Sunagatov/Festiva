@@ -57,7 +57,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (name.length() > 100) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
         if (friendService.friendExists(userId, name)) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, name));
