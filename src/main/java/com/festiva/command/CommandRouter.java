@@ -50,8 +50,7 @@ public class CommandRouter {
             return handlers.getOrDefault(command, defaultHandler).handle(update);
         }
 
-        String mappedCommand = MessageBuilder.LABEL_TO_COMMAND.getOrDefault(text,
-                MessageBuilder.LABEL_TO_COMMAND_EXTRA.get(text));
+        String mappedCommand = MessageBuilder.LABEL_TO_COMMAND.get(text);
         if (mappedCommand != null) {
             log.debug("router.label: userId={}, label={}, command={}", userId, text, mappedCommand);
             userStateService.clearState(userId);

@@ -30,22 +30,19 @@ public final class MessageBuilder {
         return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).replyMarkup(markup).build();
     }
 
-    public static final Map<String, String> LABEL_TO_COMMAND = Map.of(
-            "➕ Add", "/add",
-            "🗑 Remove", "/remove",
-            "📋 List", "/list",
-            "🎂 Birthdays", "/birthdays",
-            "⏰ Upcoming", "/upcomingbirthdays",
-            "🏆 Jubilee", "/jubilee",
-            "✏️ Edit", "/edit",
-            "🌐 Language", "/language",
-            "❓ Help", "/help"
-    );
-
-    public static final Map<String, String> LABEL_TO_COMMAND_EXTRA = Map.of(
-            "🔍 Search", "/search",
-            "📊 Stats", "/stats",
-            "⚙️ Settings", "/settings"
+    public static final Map<String, String> LABEL_TO_COMMAND = Map.ofEntries(
+            Map.entry("➕ Add", "/add"),
+            Map.entry("🗑 Remove", "/remove"),
+            Map.entry("📋 List", "/list"),
+            Map.entry("🎂 Birthdays", "/birthdays"),
+            Map.entry("⏰ Upcoming", "/upcomingbirthdays"),
+            Map.entry("🏆 Jubilee", "/jubilee"),
+            Map.entry("✏️ Edit", "/edit"),
+            Map.entry("🌐 Language", "/language"),
+            Map.entry("❓ Help", "/help"),
+            Map.entry("🔍 Search", "/search"),
+            Map.entry("📊 Stats", "/stats"),
+            Map.entry("⚙️ Settings", "/settings")
     );
 
     public static ReplyKeyboardMarkup mainMenu() {

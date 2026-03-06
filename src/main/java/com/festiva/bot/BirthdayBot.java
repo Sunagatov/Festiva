@@ -62,11 +62,15 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                             new BotCommand("list",              "Friends / Друзья"),
                             new BotCommand("add",               "Add friend / Добавить друга"),
                             new BotCommand("remove",            "Remove friend / Удалить друга"),
+                            new BotCommand("edit",              "Edit friend / Редактировать друга"),
+                            new BotCommand("search",            "Search / Поиск"),
                             new BotCommand("birthdays",         "By month / По месяцам"),
                             new BotCommand("upcomingbirthdays", "Upcoming / Ближайшие"),
                             new BotCommand("jubilee",           "Milestones / Юбилеи"),
+                            new BotCommand("stats",             "Stats / Статистика"),
+                            new BotCommand("settings",          "Settings / Настройки"),
+                            new BotCommand("language",          "Language / Язык"),
                             new BotCommand("help",              "Help / Помощь"),
-                            new BotCommand("language",          "🌐 Language / Язык"),
                             new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());
