@@ -105,6 +105,6 @@ public class UserStateService {
 
     private UserPreference getOrCreatePref(long userId) {
         return userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), 9, "Europe/Moscow"));
+                .orElse(new UserPreference(userId, getLanguage(userId), -1, "Europe/Moscow"));
     }
 }

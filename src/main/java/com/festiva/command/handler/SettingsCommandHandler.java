@@ -77,9 +77,9 @@ public class SettingsCommandHandler implements CommandHandler {
     public static InlineKeyboardMarkup hourKeyboard(int activeHour) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
         InlineKeyboardRow row = new InlineKeyboardRow();
-        for (int h : new int[]{7, 8, 9, 10, 11, 12}) {
+        for (int h = 0; h < 24; h++) {
             row.add(btn(h, activeHour));
-            if (row.size() == 3) { rows.add(row); row = new InlineKeyboardRow(); }
+            if (row.size() == 4) { rows.add(row); row = new InlineKeyboardRow(); }
         }
         if (!row.isEmpty()) rows.add(row);
         return InlineKeyboardMarkup.builder().keyboard(rows).build();

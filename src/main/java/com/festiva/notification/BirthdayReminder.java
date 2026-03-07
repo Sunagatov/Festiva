@@ -1,7 +1,7 @@
 package com.festiva.notification;
 
+import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
-import com.festiva.friend.repository.FriendMongoRepository;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.user.UserPreference;
@@ -37,7 +37,7 @@ public class BirthdayReminder {
             7L, Messages.NOTIFY_WEEK
     );
 
-    private final FriendMongoRepository friendRepository;
+    private final FriendService friendService;
     private final NotificationSender notificationSender;
     private final UserPreferenceRepository userPreferenceRepository;
 
@@ -53,20 +53,20 @@ public class BirthdayReminder {
 
     void checkBirthdaysForHour(ZonedDateTime utcNow) {
         log.info("reminder.check.start: utcHour={}", utcNow.getHour());
-        List<Long> userIds = friendRepository.findDistinctTelegramUserIds();
+        List<Long> userIds = friendService.getAllUserIds();
 
         Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
 
-        Map<Long, List<Friend>> friendsByUser = friendRepository.findByTelegramUserIdIn(userIds).stream()
-                .collect(Collectors.groupingBy(Friend::getTelegramUserId));
+        Map<Long, List<Friend>> friendsByUser = userIds.stream()
+                .collect(Collectors.toMap(id -> id, friendService::getFriends));
 
         AtomicInteger notifiedCount = new AtomicInteger();
         userIds.forEach(userId -> {
             MDC.put("userId", String.valueOf(userId));
             try {
                 UserPreference pref = prefByUser.get(userId);
-                int notifyHour = pref != null && pref.getNotifyHour() > 0 ? pref.getNotifyHour() : 9;
+                int notifyHour = pref != null && pref.getNotifyHour() >= 0 ? pref.getNotifyHour() : 9;
                 String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
                 Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : Lang.RU;
                 ZoneId zone;

@@ -16,6 +16,6 @@ public class UserPreference {
     @Id
     private long telegramUserId;
     private Lang lang;
-    private int notifyHour = 9;
+    private int notifyHour = -1;
     private String timezone = "Europe/Moscow";
 }

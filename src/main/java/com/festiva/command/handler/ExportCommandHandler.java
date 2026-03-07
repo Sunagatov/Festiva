@@ -42,14 +42,16 @@ public class ExportCommandHandler implements CommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_EMPTY));
         }
 
-        StringBuilder csv = new StringBuilder("name,birthday\n");
+        StringBuilder csv = new StringBuilder("name,birthday,relationship\n");
         friends.forEach(f -> {
             String n = f.getName();
             String name = (n.contains(",") || n.contains("\""))
                     ? "\"" + n.replace("\"", "\"\"") + "\""
                     : n;
+            String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase() : "";
             csv.append(name).append(",")
-                    .append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).append("\n");
+                    .append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).append(",")
+                    .append(rel).append("\n");
         });
 
         try {
