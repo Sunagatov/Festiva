@@ -10,6 +10,8 @@ services:
       dockerfile: Dockerfile
     container_name: festiva-bot
     env_file: .env.prod
+    environment:
+      - SPRING_APPLICATION_JSON={"spring":{"mongodb":{"uri":"mongodb+srv://admin_festiva_db_user:8xfz9D9gwC0QkKMN@festivacluster.tdjxva4.mongodb.net/?retryWrites=true&w=majority&appName=FestivaCluster"}}}
     dns:
       - 8.8.8.8
       - 8.8.4.4

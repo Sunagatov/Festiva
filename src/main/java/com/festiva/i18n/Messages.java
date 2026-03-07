@@ -37,7 +37,7 @@ public final class Messages {
     public static final String SETTINGS_HOUR_SET      = "settings_hour_set";
     public static final String START_ADD_FIRST        = "start_add_first";
     public static final String WELCOME                = "welcome";
-    public static final String HELP                   = "help";
+    public static final String MENU                   = "menu";
     public static final String ABOUT                  = "about";
     public static final String ENTER_NAME             = "enter_name";
     public static final String ENTER_DATE             = "enter_date";

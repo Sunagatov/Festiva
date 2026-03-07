@@ -35,6 +35,7 @@ public class CancelCommandHandler implements CommandHandler {
         }
 
         String key = active ? Messages.CANCEL_ACTIVE : Messages.CANCEL_IDLE;
-        return MessageBuilder.html(chatId, Messages.get(userStateService.getLanguage(userId), key), MessageBuilder.mainMenu());
+        var lang = userStateService.getLanguage(userId);
+        return MessageBuilder.html(chatId, Messages.get(lang, key), MessageBuilder.mainMenu(lang));
     }
 }

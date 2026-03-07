@@ -17,13 +17,13 @@ public class HelpCommandHandler implements CommandHandler {
 
     @Override
     public String command() {
-        return "/help";
+        return "/menu";
     }
 
     @Override
     public SendMessage handle(Update update) {
         long userId = update.getMessage().getFrom().getId();
         return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.HELP));
+                Messages.get(userStateService.getLanguage(userId), Messages.MENU));
     }
 }

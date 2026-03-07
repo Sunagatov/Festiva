@@ -210,10 +210,16 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleLanguage(long userId, String code) {
         try {
-            Lang lang = Lang.valueOf(code);
-            userStateService.setLanguage(userId, lang);
-            log.debug("callback.language.changed: userId={}, lang={}", userId, lang);
-            return new CallbackResult(Messages.get(lang, Messages.LANGUAGE_SET), null);
+            Lang newLang = Lang.valueOf(code);
+            userStateService.setLanguage(userId, newLang);
+            log.debug("callback.language.changed: userId={}, lang={}", userId, newLang);
+            InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
+                    .keyboard(List.of(new InlineKeyboardRow(
+                            InlineKeyboardButton.builder().text((newLang == Lang.EN ? "\u2705 " : "") + Messages.get(newLang, Messages.LANG_EN_BTN)).callbackData(LANG_PREFIX + Lang.EN.name()).build(),
+                            InlineKeyboardButton.builder().text((newLang == Lang.RU ? "\u2705 " : "") + Messages.get(newLang, Messages.LANG_RU_BTN)).callbackData(LANG_PREFIX + Lang.RU.name()).build()
+                    )))
+                    .build();
+            return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard);
         } catch (IllegalArgumentException e) {
             log.warn("callback.language.unknown: code={}", code, e);
             return new CallbackResult(Messages.get(userStateService.getLanguage(userId), Messages.UNKNOWN_COMMAND), null);

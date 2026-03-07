@@ -2,7 +2,6 @@ package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
-import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
@@ -12,19 +11,17 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 @RequiredArgsConstructor
-public class StartCommandHandler implements CommandHandler {
+public class HelpAliasCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
 
     @Override
-    public String command() { return "/start"; }
+    public String command() { return "/help"; }
 
     @Override
     public SendMessage handle(Update update) {
-        long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
-        String text = Messages.get(lang, Messages.WELCOME) + "\n\n" + Messages.get(lang, Messages.MENU);
-        return MessageBuilder.html(chatId, text, MessageBuilder.mainMenu(lang));
+        return MessageBuilder.html(update.getMessage().getChatId(),
+                Messages.get(userStateService.getLanguage(userId), Messages.MENU));
     }
 }
