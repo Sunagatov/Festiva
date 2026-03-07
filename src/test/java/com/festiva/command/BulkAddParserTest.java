@@ -2,6 +2,7 @@ package com.festiva.command;
 
 import com.festiva.command.handler.BulkAddParser;
 import com.festiva.command.handler.BulkAddParser.ParseResult;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.MessagesTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -155,6 +156,24 @@ class BulkAddParserTest extends MessagesTestSupport {
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("relationship column present → parsed and set on friend")
+    void relationshipColumn_parsedCorrectly() {
+        ParseResult r = parse(List.of("Alice,15.03.1990,friend"), Set.of());
+
+        assertThat(r.valid()).hasSize(1);
+        assertThat(r.valid().getFirst().getRelationship()).isEqualTo(Relationship.FRIEND);
+    }
+
+    @Test
+    @DisplayName("unknown relationship value → parsed with null relationship, no error")
+    void unknownRelationship_parsedAsNull() {
+        ParseResult r = parse(List.of("Alice,15.03.1990,alien"), Set.of());
+
+        assertThat(r.valid()).hasSize(1);
+        assertThat(r.valid().getFirst().getRelationship()).isNull();
     }
 
     @Test

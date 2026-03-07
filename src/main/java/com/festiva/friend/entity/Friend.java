@@ -51,10 +51,8 @@ public class Friend {
         return next;
     }
 
-    public int getNextAge() {
-        LocalDate today = LocalDate.now();
-        LocalDate next = nextBirthday(today);
-        return next.getYear() - birthDate.getYear();
+    public int getNextAge(LocalDate from) {
+        return nextBirthday(from).getYear() - birthDate.getYear();
     }
 
     public String getZodiac() {

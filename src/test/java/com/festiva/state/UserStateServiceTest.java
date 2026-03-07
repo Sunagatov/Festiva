@@ -53,7 +53,7 @@ class UserStateServiceTest {
     @Test
     @DisplayName("setLanguage() persists to repo and updates in-memory cache")
     void setLanguage_persistsAndCaches() {
-        when(repo.findById(1L)).thenReturn(Optional.of(new UserPreference(1L, Lang.RU, 9, "Europe/Moscow")));
+        when(repo.findById(1L)).thenReturn(Optional.of(new UserPreference(1L, Lang.RU, 9, "Europe/Moscow", null)));
         service.setLanguage(1L, Lang.EN);
         assertThat(service.getLanguage(1L)).isEqualTo(Lang.EN);
         verify(repo).save(any(UserPreference.class));

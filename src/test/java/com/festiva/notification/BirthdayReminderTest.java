@@ -44,7 +44,7 @@ class BirthdayReminderTest extends IntegrationTestBase {
     }
 
     private void savePrefs(long userId) {
-        userPreferenceRepository.save(new UserPreference(userId, Lang.EN, 9, "UTC"));
+        userPreferenceRepository.save(new UserPreference(userId, Lang.EN, 9, "UTC", null));
     }
 
     @Test
@@ -95,7 +95,7 @@ class BirthdayReminderTest extends IntegrationTestBase {
     @Test
     @DisplayName("wrong notify hour → no notification sent")
     void wrongHour_noNotification() {
-        userPreferenceRepository.save(new UserPreference(15L, Lang.EN, 10, "UTC"));
+        userPreferenceRepository.save(new UserPreference(15L, Lang.EN, 10, "UTC", null));
         friendService.addFriend(15L, new Friend("Eve", LocalDate.now().minusYears(30)));
         birthdayReminder.checkBirthdaysForHour(UTC_9);
         verify(birthdayBot, never()).send(eq(15L), anyString());
@@ -104,7 +104,7 @@ class BirthdayReminderTest extends IntegrationTestBase {
     @Test
     @DisplayName("invalid timezone in prefs → skips user, no exception")
     void invalidTimezone_skipsUserSilently() {
-        userPreferenceRepository.save(new UserPreference(16L, Lang.EN, 9, "Not/AZone"));
+        userPreferenceRepository.save(new UserPreference(16L, Lang.EN, 9, "Not/AZone", null));
         friendService.addFriend(16L, new Friend("Frank", LocalDate.now().minusYears(30)));
         assertThatCode(() -> birthdayReminder.checkBirthdaysForHour(UTC_9)).doesNotThrowAnyException();
         verify(birthdayBot, never()).send(eq(16L), anyString());

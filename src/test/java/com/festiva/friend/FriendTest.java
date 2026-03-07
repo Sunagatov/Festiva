@@ -34,29 +34,27 @@ class FriendTest {
     }
 
     @Test
-    @DisplayName("getNextAge() — birthday still ahead this year → turns 30 on next birthday")
+    @DisplayName("getNextAge(LocalDate) — birthday still ahead this year → turns 30 on next birthday")
     void getNextAge_birthdayAhead() {
-        LocalDate today = LocalDate.now();
-        Friend friend = new Friend("Alice", today.plusDays(1).minusYears(30));
-        assertThat(friend.getNextAge()).isEqualTo(30);
+        LocalDate from = LocalDate.of(2024, 6, 1);
+        assertThat(new Friend("Alice", LocalDate.of(1994, 6, 2)).getNextAge(from)).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("getNextAge(LocalDate) — birthday already passed this year → turns 31 on next birthday")
+    void getNextAge_birthdayPassed() {
+        LocalDate from = LocalDate.of(2024, 6, 1);
+        assertThat(new Friend("Alice", LocalDate.of(1994, 5, 31)).getNextAge(from)).isEqualTo(31);
     }
 
     @Test
     @DisplayName("getZodiac() — returns correct sign for boundary dates")
     void getZodiac_correctSignForBoundaryDates() {
-        assertThat(new Friend("x", LocalDate.of(1990,  3, 21)).getZodiac()).isEqualTo("♈"); // Aries start
-        assertThat(new Friend("x", LocalDate.of(1990,  4, 19)).getZodiac()).isEqualTo("♈"); // Aries end
-        assertThat(new Friend("x", LocalDate.of(1990,  4, 20)).getZodiac()).isEqualTo("♉"); // Taurus start
-        assertThat(new Friend("x", LocalDate.of(1990, 12, 22)).getZodiac()).isEqualTo("♑"); // Capricorn start
-        assertThat(new Friend("x", LocalDate.of(1990,  2, 19)).getZodiac()).isEqualTo("♓"); // Pisces
-        assertThat(new Friend("x", LocalDate.of(1990,  1, 20)).getZodiac()).isEqualTo("♒"); // Aquarius start
-    }
-
-    @Test
-    @DisplayName("getNextAge() — birthday already passed this year → turns 31 on next birthday")
-    void getNextAge_birthdayPassed() {
-        LocalDate today = LocalDate.now();
-        Friend friend = new Friend("Alice", today.minusDays(1).minusYears(30));
-        assertThat(friend.getNextAge()).isEqualTo(31);
+        assertThat(new Friend("x", LocalDate.of(1990,  3, 21)).getZodiac()).isEqualTo("♈");
+        assertThat(new Friend("x", LocalDate.of(1990,  4, 19)).getZodiac()).isEqualTo("♈");
+        assertThat(new Friend("x", LocalDate.of(1990,  4, 20)).getZodiac()).isEqualTo("♉");
+        assertThat(new Friend("x", LocalDate.of(1990, 12, 22)).getZodiac()).isEqualTo("♑");
+        assertThat(new Friend("x", LocalDate.of(1990,  2, 19)).getZodiac()).isEqualTo("♓");
+        assertThat(new Friend("x", LocalDate.of(1990,  1, 20)).getZodiac()).isEqualTo("♒");
     }
 }

@@ -40,7 +40,7 @@ public class StatsCommandHandler implements CommandHandler {
                 .filter(f -> f.getBirthDate().getMonthValue() == today.getMonthValue())
                 .count();
         int jubilees = (int) friends.stream()
-                .filter(f -> f.getNextAge() > 0 && f.getNextAge() % FriendService.JUBILEE_INTERVAL == 0)
+                .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .count();
         record Entry(Friend friend, long days) {}
         String nextBirthday = friends.stream()

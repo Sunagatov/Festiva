@@ -20,4 +20,5 @@ public class UserPreference {
     private Lang lang;
     private int notifyHour = -1;
     private String timezone = UserPreference.DEFAULT_TIMEZONE;
+    private java.time.LocalDate lastNotifiedDate;
 }

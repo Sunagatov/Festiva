@@ -68,10 +68,9 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_CHOOSE), keyboard);
     }
 
-    /** Called from CallbackQueryHandler when user picks CSV template. */
     public void sendCsvTemplate(long chatId, Lang lang) {
         try {
-            String csv = "name,birthday\nAlice,15.03.1990\nBob,22.07.1985\n";
+            String csv = "name,birthday,relationship\nAlice,15.03.1990,friend\nBob,22.07.1985,\n";
             InputFile file = new InputFile(
                     new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
                     "friends_template.csv");
@@ -85,7 +84,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         }
     }
 
-    /** Called from CallbackQueryHandler when user picks paste text. */
     public SendMessage promptPaste(long chatId, long userId, Lang lang) {
         userStateService.setState(userId, BotState.WAITING_FOR_BULK_ADD);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_PROMPT));

@@ -4,6 +4,7 @@ import com.festiva.command.CommandRouter;
 import com.festiva.metrics.MetricsSender;
 import com.festiva.notification.NotificationSender;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
     private final String botToken;
     private final TelegramClient telegramClient;
+    private TelegramBotsLongPollingApplication botsApplication;
     private final CommandRouter commandRouter;
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
@@ -44,7 +46,8 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     @PostConstruct
     public void start() {
         try {
-            new TelegramBotsLongPollingApplication().registerBot(botToken, this);
+            botsApplication = new TelegramBotsLongPollingApplication();
+            botsApplication.registerBot(botToken, this);
             log.info("bot.started");
         } catch (TelegramApiException e) {
             throw new RuntimeException("bot.start.failed", e);
@@ -99,6 +102,11 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
             log.error("bot.update.failed: updateId={}, type={}, message={}", update.getUpdateId(), updateType, e.getMessage(), e);
         }
+    }
+
+    @PreDestroy
+    public void stop() throws Exception {
+        if (botsApplication != null) botsApplication.close();
     }
 
     @Override

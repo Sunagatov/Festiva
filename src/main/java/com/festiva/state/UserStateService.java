@@ -110,6 +110,6 @@ public class UserStateService {
 
     private UserPreference getOrCreatePref(long userId) {
         return userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), -1, UserPreference.DEFAULT_TIMEZONE));
+                .orElse(new UserPreference(userId, getLanguage(userId), -1, UserPreference.DEFAULT_TIMEZONE, null));
     }
 }

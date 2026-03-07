@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +55,19 @@ class FriendServiceIntegrationTest extends IntegrationTestBase {
         friendService.addFriend(2L, new Friend("Bob",   LocalDate.of(1990, 1, 1)));
         assertThat(friendService.getFriends(1L)).extracting(Friend::getName).containsExactly("Alice");
         assertThat(friendService.getFriends(2L)).extracting(Friend::getName).containsExactly("Bob");
+    }
+
+    @Test
+    @DisplayName("getFriendsByUserIds() returns friends grouped by userId")
+    void getFriendsByUserIds() {
+        friendService.addFriend(10L, new Friend("A", LocalDate.of(1990, 1, 1)));
+        friendService.addFriend(10L, new Friend("B", LocalDate.of(1991, 2, 2)));
+        friendService.addFriend(20L, new Friend("C", LocalDate.of(1992, 3, 3)));
+
+        var result = friendService.getFriendsByUserIds(List.of(10L, 20L));
+
+        assertThat(result.get(10L)).extracting(Friend::getName).containsExactlyInAnyOrder("A", "B");
+        assertThat(result.get(20L)).extracting(Friend::getName).containsExactly("C");
     }
 
     @Test

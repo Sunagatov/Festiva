@@ -250,7 +250,7 @@ public class CallbackQueryHandler {
         filtered.forEach(f -> {
             boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
             String ageLabel = alreadyCelebrated ? Messages.get(lang, Messages.YEARS_OLD, f.getAge(today))
-                    : Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge());
+                    : Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge(today));
             sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> ").append(f.getName())
                     .append(" (<i>").append(ageLabel).append("</i>)\n");

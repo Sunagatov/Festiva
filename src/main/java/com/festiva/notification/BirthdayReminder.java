@@ -78,9 +78,18 @@ public class BirthdayReminder {
                 ZonedDateTime userNow = utcNow.withZoneSameInstant(zone);
                 if (notifyHour != userNow.getHour()) return;
                 LocalDate today = userNow.toLocalDate();
+                if (today.equals(pref != null ? pref.getLastNotifiedDate() : null)) return;
+                final long[] count = {0};
                 friendsByUser.getOrDefault(userId, List.of()).forEach(f -> {
-                    if (checkAndNotify(userId, f, today, lang)) notifiedCount.incrementAndGet();
+                    if (checkAndNotify(userId, f, today, lang)) count[0]++;
                 });
+                if (count[0] > 0 || !friendsByUser.getOrDefault(userId, List.of()).isEmpty()) {
+                    UserPreference p = pref != null ? pref : new UserPreference();
+                    p.setTelegramUserId(userId);
+                    p.setLastNotifiedDate(today);
+                    userPreferenceRepository.save(p);
+                    notifiedCount.addAndGet((int) count[0]);
+                }
             } finally {
                 MDC.remove("userId");
             }
@@ -98,7 +107,7 @@ public class BirthdayReminder {
                     friend.getName(),
                     friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                     friend.getZodiac(),
-                    friend.getNextAge(),
+                    friend.getNextAge(today),
                     botUsername));
             log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
             return true;

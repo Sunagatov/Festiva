@@ -45,15 +45,15 @@ public class JubileeCommandHandler implements CommandHandler {
     }
 
     private String buildText(List<Friend> friends, Lang lang) {
+        LocalDate today = LocalDate.now();
         List<Friend> jubilee = friends.stream()
-                .filter(f -> f.getNextAge() > 0 && f.getNextAge() % FriendService.JUBILEE_INTERVAL == 0)
+                .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .toList();
 
         if (jubilee.isEmpty()) {
             return Messages.get(lang, Messages.JUBILEE_NONE);
         }
 
-        LocalDate today = LocalDate.now();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER));
         jubilee.forEach(f -> {
             LocalDate next = f.nextBirthday(today);
@@ -63,7 +63,7 @@ public class JubileeCommandHandler implements CommandHandler {
                     : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
             sb.append("– <b>").append(next.format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> <i>").append(f.getName()).append("</i> ")
-                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge()))
+                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge(today)))
                     .append(daysLabel).append("\n");
         });
         return sb.toString();

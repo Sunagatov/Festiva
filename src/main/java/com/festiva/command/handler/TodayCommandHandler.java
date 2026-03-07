@@ -43,7 +43,7 @@ public class TodayCommandHandler implements CommandHandler {
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER));
         todayFriends.forEach(f ->
                 sb.append("🎂 <b>").append(f.getName()).append("</b> — ")
-                  .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge())).append("\n"));
+                  .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge(today))).append("\n"));
         return MessageBuilder.html(chatId, sb.toString());
     }
 }

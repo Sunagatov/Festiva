@@ -128,7 +128,7 @@ public class ListCommandHandler implements CommandHandler {
         if (alreadyHadBirthday) {
             sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge(today)));
         } else {
-            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(today), f.getNextAge()));
+            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(today), f.getNextAge(today)));
         }
         sb.append(daysLabel).append("\n");
     }
