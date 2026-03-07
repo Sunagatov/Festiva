@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Component
@@ -44,7 +45,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        String query = update.getMessage().getText().trim().toLowerCase(java.util.Locale.ROOT);
+        String query = update.getMessage().getText().trim().toLowerCase(Locale.ROOT);
         userStateService.clearState(userId);
 
         if (query.isBlank()) {
@@ -52,7 +53,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         }
 
         List<Friend> matches = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .filter(f -> f.getName().toLowerCase(java.util.Locale.ROOT).contains(query))
+                .filter(f -> f.getName().toLowerCase(Locale.ROOT).contains(query))
                 .toList();
 
         if (matches.isEmpty()) {

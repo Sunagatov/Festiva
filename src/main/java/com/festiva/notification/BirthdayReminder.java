@@ -57,44 +57,54 @@ public class BirthdayReminder {
 
         Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
-
         Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
 
         AtomicInteger notifiedCount = new AtomicInteger();
         userIds.forEach(userId -> {
             MDC.put("userId", String.valueOf(userId));
             try {
-                UserPreference pref = prefByUser.get(userId);
-                int notifyHour = pref != null && pref.getNotifyHour() >= 0 ? pref.getNotifyHour() : 9;
-                String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
-                Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : Lang.RU;
-                ZoneId zone;
-                try {
-                    zone = ZoneId.of(tz);
-                } catch (java.time.zone.ZoneRulesException e) {
-                    log.warn("reminder.timezone.invalid: tz={}, reason={}", tz, e.getMessage(), e);
-                    return;
-                }
-                ZonedDateTime userNow = utcNow.withZoneSameInstant(zone);
-                if (notifyHour != userNow.getHour()) return;
-                LocalDate today = userNow.toLocalDate();
-                if (today.equals(pref != null ? pref.getLastNotifiedDate() : null)) return;
-                final long[] count = {0};
-                friendsByUser.getOrDefault(userId, List.of()).forEach(f -> {
-                    if (checkAndNotify(userId, f, today, lang)) count[0]++;
-                });
-                if (count[0] > 0 || !friendsByUser.getOrDefault(userId, List.of()).isEmpty()) {
-                    UserPreference p = pref != null ? pref : new UserPreference();
-                    p.setTelegramUserId(userId);
-                    p.setLastNotifiedDate(today);
-                    userPreferenceRepository.save(p);
-                    notifiedCount.addAndGet((int) count[0]);
-                }
+                notifiedCount.addAndGet(processUser(userId, prefByUser.get(userId),
+                        friendsByUser.getOrDefault(userId, List.of()), utcNow));
             } finally {
                 MDC.remove("userId");
             }
         });
         log.info("reminder.check.done: userCount={}, notifiedCount={}", userIds.size(), notifiedCount.get());
+    }
+
+    private int processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow) {
+        ZoneId zone = resolveZone(pref);
+        if (zone == null) return 0;
+        ZonedDateTime userNow = utcNow.withZoneSameInstant(zone);
+        if (!shouldNotify(pref, userNow)) return 0;
+        LocalDate today = userNow.toLocalDate();
+        Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : Lang.RU;
+
+        int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang)).count();
+        if (count > 0 || !friends.isEmpty()) {
+            UserPreference p = pref != null ? pref : new UserPreference();
+            p.setTelegramUserId(userId);
+            p.setLastNotifiedDate(today);
+            userPreferenceRepository.save(p);
+        }
+        return count;
+    }
+
+    private ZoneId resolveZone(UserPreference pref) {
+        String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
+        try {
+            return ZoneId.of(tz);
+        } catch (java.time.zone.ZoneRulesException e) {
+            log.warn("reminder.timezone.invalid: tz={}", tz, e);
+            return null;
+        }
+    }
+
+    private boolean shouldNotify(UserPreference pref, ZonedDateTime userNow) {
+        int notifyHour = pref != null && pref.getNotifyHour() >= 0 ? pref.getNotifyHour() : 9;
+        if (notifyHour != userNow.getHour()) return false;
+        LocalDate today = userNow.toLocalDate();
+        return !today.equals(pref != null ? pref.getLastNotifiedDate() : null);
     }
 
     private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang) {

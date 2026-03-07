@@ -55,19 +55,12 @@ public class Friend {
         return nextBirthday(from).getYear() - birthDate.getYear();
     }
 
+    private static final int[][] ZODIAC_ENDS = {{1,19},{2,18},{3,20},{4,19},{5,20},{6,20},{7,22},{8,22},{9,22},{10,22},{11,21},{12,21}};
+    private static final String[] ZODIAC_SIGNS = {"♑","♒","♓","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑"};
+
     public String getZodiac() {
         int m = birthDate.getMonthValue(), d = birthDate.getDayOfMonth();
-        if ((m == 3 && d >= 21) || (m == 4 && d <= 19)) return "♈";
-        if ((m == 4 && d >= 20) || (m == 5 && d <= 20)) return "♉";
-        if ((m == 5 && d >= 21) || (m == 6 && d <= 20)) return "♊";
-        if ((m == 6 && d >= 21) || (m == 7 && d <= 22)) return "♋";
-        if ((m == 7 && d >= 23) || (m == 8 && d <= 22)) return "♌";
-        if ((m == 8 && d >= 23) || (m == 9 && d <= 22)) return "♍";
-        if ((m == 9 && d >= 23) || (m == 10 && d <= 22)) return "♎";
-        if ((m == 10 && d >= 23) || (m == 11 && d <= 21)) return "♏";
-        if ((m == 11 && d >= 22) || (m == 12 && d <= 21)) return "♐";
-        if ((m == 12 && d >= 22) || (m == 1 && d <= 19)) return "♑";
-        if ((m == 1 && d >= 20) || (m == 2 && d <= 18)) return "♒";
-        return "♓";
+        int idx = d <= ZODIAC_ENDS[m - 1][1] ? m - 1 : m;
+        return ZODIAC_SIGNS[idx];
     }
 }

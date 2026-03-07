@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,11 +30,9 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     @Mock UserStateService userStateService;
     @InjectMocks EditCallbackHandler handler;
 
-    private Friend alice;
-
     @BeforeEach
     void setup() {
-        alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
+        Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
         alice.setId("id-alice");
         lenient().when(friendService.findFriendById("id-alice")).thenReturn(Optional.of(alice));
     }
@@ -41,10 +40,11 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleEditSelect → response contains friend name and field buttons use ID")
     void handleEditSelect_containsNameAndIdButtons() {
-        CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "id-alice", 1L, Lang.EN);
+        CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "id-alice", Lang.EN);
 
         assertThat(result.text).contains("Alice");
-        result.markup.getKeyboard().stream().flatMap(row -> row.stream())
+        assertThat(result.markup).isNotNull();
+        result.markup.getKeyboard().stream().flatMap(Collection::stream)
                 .forEach(btn -> assertThat(btn.getCallbackData()).contains("id-alice"));
     }
 
@@ -52,7 +52,7 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleEditSelect → friend not found returns unknown command")
     void handleEditSelect_notFound_returnsUnknown() {
         when(friendService.findFriendById("ghost")).thenReturn(Optional.empty());
-        CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "ghost", 1L, Lang.EN);
+        CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "ghost", Lang.EN);
         assertThat(result.text).contains("?");
     }
 

@@ -1,6 +1,9 @@
 package com.festiva.i18n;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -125,6 +128,7 @@ public final class Messages {
 
     private static MessageSource messageSource;
 
+    @Autowired
     Messages(MessageSource messageSource) {
         Messages.messageSource = messageSource;
     }
@@ -134,11 +138,11 @@ public final class Messages {
     }
 
     public static String get(Lang lang, String key) {
-        return messageSource.getMessage(key, null, key, lang.locale()).replace("\\n", "\n");
+        return Objects.requireNonNullElse(messageSource.getMessage(key, null, key, lang.locale()), key).replace("\\n", "\n");
     }
 
     public static String get(Lang lang, String key, Object... args) {
-        String pattern = messageSource.getMessage(key, null, key, lang.locale()).replace("\\n", "\n");
+        String pattern = Objects.requireNonNullElse(messageSource.getMessage(key, null, key, lang.locale()), key).replace("\\n", "\n");
         return String.format(pattern, args);
     }
 }

@@ -99,7 +99,7 @@ public class ListCommandHandler implements CommandHandler {
                 nav.add(InlineKeyboardButton.builder().text("◀").callbackData(LIST_PAGE_PREFIX + mode + "_" + (page - 1)).build());
             if (page < totalPages - 1)
                 nav.add(InlineKeyboardButton.builder().text("▶").callbackData(LIST_PAGE_PREFIX + mode + "_" + (page + 1)).build());
-            if (!nav.isEmpty()) rows.add(nav);
+            rows.add(nav);
         }
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }

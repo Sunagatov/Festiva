@@ -114,8 +114,8 @@ class DatePickerCallbackHandler {
                 ))).build());
     }
 
-    CallbackResult handleEditFieldRel(String data, long userId, Lang lang, String editFieldRelPrefix) {
-        String id = data.substring(editFieldRelPrefix.length());
+    CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
+        String id = data.substring(EditCallbackHandler.EDIT_FIELD_REL.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
         if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         userStateService.setPendingName(userId, friend.getName());

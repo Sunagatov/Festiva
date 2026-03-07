@@ -60,7 +60,7 @@ class EditCallbackHandler {
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 
-    CallbackResult handleEditSelect(String data, long userId, Lang lang) {
+    CallbackResult handleEditSelect(String data, Lang lang) {
         String id = data.substring(EDIT_PREFIX.length());
         Friend found = friendService.findFriendById(id).orElse(null);
         String name = found != null ? found.getName() : "?";

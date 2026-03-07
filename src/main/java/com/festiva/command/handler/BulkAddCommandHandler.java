@@ -19,10 +19,12 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -79,8 +81,8 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                     .document(file)
                     .caption(Messages.get(lang, Messages.BULK_ADD_CSV_CAPTION))
                     .build());
-        } catch (Exception e) {
-            log.warn("bulk.csv.template.failed: chatId={}, message={}", chatId, e.getMessage(), e);
+        } catch (TelegramApiException e) {
+            log.warn("bulk.csv.template.failed: chatId={}", chatId, e);
         }
     }
 
@@ -170,8 +172,8 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                     new InputStreamReader(URI.create(url).toURL().openStream(), StandardCharsets.UTF_8))) {
                 return reader.lines().toList();
             }
-        } catch (Exception e) {
-            log.warn("bulk.add.file.download.failed: message={}", e.getMessage(), e);
+        } catch (TelegramApiException | IOException e) {
+            log.warn("bulk.add.file.download.failed", e);
             return null;
         }
     }

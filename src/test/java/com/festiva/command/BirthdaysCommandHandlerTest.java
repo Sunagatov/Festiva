@@ -17,9 +17,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,10 +67,10 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
         var keyboard = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();
         var allLabels = keyboard.getKeyboard().stream()
-                .flatMap(row -> row.stream())
-                .map(btn -> btn.getText())
+                .flatMap(Collection::stream)
+                .map(InlineKeyboardButton::getText)
                 .collect(Collectors.toList());
-        assertThat(allLabels).anyMatch(label -> label.contains("(1)") && label.toLowerCase().contains("jan"));
+        assertThat(allLabels).anyMatch(label -> label.contains("(1)") && label.toLowerCase(Locale.ROOT).contains("jan"));
     }
 
     private Update update() {

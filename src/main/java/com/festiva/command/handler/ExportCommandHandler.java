@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 @Slf4j
 @Component
@@ -48,7 +49,7 @@ public class ExportCommandHandler implements CommandHandler {
             String name = (n.contains(",") || n.contains("\""))
                     ? "\"" + n.replace("\"", "\"\"") + "\""
                     : n;
-            String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase() : "";
+            String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase(Locale.ROOT) : "";
             csv.append(name).append(",")
                     .append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).append(",")
                     .append(rel).append("\n");

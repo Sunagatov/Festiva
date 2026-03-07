@@ -46,10 +46,10 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         if (friends.isEmpty()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY));
         }
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_SELECT), keyboard(friends, lang, 0));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_SELECT), keyboard(friends, 0));
     }
 
-    public InlineKeyboardMarkup keyboard(List<Friend> friends, Lang lang, int page) {
+    public InlineKeyboardMarkup keyboard(List<Friend> friends, int page) {
         int from = page * PAGE_SIZE;
         if (from >= friends.size()) from = 0;
         int to = Math.min(from + PAGE_SIZE, friends.size());
@@ -67,7 +67,7 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
                 nav.add(InlineKeyboardButton.builder().text("◀").callbackData(EDIT_PAGE_PREFIX + (page - 1)).build());
             if (page < totalPages - 1)
                 nav.add(InlineKeyboardButton.builder().text("▶").callbackData(EDIT_PAGE_PREFIX + (page + 1)).build());
-            if (!nav.isEmpty()) rows.add(nav);
+            rows.add(nav);
         }
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }

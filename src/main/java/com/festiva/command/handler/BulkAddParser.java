@@ -5,6 +5,8 @@ import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+@Slf4j
 public final class BulkAddParser {
 
     public static final int MAX_ENTRIES = 50;
@@ -28,11 +31,7 @@ public final class BulkAddParser {
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
 
-        List<String> rows = lines.stream()
-                .map(String::trim)
-                .filter(l -> !l.isBlank())
-                .toList();
-
+        List<String> rows = lines.stream().map(String::trim).filter(l -> !l.isBlank()).toList();
         if (rows.isEmpty()) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
             return new ParseResult(valid, errors);
@@ -40,70 +39,73 @@ public final class BulkAddParser {
 
         int start = rows.getFirst().toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
         List<String> data = rows.subList(start, rows.size());
-
         if (data.size() > MAX_ENTRIES) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, MAX_ENTRIES, MAX_ENTRIES));
             data = data.subList(0, MAX_ENTRIES);
         }
 
         for (int i = 0; i < data.size(); i++) {
-            String line = data.get(i);
-            String[] parts = line.split(",", 3);
-            int lineNum = start + i + 1;
+            parseRow(data.get(i), start + i + 1, existingNames, seenInBatch, lang, valid, errors);
+        }
+        return new ParseResult(valid, errors);
+    }
 
-            if (parts.length < 2) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
-                continue;
-            }
-
-            String name = parts[0].trim();
-            if (name.startsWith("\"") && name.endsWith("\""))
-                name = name.substring(1, name.length() - 1).replace("\"\"", "\"").trim();
-            String dateStr = parts[1].trim();
-            String relStr  = parts.length > 2 ? parts[2].trim() : "";
-
-            if (name.isBlank()) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum));
-                continue;
-            }
-            if (name.length() > 100) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, lineNum));
-                continue;
-            }
-
-            LocalDate date;
-            try {
-                date = LocalDate.parse(dateStr, FMT);
-            } catch (DateTimeParseException e) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum, name, dateStr));
-                continue;
-            }
-
-            if (date.isAfter(LocalDate.now())) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
-                continue;
-            }
-
-            String nameLower = name.toLowerCase(Locale.ROOT);
-            if (existingNames.contains(nameLower)) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name));
-                continue;
-            }
-            if (seenInBatch.contains(nameLower)) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name));
-                continue;
-            }
-
-            Relationship rel = null;
-            if (!relStr.isBlank()) {
-                try { rel = Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)); }
-                catch (IllegalArgumentException ignored) {}
-            }
-
-            seenInBatch.add(nameLower);
-            valid.add(new Friend(name, date, rel));
+    private static void parseRow(String line, int lineNum, Set<String> existingNames,
+                                  Set<String> seenInBatch, Lang lang,
+                                  List<Friend> valid, List<String> errors) {
+        String[] parts = line.split(",", 3);
+        if (parts.length < 2) {
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
+            return;
         }
 
-        return new ParseResult(valid, errors);
+        String name = parts[0].trim();
+        if (name.startsWith("\"") && name.endsWith("\""))
+            name = name.substring(1, name.length() - 1).replace("\"\"", "\"").trim();
+        String dateStr = parts[1].trim();
+        String relStr  = parts.length > 2 ? parts[2].trim() : "";
+
+        String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
+        if (nameError != null) { errors.add(nameError); return; }
+
+        LocalDate date = parseDate(dateStr, name, lineNum, lang, errors);
+        if (date == null) return;
+
+        Relationship rel = parseRelationship(relStr, lineNum);
+        seenInBatch.add(name.toLowerCase(Locale.ROOT));
+        valid.add(new Friend(name, date, rel));
+    }
+
+    private static String validateName(String name, int lineNum, Set<String> existingNames,
+                                        Set<String> seenInBatch, Lang lang) {
+        if (name.isBlank())          return Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum);
+        if (name.length() > 100)     return Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, lineNum);
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (existingNames.contains(lower)) return Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name);
+        if (seenInBatch.contains(lower))   return Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name);
+        return null;
+    }
+
+    private static LocalDate parseDate(String dateStr, String name, int lineNum, Lang lang, List<String> errors) {
+        LocalDate date;
+        try {
+            date = LocalDate.parse(dateStr, FMT);
+        } catch (DateTimeParseException e) {
+            log.debug("bulk.parse.date.invalid: line={}, value={}", lineNum, dateStr, e);
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum, name, dateStr));
+            return null;
+        }
+        if (date.isAfter(LocalDate.now())) {
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
+            return null;
+        }
+        return date;
+    }
+
+    private static Relationship parseRelationship(String relStr, int lineNum) {
+        if (relStr.isBlank()) return null;
+        try { return Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)); }
+        catch (IllegalArgumentException e) { log.debug("bulk.parse.unknown.relationship: line={}, value={}", lineNum, relStr, e); }
+        return null;
     }
 }

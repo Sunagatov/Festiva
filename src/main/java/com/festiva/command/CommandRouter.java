@@ -45,16 +45,18 @@ public class CommandRouter {
         long userId = update.getMessage().getFrom().getId();
         BotState state = userStateService.getState(userId);
 
-        // document upload — route to stateful handler if waiting
-        if (update.getMessage().hasDocument()) {
-            StatefulCommandHandler statefulHandler = statefulHandlers.get(state);
-            if (statefulHandler != null) {
-                log.debug("router.document: userId={}, state={}", userId, state);
-                return statefulHandler.handleState(update);
-            }
-            return null;
-        }
+        if (update.getMessage().hasDocument()) return routeDocument(update, userId, state);
+        return routeText(update, userId, state);
+    }
 
+    private SendMessage routeDocument(Update update, long userId, BotState state) {
+        StatefulCommandHandler h = statefulHandlers.get(state);
+        if (h == null) return null;
+        log.debug("router.document: userId={}, state={}", userId, state);
+        return h.handleState(update);
+    }
+
+    private SendMessage routeText(Update update, long userId, BotState state) {
         String text = update.getMessage().getText().trim();
         String command = text.split("[\\s@]")[0];
 
@@ -70,10 +72,10 @@ public class CommandRouter {
             return handlers.getOrDefault(mappedCommand, defaultHandler).handle(update);
         }
 
-        StatefulCommandHandler statefulHandler = statefulHandlers.get(state);
-        if (statefulHandler != null) {
+        StatefulCommandHandler h = statefulHandlers.get(state);
+        if (h != null) {
             log.debug("router.state: userId={}, state={}, input={}", userId, state, text);
-            return statefulHandler.handleState(update);
+            return h.handleState(update);
         }
 
         log.debug("router.command: userId={}, command={}", userId, command);
