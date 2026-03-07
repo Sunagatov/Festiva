@@ -93,13 +93,13 @@ public class CallbackQueryHandler {
         if (BulkAddCommandHandler.CALLBACK_PASTE.equals(data))         return new CallbackResult(bulkAddHandler.promptPaste(chatId, userId, lang));
         if (BulkAddCommandHandler.CALLBACK_CSV.equals(data))           { bulkAddHandler.sendCsvTemplate(chatId, lang); return null; }
         if (data.startsWith(LANG_PREFIX))                               return handleLanguage(userId, data.substring(LANG_PREFIX.length()));
+        if (data.startsWith(RemoveCommandHandler.REMOVE_PAGE_PREFIX))  return handleRemovePage(data, userId, lang);
+        if (data.startsWith(EditFriendCommandHandler.EDIT_PAGE_PREFIX)) return handleEditPage(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NOTIFY))    return editHandler.handleEditNotify(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NAME))      return editHandler.handleEditFieldName(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_DATE))      return editHandler.handleEditFieldDate(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_REL))       return datePickerHandler.handleEditFieldRel(data, userId, lang, EditCallbackHandler.EDIT_FIELD_REL);
         if (data.startsWith(EditCallbackHandler.EDIT_PREFIX))          return editHandler.handleEditSelect(data, userId, lang);
-        if (data.startsWith(RemoveCommandHandler.REMOVE_PAGE_PREFIX))        return handleRemovePage(data, userId, lang);
-        if (data.startsWith(EditFriendCommandHandler.EDIT_PAGE_PREFIX))        return handleEditPage(data, userId, lang);
         if (data.startsWith(REMOVE_PREFIX))                            return handleRemove(data, userId, lang);
         if (data.startsWith(CONFIRM_PREFIX))                           return handleConfirmRemove(userId, data.substring(CONFIRM_PREFIX.length()), lang);
         if (CANCEL_REMOVE.equals(data))                                return handleCancelRemove(userId, lang);

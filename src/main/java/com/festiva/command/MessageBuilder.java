@@ -37,6 +37,7 @@ public final class MessageBuilder {
             Map.entry("\uD83D\uDCCB List", "/list"),
             Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
             Map.entry("\uD83D\uDD14 Upcoming", "/upcomingbirthdays"),
+            Map.entry("\uD83C\uDF82 Today", "/today"),
             Map.entry("\uD83C\uDFC6 Jubilee", "/jubilee"),
             Map.entry("\uD83D\uDCDD Edit", "/edit"),
             Map.entry("\uD83C\uDF10 Language", "/language"),
@@ -50,9 +51,10 @@ public final class MessageBuilder {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
                         new KeyboardRow(List.of(new KeyboardButton("➕ Add"), new KeyboardButton("\uD83D\uDDD1 Remove"), new KeyboardButton("\uD83D\uDCCB List"))),
-                        new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDF82 Birthdays"), new KeyboardButton("\uD83D\uDD14 Upcoming"), new KeyboardButton("\uD83C\uDFC6 Jubilee"))),
-                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCDD Edit"), new KeyboardButton("\uD83D\uDD0D Search"), new KeyboardButton("\uD83D\uDCCA Stats"))),
-                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDD27 Settings"), new KeyboardButton("\uD83C\uDF10 Language"), new KeyboardButton("\uD83D\uDCD6 Help")))
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDF82 Birthdays"), new KeyboardButton("\uD83D\uDD14 Upcoming"), new KeyboardButton("\uD83C\uDF82 Today"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDFC6 Jubilee"), new KeyboardButton("\uD83D\uDCDD Edit"), new KeyboardButton("\uD83D\uDD0D Search"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCCA Stats"), new KeyboardButton("\uD83D\uDD27 Settings"), new KeyboardButton("\uD83C\uDF10 Language"))),
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCD6 Help")))
                 ))
                 .resizeKeyboard(true)
                 .build();
