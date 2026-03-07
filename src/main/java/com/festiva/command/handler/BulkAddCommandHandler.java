@@ -114,7 +114,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 .map(f -> f.getName().toLowerCase(java.util.Locale.ROOT))
                 .collect(Collectors.toSet());
 
-        BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing);
+        BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang);
 
         if (result.valid().isEmpty() && result.errors().isEmpty()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_EMPTY));

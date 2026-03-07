@@ -16,12 +16,16 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
 public class EditFriendCommandHandler implements StatefulCommandHandler {
+
+    public static final String EDIT_PAGE_PREFIX = "EDIT_PAGE_";
+    public static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -42,17 +46,30 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         if (friends.isEmpty()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY));
         }
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_SELECT), keyboard(friends, lang, 0));
+    }
 
-        List<InlineKeyboardRow> rows = friends.stream()
-                .map(f -> new InlineKeyboardRow(
-                        InlineKeyboardButton.builder()
-                                .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
-                                .callbackData("EDIT_" + f.getName())
-                                .build()))
-                .toList();
+    public InlineKeyboardMarkup keyboard(List<Friend> friends, Lang lang, int page) {
+        int from = page * PAGE_SIZE;
+        if (from >= friends.size()) from = 0;
+        int to = Math.min(from + PAGE_SIZE, friends.size());
 
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_SELECT),
-                InlineKeyboardMarkup.builder().keyboard(rows).build());
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        friends.subList(from, to).forEach(f -> rows.add(new InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                        .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
+                        .callbackData("EDIT_" + f.getName()).build())));
+
+        int totalPages = (int) Math.ceil((double) friends.size() / PAGE_SIZE);
+        if (totalPages > 1) {
+            InlineKeyboardRow nav = new InlineKeyboardRow();
+            if (page > 0)
+                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(EDIT_PAGE_PREFIX + (page - 1)).build());
+            if (page < totalPages - 1)
+                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(EDIT_PAGE_PREFIX + (page + 1)).build());
+            if (!nav.isEmpty()) rows.add(nav);
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
     @Override

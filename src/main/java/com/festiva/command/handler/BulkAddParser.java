@@ -1,6 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.friend.entity.Friend;
+import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,11 +22,7 @@ public final class BulkAddParser {
 
     public record ParseResult(List<Friend> valid, List<String> errors) {}
 
-    /**
-     * Parses lines of "Name, DD.MM.YYYY" (text paste or CSV rows).
-     * Skips header row if first line contains "name" (case-insensitive).
-     */
-    public static ParseResult parse(List<String> lines, Set<String> existingNames) {
+    public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang) {
         List<Friend> valid = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
@@ -35,16 +33,15 @@ public final class BulkAddParser {
                 .toList();
 
         if (rows.isEmpty()) {
-            errors.add("No data found.");
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
             return new ParseResult(valid, errors);
         }
 
-        // skip header if first row looks like a header
         int start = rows.getFirst().toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
         List<String> data = rows.subList(start, rows.size());
 
         if (data.size() > MAX_ENTRIES) {
-            errors.add("Too many entries (max " + MAX_ENTRIES + "). Only first " + MAX_ENTRIES + " processed.");
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, MAX_ENTRIES, MAX_ENTRIES));
             data = data.subList(0, MAX_ENTRIES);
         }
 
@@ -54,7 +51,7 @@ public final class BulkAddParser {
             int lineNum = start + i + 1;
 
             if (parts.length < 2) {
-                errors.add("Line " + lineNum + ": invalid format — expected \"Name, DD.MM.YYYY\"");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
                 continue;
             }
 
@@ -64,11 +61,11 @@ public final class BulkAddParser {
             String dateStr = parts[1].trim();
 
             if (name.isBlank()) {
-                errors.add("Line " + lineNum + ": name is empty");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum));
                 continue;
             }
             if (name.length() > 100) {
-                errors.add("Line " + lineNum + ": name too long");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, lineNum));
                 continue;
             }
 
@@ -76,22 +73,22 @@ public final class BulkAddParser {
             try {
                 date = LocalDate.parse(dateStr, FMT);
             } catch (DateTimeParseException e) {
-                errors.add("Line " + lineNum + " (" + name + "): invalid date \"" + dateStr + "\" — use DD.MM.YYYY");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum, name, dateStr));
                 continue;
             }
 
             if (date.isAfter(LocalDate.now())) {
-                errors.add("Line " + lineNum + " (" + name + "): birth date cannot be in the future");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
                 continue;
             }
 
             String nameLower = name.toLowerCase(Locale.ROOT);
             if (existingNames.contains(nameLower)) {
-                errors.add("Line " + lineNum + " (" + name + "): already exists");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name));
                 continue;
             }
             if (seenInBatch.contains(nameLower)) {
-                errors.add("Line " + lineNum + " (" + name + "): duplicate in this batch");
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name));
                 continue;
             }
 

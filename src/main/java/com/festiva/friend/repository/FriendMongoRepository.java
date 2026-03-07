@@ -19,6 +19,8 @@ public interface FriendMongoRepository extends MongoRepository<Friend, String> {
 
     void deleteByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
 
+    void deleteByTelegramUserId(long telegramUserId);
+
     @Aggregation("{ $group: { _id: '$telegramUserId' } }")
     List<Long> findDistinctTelegramUserIds();
 }

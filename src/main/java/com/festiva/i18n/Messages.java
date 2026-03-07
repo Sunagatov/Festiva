@@ -108,6 +108,20 @@ public final class Messages {
     public static final String EDIT_REL_DONE          = "edit_rel_done";
     public static final String LIST_PAGE              = "list_page";
     public static final String BULK_CAP_EXCEEDED      = "bulk_cap_exceeded";
+    public static final String DELETE_ACCOUNT_ASK    = "delete_account_ask";
+    public static final String DELETE_ACCOUNT_DONE   = "delete_account_done";
+    public static final String DELETE_ACCOUNT_CANCEL = "delete_account_cancel";
+    public static final String TODAY_HEADER            = "today_header";
+    public static final String TODAY_NONE              = "today_none";
+    public static final String BULK_ERROR_NO_DATA      = "bulk_error_no_data";
+    public static final String BULK_ERROR_TOO_MANY     = "bulk_error_too_many";
+    public static final String BULK_ERROR_FORMAT       = "bulk_error_format";
+    public static final String BULK_ERROR_NAME_EMPTY   = "bulk_error_name_empty";
+    public static final String BULK_ERROR_NAME_LONG    = "bulk_error_name_long";
+    public static final String BULK_ERROR_DATE_INVALID = "bulk_error_date_invalid";
+    public static final String BULK_ERROR_DATE_FUTURE  = "bulk_error_date_future";
+    public static final String BULK_ERROR_EXISTS       = "bulk_error_exists";
+    public static final String BULK_ERROR_DUPLICATE    = "bulk_error_duplicate";
 
     private static MessageSource messageSource;
 

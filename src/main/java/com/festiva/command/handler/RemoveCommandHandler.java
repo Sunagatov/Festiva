@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -23,13 +24,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RemoveCommandHandler implements CommandHandler {
 
+    public static final String REMOVE_PAGE_PREFIX = "REMOVE_PAGE_";
+    public static final int PAGE_SIZE = 10;
+
     private final FriendService friendService;
     private final UserStateService userStateService;
 
     @Override
-    public String command() {
-        return "/remove";
-    }
+    public String command() { return "/remove"; }
 
     @Override
     public SendMessage handle(Update update) {
@@ -39,25 +41,36 @@ public class RemoveCommandHandler implements CommandHandler {
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
-            InlineKeyboardMarkup addButton = InlineKeyboardMarkup.builder()
-                    .keyboard(List.of(new InlineKeyboardRow(
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
+                    InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
                             InlineKeyboardButton.builder()
                                     .text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
-                                    .callbackData("ACTION_ADD")
-                                    .build())))
-                    .build();
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), addButton);
+                                    .callbackData("ACTION_ADD").build()))).build());
         }
-
-        List<InlineKeyboardRow> rows = friends.stream()
-                .map(f -> new InlineKeyboardRow(
-                        InlineKeyboardButton.builder()
-                                .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
-                                .callbackData("REMOVE_" + f.getName())
-                                .build()))
-                .toList();
-
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.SELECT_REMOVE),
-                InlineKeyboardMarkup.builder().keyboard(rows).build());
+                keyboard(friends, lang, 0));
+    }
+
+    public InlineKeyboardMarkup keyboard(List<Friend> friends, Lang lang, int page) {
+        int from = page * PAGE_SIZE;
+        if (from >= friends.size()) from = 0;
+        int to = Math.min(from + PAGE_SIZE, friends.size());
+
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        friends.subList(from, to).forEach(f -> rows.add(new InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                        .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
+                        .callbackData("REMOVE_" + f.getName()).build())));
+
+        int totalPages = (int) Math.ceil((double) friends.size() / PAGE_SIZE);
+        if (totalPages > 1) {
+            InlineKeyboardRow nav = new InlineKeyboardRow();
+            if (page > 0)
+                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(REMOVE_PAGE_PREFIX + (page - 1)).build());
+            if (page < totalPages - 1)
+                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(REMOVE_PAGE_PREFIX + (page + 1)).build());
+            if (!nav.isEmpty()) rows.add(nav);
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 }

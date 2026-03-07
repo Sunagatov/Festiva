@@ -49,10 +49,6 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         } catch (TelegramApiException e) {
             throw new RuntimeException("bot.start.failed", e);
         }
-    }
-
-    @PostConstruct
-    public void registerCommands() {
         try {
             telegramClient.execute(SetMyCommands.builder()
                     .commands(List.of(
@@ -63,6 +59,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                             new BotCommand("edit",              "Edit friend / Редактировать друга"),
                             new BotCommand("search",            "Search / Поиск"),
                             new BotCommand("birthdays",         "By month / По месяцам"),
+                            new BotCommand("today",             "Today's birthdays / Сегодня"),
                             new BotCommand("upcomingbirthdays", "Upcoming / Ближайшие"),
                             new BotCommand("jubilee",           "Milestones / Юбилеи"),
                             new BotCommand("stats",             "Stats / Статистика"),
@@ -71,6 +68,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                             new BotCommand("help",              "Help / Помощь"),
                             new BotCommand("addmany",           "Bulk add / Добавить несколько"),
                             new BotCommand("export",            "Export / Экспорт"),
+                            new BotCommand("deleteaccount",     "Delete my data / Удалить данные"),
                             new BotCommand("cancel",            "Cancel / Отмена")
                     ))
                     .build());

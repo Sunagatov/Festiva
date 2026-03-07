@@ -19,6 +19,7 @@ public class UserStateService {
         Integer pendingMonth = null;
         Integer pendingDay = null;
         int yearPageOffset = 0;
+        int pendingPage = 0;
         Lang lang = null;
     }
 
@@ -40,6 +41,7 @@ public class UserStateService {
         s.pendingMonth = null;
         s.pendingDay = null;
         s.yearPageOffset = 0;
+        s.pendingPage = 0;
     }
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
@@ -56,6 +58,9 @@ public class UserStateService {
 
     public void setPendingDay(long userId, Integer day) { session(userId).pendingDay = day; }
     public Integer getPendingDay(long userId) { return session(userId).pendingDay; }
+
+    public void setPendingPage(long userId, int page) { session(userId).pendingPage = page; }
+    public int getPendingPage(long userId) { return session(userId).pendingPage; }
 
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);

@@ -91,4 +91,22 @@ class BirthdayReminderTest extends IntegrationTestBase {
         doThrow(new RuntimeException("send failed")).when(birthdayBot).send(eq(14L), anyString());
         assertThatCode(() -> birthdayReminder.checkBirthdaysForHour(UTC_9)).doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("wrong notify hour → no notification sent")
+    void wrongHour_noNotification() {
+        userPreferenceRepository.save(new UserPreference(15L, Lang.EN, 10, "UTC"));
+        friendService.addFriend(15L, new Friend("Eve", LocalDate.now().minusYears(30)));
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot, never()).send(eq(15L), anyString());
+    }
+
+    @Test
+    @DisplayName("invalid timezone in prefs → skips user, no exception")
+    void invalidTimezone_skipsUserSilently() {
+        userPreferenceRepository.save(new UserPreference(16L, Lang.EN, 9, "Not/AZone"));
+        friendService.addFriend(16L, new Friend("Frank", LocalDate.now().minusYears(30)));
+        assertThatCode(() -> birthdayReminder.checkBirthdaysForHour(UTC_9)).doesNotThrowAnyException();
+        verify(birthdayBot, never()).send(eq(16L), anyString());
+    }
 }

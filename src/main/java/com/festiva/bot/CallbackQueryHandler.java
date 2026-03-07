@@ -3,7 +3,10 @@ package com.festiva.bot;
 import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.handler.BulkAddCommandHandler;
+import com.festiva.command.handler.DeleteAccountCommandHandler;
+import com.festiva.command.handler.EditFriendCommandHandler;
 import com.festiva.command.handler.ListCommandHandler;
+import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
@@ -47,6 +50,9 @@ public class CallbackQueryHandler {
     private final BulkAddCommandHandler bulkAddHandler;
     private final DatePickerCallbackHandler datePickerHandler;
     private final EditCallbackHandler editHandler;
+    private final RemoveCommandHandler removeCommandHandler;
+    private final EditFriendCommandHandler editFriendCommandHandler;
+    private final DeleteAccountCommandHandler deleteAccountHandler;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
         if (callbackQuery == null) return null;
@@ -92,9 +98,13 @@ public class CallbackQueryHandler {
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_DATE))      return editHandler.handleEditFieldDate(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_REL))       return datePickerHandler.handleEditFieldRel(data, userId, lang, EditCallbackHandler.EDIT_FIELD_REL);
         if (data.startsWith(EditCallbackHandler.EDIT_PREFIX))          return editHandler.handleEditSelect(data, userId, lang);
+        if (data.startsWith(RemoveCommandHandler.REMOVE_PAGE_PREFIX))        return handleRemovePage(data, userId, lang);
+        if (data.startsWith(EditFriendCommandHandler.EDIT_PAGE_PREFIX))        return handleEditPage(data, userId, lang);
         if (data.startsWith(REMOVE_PREFIX))                            return handleRemove(data, userId, lang);
         if (data.startsWith(CONFIRM_PREFIX))                           return handleConfirmRemove(userId, data.substring(CONFIRM_PREFIX.length()), lang);
         if (CANCEL_REMOVE.equals(data))                                return handleCancelRemove(userId, lang);
+        if (DeleteAccountCommandHandler.CONFIRM_DELETE.equals(data))    return handleConfirmDeleteAccount(userId, lang);
+        if (DeleteAccountCommandHandler.CANCEL_DELETE.equals(data))     return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_CANCEL), null);
         if (data.startsWith(MONTH_PREFIX))                             return handleMonth(userId, data, lang);
         log.debug("callback.unknown: data={}", data);
         return null;
@@ -170,6 +180,20 @@ public class CallbackQueryHandler {
 
     // ── Remove ────────────────────────────────────────────────────────────────
 
+    private CallbackResult handleRemovePage(String data, long userId, Lang lang) {
+        int page = Integer.parseInt(data.substring(RemoveCommandHandler.REMOVE_PAGE_PREFIX.length()));
+        var friends = friendService.getFriendsSortedByDayMonth(userId);
+        return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
+                removeCommandHandler.keyboard(friends, lang, page));
+    }
+
+    private CallbackResult handleEditPage(String data, long userId, Lang lang) {
+        int page = Integer.parseInt(data.substring(EditFriendCommandHandler.EDIT_PAGE_PREFIX.length()));
+        var friends = friendService.getFriendsSortedByDayMonth(userId);
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
+                editFriendCommandHandler.keyboard(friends, lang, page));
+    }
+
     private CallbackResult handleRemove(String data, long userId, Lang lang) {
         String name = data.substring(REMOVE_PREFIX.length());
         userStateService.setPendingName(userId, name);
@@ -189,6 +213,11 @@ public class CallbackQueryHandler {
     private CallbackResult handleCancelRemove(long userId, Lang lang) {
         userStateService.clearState(userId);
         return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_CANCEL), null);
+    }
+
+    private CallbackResult handleConfirmDeleteAccount(long userId, Lang lang) {
+        deleteAccountHandler.deleteAccount(userId);
+        return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_DONE), null);
     }
 
     // ── Month ─────────────────────────────────────────────────────────────────
