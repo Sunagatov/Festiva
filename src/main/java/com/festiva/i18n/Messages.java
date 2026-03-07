@@ -38,6 +38,7 @@ public final class Messages {
     public static final String START_ADD_FIRST        = "start_add_first";
     public static final String WELCOME                = "welcome";
     public static final String HELP                   = "help";
+    public static final String ABOUT                  = "about";
     public static final String ENTER_NAME             = "enter_name";
     public static final String ENTER_DATE             = "enter_date";
     public static final String NAME_EMPTY             = "name_empty";

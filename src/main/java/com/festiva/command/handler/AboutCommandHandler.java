@@ -11,20 +11,18 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 @RequiredArgsConstructor
-public class HelpCommandHandler implements CommandHandler {
+public class AboutCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
 
     @Override
-    public String command() {
-        return "/help";
-    }
+    public String command() { return "/about"; }
 
     @Override
     public SendMessage handle(Update update) {
         long userId = update.getMessage().getFrom().getId();
         return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.HELP),
+                Messages.get(userStateService.getLanguage(userId), Messages.ABOUT),
                 MessageBuilder.quickMenu());
     }
 }

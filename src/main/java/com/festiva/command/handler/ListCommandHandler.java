@@ -1,5 +1,6 @@
 package com.festiva.command.handler;
 
+import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
@@ -44,7 +45,7 @@ public class ListCommandHandler implements CommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
                     InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
                             InlineKeyboardButton.builder().text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
-                                    .callbackData("ACTION_ADD").build()))).build());
+                                    .callbackData(CallbackQueryHandler.ACTION_ADD).build()))).build());
         }
         return MessageBuilder.html(chatId, buildText(friends, lang, true, 0), keyboard(lang, true, 0, friends.size()));
     }

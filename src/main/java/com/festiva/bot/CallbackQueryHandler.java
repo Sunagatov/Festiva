@@ -35,6 +35,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CallbackQueryHandler {
 
+    public static final String ACTION_ADD   = "ACTION_ADD";
+    public static final String ACTION_ABOUT = "ACTION_ABOUT";
+
     private static final String MONTH_PREFIX   = "MONTH_";
     private static final String REMOVE_PREFIX  = "REMOVE_";
     private static final String CONFIRM_PREFIX = "CONFIRM_REMOVE_";
@@ -125,8 +128,11 @@ public class CallbackQueryHandler {
         if (data.startsWith(LANG_PREFIX))                                           return handleLanguage(userId, data.substring(LANG_PREFIX.length()));
         if (data.startsWith(MONTH_PREFIX))                                          return handleMonth(userId, data, lang);
         switch (data) {
-            case "ACTION_ADD" -> {
+            case ACTION_ADD -> {
                 return handleActionAdd(userId, lang);
+            }
+            case ACTION_ABOUT -> {
+                return new CallbackResult(Messages.get(lang, Messages.ABOUT), null);
             }
             case BulkAddCommandHandler.CALLBACK_PASTE -> {
                 return new CallbackResult(bulkAddHandler.promptPaste(chatId, userId, lang));

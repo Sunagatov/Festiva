@@ -1,5 +1,6 @@
 package com.festiva.command.handler;
 
+import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
@@ -35,11 +36,17 @@ public class StartCommandHandler implements CommandHandler {
 
         if (friendService.getFriends(userId).isEmpty()) {
             InlineKeyboardMarkup onboarding = InlineKeyboardMarkup.builder()
-                    .keyboard(List.of(new InlineKeyboardRow(
-                            InlineKeyboardButton.builder()
-                                    .text(Messages.get(lang, Messages.START_ADD_FIRST))
-                                    .callbackData("ACTION_ADD")
-                                    .build())))
+                    .keyboard(List.of(
+                            new InlineKeyboardRow(
+                                    InlineKeyboardButton.builder()
+                                            .text(Messages.get(lang, Messages.START_ADD_FIRST))
+                                            .callbackData(CallbackQueryHandler.ACTION_ADD)
+                                            .build()),
+                            new InlineKeyboardRow(
+                                    InlineKeyboardButton.builder()
+                                            .text("\u2139\uFE0F About")
+                                            .callbackData(CallbackQueryHandler.ACTION_ABOUT)
+                                            .build())))
                     .build();
             return MessageBuilder.html(chatId, welcome, onboarding);
         }

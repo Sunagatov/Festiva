@@ -97,7 +97,13 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 - 🎉 **Milestone highlights** — jubilee birthdays (multiples of 5) are called out specially
 - 📅 **Month-by-month browsing** — scroll through birthdays by month
 - 🌍 **Bilingual** — full support for 🇬🇧 English and 🇷🇺 Russian
-- 👥 **Friend management** — add and remove friends with their birthdates
+- 👥 **Friend management** — add, edit, remove friends with birthdates and relationship labels
+- 📦 **Bulk import** — add many friends at once via CSV file or paste
+- 📤 **Export** — download your friends list as a CSV file
+- 🔍 **Search** — find friends by name
+- 📊 **Stats** — see your birthday statistics
+- ⚙️ **Settings** — configure notification hour and timezone
+- 🗑️ **Account deletion** — remove all your data
 
 ---
 
@@ -107,12 +113,20 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 |---|---|
 | `/start` | Welcome message and command overview |
 | `/add` | Add a friend with their birthdate |
+| `/addmany` | Bulk-add friends via CSV file or paste |
+| `/edit` | Edit a friend's name, date, or relationship |
 | `/remove` | Remove a friend |
 | `/list` | List all friends sorted by birthday |
 | `/birthdays` | Browse birthdays by month |
+| `/today` | See today's birthdays |
 | `/upcomingbirthdays` | Birthdays in the next 30 days |
 | `/jubilee` | Upcoming milestone birthdays (multiples of 5) |
+| `/search` | Search friends by name |
+| `/stats` | Birthday statistics |
+| `/export` | Download friends list as CSV |
+| `/settings` | Configure notification hour and timezone |
 | `/language` | Switch between 🇬🇧 English and 🇷🇺 Russian |
+| `/deleteaccount` | Delete all your data |
 | `/cancel` | Cancel the current operation |
 
 ---
@@ -121,13 +135,14 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 
 ```
 src/main/java/com/festiva/
-├── 🤖 bot/            # BirthdayBot, CallbackQueryHandler
+├── 🤖 bot/            # BirthdayBot, CallbackQueryHandler, sub-handlers
 ├── 💬 command/        # CommandRouter, all command handlers
 ├── 👥 friend/         # Friend entity, FriendService, MongoDB repository
 ├── 🌐 i18n/           # Lang enum, Messages (EN + RU)
 ├── 📊 metrics/        # Kafka metrics sender
 ├── 🔔 notification/   # BirthdayReminder scheduler
-└── 🗂️ state/          # UserStateService, BotState
+├── 🗂️ state/          # UserStateService, BotState
+└── 👤 user/           # UserPreference, UserPreferenceRepository
 ```
 
 ---

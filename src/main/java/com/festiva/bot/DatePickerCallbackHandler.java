@@ -27,7 +27,6 @@ class DatePickerCallbackHandler {
     static final String RELATIONSHIP_PREFIX = "RELATIONSHIP_";
     static final String EDIT_REL_PREFIX     = "EDIT_REL_";
     private static final String LIST_SORT_DATE = "LIST_SORT_DATE";
-    private static final String ACTION_ADD     = "ACTION_ADD";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -110,7 +109,7 @@ class DatePickerCallbackHandler {
         return new CallbackResult(Messages.get(lang, Messages.FRIEND_ADDED, name),
                 InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData(LIST_SORT_DATE + "_0").build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(ACTION_ADD).build()
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(CallbackQueryHandler.ACTION_ADD).build()
                 ))).build());
     }
 
