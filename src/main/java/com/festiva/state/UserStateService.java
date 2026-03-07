@@ -15,6 +15,7 @@ public class UserStateService {
     private static class UserSession {
         BotState state = BotState.IDLE;
         String pendingName = null;
+        String pendingId = null;
         Integer pendingYear = null;
         Integer pendingMonth = null;
         Integer pendingDay = null;
@@ -37,6 +38,7 @@ public class UserStateService {
         UserSession s = session(userId);
         s.state = BotState.IDLE;
         s.pendingName = null;
+        s.pendingId = null;
         s.pendingYear = null;
         s.pendingMonth = null;
         s.pendingDay = null;
@@ -46,6 +48,9 @@ public class UserStateService {
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
     public String getPendingName(long userId) { return session(userId).pendingName; }
+
+    public void setPendingId(long userId, String id) { session(userId).pendingId = id; }
+    public String getPendingId(long userId) { return session(userId).pendingId; }
 
     public void setPendingYear(long userId, Integer year) { session(userId).pendingYear = year; }
     public Integer getPendingYear(long userId) { return session(userId).pendingYear; }

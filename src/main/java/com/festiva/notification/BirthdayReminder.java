@@ -58,8 +58,7 @@ public class BirthdayReminder {
         Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
 
-        Map<Long, List<Friend>> friendsByUser = userIds.stream()
-                .collect(Collectors.toMap(id -> id, friendService::getFriends));
+        Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
 
         AtomicInteger notifiedCount = new AtomicInteger();
         userIds.forEach(userId -> {

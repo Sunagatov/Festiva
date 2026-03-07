@@ -1,6 +1,7 @@
 package com.festiva.command.handler;
 
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 
@@ -47,7 +48,7 @@ public final class BulkAddParser {
 
         for (int i = 0; i < data.size(); i++) {
             String line = data.get(i);
-            String[] parts = line.split(",", 2);
+            String[] parts = line.split(",", 3);
             int lineNum = start + i + 1;
 
             if (parts.length < 2) {
@@ -59,6 +60,7 @@ public final class BulkAddParser {
             if (name.startsWith("\"") && name.endsWith("\""))
                 name = name.substring(1, name.length() - 1).replace("\"\"", "\"").trim();
             String dateStr = parts[1].trim();
+            String relStr  = parts.length > 2 ? parts[2].trim() : "";
 
             if (name.isBlank()) {
                 errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum));
@@ -92,8 +94,14 @@ public final class BulkAddParser {
                 continue;
             }
 
+            Relationship rel = null;
+            if (!relStr.isBlank()) {
+                try { rel = Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)); }
+                catch (IllegalArgumentException ignored) {}
+            }
+
             seenInBatch.add(nameLower);
-            valid.add(new Friend(name, date));
+            valid.add(new Friend(name, date, rel));
         }
 
         return new ParseResult(valid, errors);

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @Service
@@ -80,5 +81,10 @@ public class FriendService {
 
     public List<Long> getAllUserIds() {
         return friendRepository.findDistinctTelegramUserIds();
+    }
+
+    public Map<Long, List<Friend>> getFriendsByUserIds(List<Long> userIds) {
+        return friendRepository.findByTelegramUserIdIn(userIds).stream()
+                .collect(java.util.stream.Collectors.groupingBy(Friend::getTelegramUserId));
     }
 }

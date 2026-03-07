@@ -115,17 +115,30 @@ class DatePickerCallbackHandler {
     }
 
     CallbackResult handleEditFieldRel(String data, long userId, Lang lang, String editFieldRelPrefix) {
-        String name = data.substring(editFieldRelPrefix.length());
-        userStateService.setPendingName(userId, name);
+        String id = data.substring(editFieldRelPrefix.length());
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        userStateService.setPendingName(userId, friend.getName());
+        userStateService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_RELATIONSHIP);
-        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, name), editRelKeyboard(lang));
+        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, friend.getName()), editRelKeyboard(lang));
     }
 
     CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
+        String id = userStateService.getPendingId(userId);
         String name = userStateService.getPendingName(userId);
         if (name == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
         String value = data.substring(EDIT_REL_PREFIX.length());
         Relationship rel = "SKIP".equals(value) ? null : Relationship.valueOf(value);
+        if (id != null) {
+            Friend friend = friendService.findFriendById(id).orElse(null);
+            if (friend != null) {
+                friendService.updateFriendRelationship(userId, friend.getName(), rel);
+                userStateService.clearState(userId);
+                log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
+                return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, friend.getName()), null);
+            }
+        }
         friendService.updateFriendRelationship(userId, name, rel);
         userStateService.clearState(userId);
         log.debug("friend.relationship.updated: userId={}, name={}, rel={}", userId, name, rel);

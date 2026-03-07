@@ -30,25 +30,33 @@ class EditCallbackHandler {
     private final UserStateService userStateService;
 
     CallbackResult handleEditNotify(String data, long userId, Lang lang) {
-        String name = data.substring(EDIT_FIELD_NOTIFY.length());
-        boolean enabled = friendService.toggleFriendNotify(userId, name);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, name,
+        String id = data.substring(EDIT_FIELD_NOTIFY.length());
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        boolean enabled = friendService.toggleFriendNotify(userId, friend.getName());
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, friend.getName(),
                 Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)), null);
     }
 
     CallbackResult handleEditFieldName(String data, long userId, Lang lang) {
-        String name = data.substring(EDIT_FIELD_NAME.length());
-        userStateService.setPendingName(userId, name);
+        String id = data.substring(EDIT_FIELD_NAME.length());
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        userStateService.setPendingName(userId, friend.getName());
+        userStateService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, name), null);
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()), null);
     }
 
     CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
-        String name = data.substring(EDIT_FIELD_DATE.length());
-        userStateService.setPendingName(userId, name);
+        String id = data.substring(EDIT_FIELD_DATE.length());
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        userStateService.setPendingName(userId, friend.getName());
+        userStateService.setPendingId(userId, id);
         userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, friend.getName()),
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 
@@ -60,11 +68,11 @@ class EditCallbackHandler {
         boolean notifyOn = found == null || found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
                 new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_NAME_BTN)).callbackData(EDIT_FIELD_NAME + name).build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_DATE_BTN)).callbackData(EDIT_FIELD_DATE + name).build()),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_NAME_BTN)).callbackData(EDIT_FIELD_NAME + id).build(),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_DATE_BTN)).callbackData(EDIT_FIELD_DATE + id).build()),
                 new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_REL_BTN)).callbackData(EDIT_FIELD_REL + name).build(),
-                        InlineKeyboardButton.builder().text(notifyOn ? Messages.get(lang, Messages.EDIT_NOTIFS_ON) : Messages.get(lang, Messages.EDIT_NOTIFS_OFF)).callbackData(EDIT_FIELD_NOTIFY + name).build())
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_REL_BTN)).callbackData(EDIT_FIELD_REL + id).build(),
+                        InlineKeyboardButton.builder().text(notifyOn ? Messages.get(lang, Messages.EDIT_NOTIFS_ON) : Messages.get(lang, Messages.EDIT_NOTIFS_OFF)).callbackData(EDIT_FIELD_NOTIFY + id).build())
         )).build();
         return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate), markup);
     }
