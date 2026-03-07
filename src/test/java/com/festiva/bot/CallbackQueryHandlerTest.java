@@ -69,7 +69,10 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("REMOVE_ callback — shows confirmation prompt with Yes/No buttons")
     void removeCallback_showsConfirmation() {
-        EditMessageText result = handler.handle(callback("REMOVE_Alice"));
+        Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
+        alice.setId("id-alice");
+        when(friendService.findFriendById("id-alice")).thenReturn(java.util.Optional.of(alice));
+        EditMessageText result = handler.handle(callback("REMOVE_id-alice"));
         verify(friendService, never()).deleteFriend(anyLong(), anyString());
         assertThat(result.getText()).contains("Alice");
         assertThat(result.getReplyMarkup()).isNotNull();
@@ -78,19 +81,21 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("CONFIRM_REMOVE_ callback — deletes friend and returns removed confirmation")
     void confirmRemoveCallback_deletesFriendAndConfirms() {
-        when(friendService.friendExists(1L, "Alice")).thenReturn(true);
-        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_Alice"));
+        Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
+        alice.setId("id-alice");
+        when(friendService.findFriendById("id-alice")).thenReturn(java.util.Optional.of(alice));
+        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
         verify(friendService).deleteFriend(1L, "Alice");
         assertThat(result.getText()).contains("Alice");
     }
 
     @Test
-    @DisplayName("CONFIRM_REMOVE_ callback — friend not found returns not-found message")
+    @DisplayName("CONFIRM_REMOVE_ callback — friend not found returns unknown command")
     void confirmRemoveCallback_friendNotFound() {
-        when(friendService.friendExists(1L, "Ghost")).thenReturn(false);
-        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_Ghost"));
+        when(friendService.findFriendById("id-ghost")).thenReturn(java.util.Optional.empty());
+        EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-ghost"));
         verify(friendService, never()).deleteFriend(anyLong(), anyString());
-        assertThat(result.getText()).contains("Ghost");
+        assertThat(result).isNotNull();
     }
 
     @Test

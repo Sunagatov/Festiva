@@ -10,6 +10,7 @@ import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
+import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -195,15 +196,19 @@ public class CallbackQueryHandler {
     }
 
     private CallbackResult handleRemove(String data, long userId, Lang lang) {
-        String name = data.substring(REMOVE_PREFIX.length());
+        String id = data.substring(REMOVE_PREFIX.length());
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        String name = friend.getName();
         userStateService.setPendingName(userId, name);
         userStateService.setState(userId, com.festiva.state.BotState.WAITING_FOR_REMOVE_CONFIRM);
-        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name), confirmKeyboard(name, lang));
+        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name), confirmKeyboard(id, name, lang));
     }
 
-    private CallbackResult handleConfirmRemove(long userId, String name, Lang lang) {
-        if (!friendService.friendExists(userId, name))
-            return new CallbackResult(Messages.get(lang, Messages.FRIEND_NOT_FOUND, name), null);
+    private CallbackResult handleConfirmRemove(long userId, String id, Lang lang) {
+        Friend friend = friendService.findFriendById(id).orElse(null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.FRIEND_NOT_FOUND, "?"), null);
+        String name = friend.getName();
         friendService.deleteFriend(userId, name);
         userStateService.clearState(userId);
         log.debug("callback.friend.removed: userId={}, name={}", userId, name);
@@ -255,9 +260,9 @@ public class CallbackQueryHandler {
 
     // ── Keyboards ─────────────────────────────────────────────────────────────
 
-    private InlineKeyboardMarkup confirmKeyboard(String name, Lang lang) {
+    private InlineKeyboardMarkup confirmKeyboard(String id, String name, Lang lang) {
         return InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
-                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_YES)).callbackData(CONFIRM_PREFIX + name).build(),
+                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_YES)).callbackData(CONFIRM_PREFIX + id).build(),
                 InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_NO)).callbackData(CANCEL_REMOVE).build()
         ))).build();
     }

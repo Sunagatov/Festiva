@@ -32,6 +32,14 @@ public class FriendService {
         friendRepository.deleteByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
     }
 
+    public java.util.Optional<Friend> findFriendById(String id) {
+        return friendRepository.findById(id);
+    }
+
+    public void deleteAllFriends(long telegramUserId) {
+        friendRepository.deleteByTelegramUserId(telegramUserId);
+    }
+
     public void updateFriendName(long telegramUserId, String oldName, String newName) {
         update(telegramUserId, oldName, f -> f.setName(newName));
     }

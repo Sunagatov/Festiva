@@ -53,10 +53,9 @@ class EditCallbackHandler {
     }
 
     CallbackResult handleEditSelect(String data, long userId, Lang lang) {
-        String name = data.substring(EDIT_PREFIX.length());
-        Friend found = friendService.getFriends(userId).stream()
-                .filter(f -> f.getName().equalsIgnoreCase(name))
-                .findFirst().orElse(null);
+        String id = data.substring(EDIT_PREFIX.length());
+        Friend found = friendService.findFriendById(id).orElse(null);
+        String name = found != null ? found.getName() : "?";
         String currentDate = found != null ? found.getBirthDate().format(MessageBuilder.DATE_FORMATTER) : "?";
         boolean notifyOn = found == null || found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(

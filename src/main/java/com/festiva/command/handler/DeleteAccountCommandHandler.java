@@ -2,7 +2,7 @@ package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
-import com.festiva.friend.repository.FriendMongoRepository;
+import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -23,10 +23,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DeleteAccountCommandHandler implements CommandHandler {
 
-    public static final String CONFIRM_DELETE  = "CONFIRM_DELETE_ACCOUNT";
-    public static final String CANCEL_DELETE   = "CANCEL_DELETE_ACCOUNT";
+    public static final String CONFIRM_DELETE = "CONFIRM_DELETE_ACCOUNT";
+    public static final String CANCEL_DELETE  = "CANCEL_DELETE_ACCOUNT";
 
-    private final FriendMongoRepository friendRepository;
+    private final FriendService friendService;
     private final UserPreferenceRepository userPreferenceRepository;
     private final UserStateService userStateService;
 
@@ -47,7 +47,7 @@ public class DeleteAccountCommandHandler implements CommandHandler {
     }
 
     public void deleteAccount(long userId) {
-        friendRepository.deleteByTelegramUserId(userId);
+        friendService.deleteAllFriends(userId);
         userPreferenceRepository.deleteById(userId);
         userStateService.clearState(userId);
         log.info("account.deleted: userId={}", userId);

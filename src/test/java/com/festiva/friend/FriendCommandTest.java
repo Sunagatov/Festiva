@@ -68,10 +68,11 @@ class FriendCommandTest extends IntegrationTestBase {
     @DisplayName("/remove existing friend → confirms removal, list is empty")
     void removeFriend_confirmsAndListIsEmpty() {
         friendService.addFriend(3L, new Friend("Carol", LocalDate.of(2000, 1, 1)));
+        String friendId = friendService.getFriends(3L).getFirst().getId();
 
         commandRouter.route(update(3L, "/remove"));
-        callbackQueryHandler.handle(callback(3L, "REMOVE_Carol"));
-        callbackQueryHandler.handle(callback(3L, "CONFIRM_REMOVE_Carol"));
+        callbackQueryHandler.handle(callback(3L, "REMOVE_" + friendId));
+        callbackQueryHandler.handle(callback(3L, "CONFIRM_REMOVE_" + friendId));
 
         assertThat(friendService.getFriends(3L)).isEmpty();
     }
