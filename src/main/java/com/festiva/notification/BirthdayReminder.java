@@ -43,7 +43,11 @@ public class BirthdayReminder {
 
     @PostConstruct
     public void checkBirthdaysOnStartup() {
-        checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
+        try {
+            checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
+        } catch (Exception e) {
+            log.warn("reminder.startup.check.failed", e);
+        }
     }
 
     @Scheduled(cron = "0 0 * * * *", zone = "UTC")

@@ -22,7 +22,6 @@ public class AboutCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long userId = update.getMessage().getFrom().getId();
         return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.ABOUT),
-                MessageBuilder.quickMenu());
+                Messages.get(userStateService.getLanguage(userId), Messages.ABOUT));
     }
 }

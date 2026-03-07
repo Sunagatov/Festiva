@@ -3,8 +3,6 @@ package com.festiva.command;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
@@ -43,20 +41,12 @@ public final class MessageBuilder {
             Map.entry("\uD83C\uDFC6 Jubilee", "/jubilee"),
             Map.entry("\uD83D\uDCDD Edit", "/edit"),
             Map.entry("\uD83C\uDF10 Language", "/language"),
-            Map.entry("\uD83D\uDCD6 Help", "/help"),
+            Map.entry("\uD83D\uDCD6 Menu", "/help"),
             Map.entry("\u2139\uFE0F About", "/about"),
             Map.entry("\uD83D\uDD0D Search", "/search"),
             Map.entry("\uD83D\uDCCA Stats", "/stats"),
             Map.entry("\uD83D\uDD27 Settings", "/settings")
     );
-
-    public static InlineKeyboardMarkup quickMenu() {
-        return InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
-                InlineKeyboardButton.builder().text("\u2795 Add").callbackData("ACTION_ADD").build(),
-                InlineKeyboardButton.builder().text("\uD83D\uDCCB List").callbackData("LIST_SORT_DATE_0").build(),
-                InlineKeyboardButton.builder().text("\uD83C\uDF82 Birthdays").callbackData("MONTH_CURRENT").build()
-        ))).build();
-    }
 
     public static ReplyKeyboardMarkup mainMenu() {
         return ReplyKeyboardMarkup.builder()
@@ -65,7 +55,7 @@ public final class MessageBuilder {
                         new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDF82 Birthdays"), new KeyboardButton("\uD83D\uDD14 Upcoming"), new KeyboardButton("\uD83C\uDF82 Today"))),
                         new KeyboardRow(List.of(new KeyboardButton("\uD83C\uDFC6 Jubilee"), new KeyboardButton("\uD83D\uDCDD Edit"), new KeyboardButton("\uD83D\uDD0D Search"))),
                         new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCCA Stats"), new KeyboardButton("\uD83D\uDD27 Settings"), new KeyboardButton("\uD83C\uDF10 Language"))),
-                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCD6 Help"), new KeyboardButton("\u2139\uFE0F About")))
+                        new KeyboardRow(List.of(new KeyboardButton("\uD83D\uDCD6 Menu"), new KeyboardButton("\u2139\uFE0F About")))
                 ))
                 .resizeKeyboard(true)
                 .build();
