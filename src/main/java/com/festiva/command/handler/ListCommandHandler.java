@@ -126,9 +126,9 @@ public class ListCommandHandler implements CommandHandler {
                 .append(relLabel).append(" ");
         boolean alreadyHadBirthday = f.nextBirthday(today).getYear() > today.getYear();
         if (alreadyHadBirthday) {
-            sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge()));
+            sb.append(Messages.get(lang, Messages.LIST_TURNED, f.getAge(today)));
         } else {
-            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(), f.getNextAge()));
+            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, f.getAge(today), f.getNextAge()));
         }
         sb.append(daysLabel).append("\n");
     }

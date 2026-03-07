@@ -99,7 +99,7 @@ public class UserStateService {
     public String getTimezone(long userId) {
         return userPreferenceRepository.findById(userId)
                 .map(UserPreference::getTimezone)
-                .orElse("Europe/Moscow");
+                .orElse(UserPreference.DEFAULT_TIMEZONE);
     }
 
     public void setTimezone(long userId, String timezone) {
@@ -110,6 +110,6 @@ public class UserStateService {
 
     private UserPreference getOrCreatePref(long userId) {
         return userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), -1, "Europe/Moscow"));
+                .orElse(new UserPreference(userId, getLanguage(userId), -1, UserPreference.DEFAULT_TIMEZONE));
     }
 }

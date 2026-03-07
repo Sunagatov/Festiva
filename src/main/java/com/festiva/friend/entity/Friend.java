@@ -37,8 +37,8 @@ public class Friend {
         this.relationship = relationship;
     }
 
-    public int getAge() {
-        return Period.between(birthDate, LocalDate.now()).getYears();
+    public int getAge(LocalDate on) {
+        return Period.between(birthDate, on).getYears();
     }
 
     public LocalDate nextBirthday(LocalDate from) {

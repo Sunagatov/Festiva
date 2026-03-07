@@ -13,9 +13,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 public class UserPreference {
 
+    public static final String DEFAULT_TIMEZONE = "Europe/Moscow";
+
     @Id
     private long telegramUserId;
     private Lang lang;
     private int notifyHour = -1;
-    private String timezone = "Europe/Moscow";
+    private String timezone = UserPreference.DEFAULT_TIMEZONE;
 }
