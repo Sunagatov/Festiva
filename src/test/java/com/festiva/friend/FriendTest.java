@@ -42,6 +42,17 @@ class FriendTest {
     }
 
     @Test
+    @DisplayName("getZodiac() — returns correct sign for boundary dates")
+    void getZodiac_correctSignForBoundaryDates() {
+        assertThat(new Friend("x", LocalDate.of(1990,  3, 21)).getZodiac()).isEqualTo("♈"); // Aries start
+        assertThat(new Friend("x", LocalDate.of(1990,  4, 19)).getZodiac()).isEqualTo("♈"); // Aries end
+        assertThat(new Friend("x", LocalDate.of(1990,  4, 20)).getZodiac()).isEqualTo("♉"); // Taurus start
+        assertThat(new Friend("x", LocalDate.of(1990, 12, 22)).getZodiac()).isEqualTo("♑"); // Capricorn start
+        assertThat(new Friend("x", LocalDate.of(1990,  2, 19)).getZodiac()).isEqualTo("♓"); // Pisces
+        assertThat(new Friend("x", LocalDate.of(1990,  1, 20)).getZodiac()).isEqualTo("♒"); // Aquarius start
+    }
+
+    @Test
     @DisplayName("getNextAge() — birthday already passed this year → turns 31 on next birthday")
     void getNextAge_birthdayPassed() {
         LocalDate today = LocalDate.now();

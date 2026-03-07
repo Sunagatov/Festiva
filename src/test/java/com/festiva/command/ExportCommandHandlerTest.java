@@ -3,6 +3,7 @@ package com.festiva.command;
 import com.festiva.command.handler.ExportCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
@@ -11,15 +12,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -58,8 +62,24 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
 
         SendMessage result = handler.handle(update());
 
-        verify(telegramClient).execute(any(org.telegram.telegrambots.meta.api.methods.send.SendDocument.class));
+        verify(telegramClient).execute(any(SendDocument.class));
         assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("with friends → CSV contains relationship column header and value")
+    void withFriends_csvContainsRelationshipColumn() throws Exception {
+        Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15), Relationship.FRIEND);
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(alice));
+
+        handler.handle(update());
+
+        ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
+        verify(telegramClient).execute(captor.capture());
+        byte[] bytes = captor.getValue().getDocument().getNewMediaStream().readAllBytes();
+        String csv = new String(bytes, StandardCharsets.UTF_8);
+        assertThat(csv).contains("name,birthday,relationship");
+        assertThat(csv).contains("friend");
     }
 
     @Test
@@ -70,12 +90,9 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
 
         handler.handle(update());
 
-        var captor = org.mockito.ArgumentCaptor.forClass(
-                org.telegram.telegrambots.meta.api.methods.send.SendDocument.class);
+        ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
         verify(telegramClient).execute(captor.capture());
-        var doc = captor.getValue();
-        // document is sent — just verify it was called (content verified via integration)
-        assertThat(doc).isNotNull();
+        assertThat(captor.getValue()).isNotNull();
     }
 
     private Update update() {
