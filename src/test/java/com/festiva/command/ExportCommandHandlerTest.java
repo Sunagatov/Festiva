@@ -83,16 +83,53 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("name with comma → quoted in CSV")
+    @DisplayName("no friends → export-empty message contains /add hint")
+    void noFriends_containsAddHint() {
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText()).contains("/add");
+    }
+
+    @Test
+    @DisplayName("no friends RU → returns RU export-empty message")
+    void noFriends_ru_returnsRuMessage() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.EXPORT_EMPTY));
+    }
+
+    @Test
+    @DisplayName("with friends → document caption contains /addmany hint")
+    void withFriends_captionContainsAddManyHint() throws Exception {
+        when(friendService.getFriendsSortedByDayMonth(1L))
+                .thenReturn(List.of(new Friend("Alice", LocalDate.of(1990, 3, 15))));
+        handler.handle(update());
+        ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
+        verify(telegramClient).execute(captor.capture());
+        assertThat(captor.getValue().getCaption()).contains("/addmany");
+    }
+
+    @Test
+    @DisplayName("TelegramApiException → returns EXPORT_FAILED message")
+    void telegramException_returnsExportFailed() throws Exception {
+        when(friendService.getFriendsSortedByDayMonth(1L))
+                .thenReturn(List.of(new Friend("Alice", LocalDate.of(1990, 3, 15))));
+        when(telegramClient.execute(any(SendDocument.class)))
+                .thenThrow(new org.telegram.telegrambots.meta.exceptions.TelegramApiException("fail"));
+        SendMessage result = handler.handle(update());
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.EXPORT_FAILED));
+    }
+
+    @Test
+    @DisplayName("name with comma → quoted correctly in CSV")
     void nameWithComma_quotedInCsv() throws Exception {
         when(friendService.getFriendsSortedByDayMonth(1L))
                 .thenReturn(List.of(new Friend("Smith, John", LocalDate.of(1985, 7, 22))));
-
         handler.handle(update());
-
         ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
         verify(telegramClient).execute(captor.capture());
-        assertThat(captor.getValue()).isNotNull();
+        byte[] bytes = captor.getValue().getDocument().getNewMediaStream().readAllBytes();
+        assertThat(new String(bytes, StandardCharsets.UTF_8)).contains('"' + "Smith, John" + '"');
     }
 
     private Update update() {

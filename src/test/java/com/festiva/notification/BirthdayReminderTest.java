@@ -102,6 +102,45 @@ class BirthdayReminderTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("notify disabled for friend → no notification sent")
+    void notifyDisabled_noNotification() {
+        savePrefs(17L);
+        Friend f = new Friend("Grace", LocalDate.now().minusYears(30));
+        f.setNotifyEnabled(false);
+        friendService.addFriend(17L, f);
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot, never()).send(eq(17L), anyString());
+    }
+
+    @Test
+    @DisplayName("already notified today → no duplicate notification")
+    void alreadyNotifiedToday_noDuplicate() {
+        UserPreference pref = new UserPreference(18L, Lang.EN, 9, "UTC", LocalDate.now());
+        userPreferenceRepository.save(pref);
+        friendService.addFriend(18L, new Friend("Hank", LocalDate.now().minusYears(30)));
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot, never()).send(eq(18L), anyString());
+    }
+
+    @Test
+    @DisplayName("birthday today RU → notification in Russian")
+    void todayBirthday_ru_sendsRuNotification() {
+        userPreferenceRepository.save(new UserPreference(19L, Lang.RU, 9, "UTC", null));
+        friendService.addFriend(19L, new Friend("Ivan", LocalDate.now().minusYears(30)));
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot).send(eq(19L), contains("Ivan"));
+    }
+
+    @Test
+    @DisplayName("birthday today → notification contains age")
+    void todayBirthday_notificationContainsAge() {
+        savePrefs(20L);
+        friendService.addFriend(20L, new Friend("Judy", LocalDate.now().minusYears(30)));
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot).send(eq(20L), contains("30"));
+    }
+
+    @Test
     @DisplayName("invalid timezone in prefs → skips user, no exception")
     void invalidTimezone_skipsUserSilently() {
         userPreferenceRepository.save(new UserPreference(16L, Lang.EN, 9, "Not/AZone", null));

@@ -141,21 +141,42 @@ class BulkAddParserTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("empty input list → returns single error")
+    @DisplayName("empty input list → returns single error and noData=true")
     void emptyInput_returnsError() {
         ParseResult r = parse(List.of(), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
+        assertThat(r.noData()).isTrue();
     }
 
     @Test
-    @DisplayName("only blank lines → returns single error")
+    @DisplayName("only blank lines → returns single error and noData=true")
     void onlyBlankLines_returnsError() {
         ParseResult r = parse(List.of("  ", "\t", ""), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
+        assertThat(r.noData()).isTrue();
+    }
+
+    @Test
+    @DisplayName("header-only CSV → noData=true")
+    void headerOnly_returnsNoData() {
+        ParseResult r = parse(List.of("name,birthday,relationship"), Set.of());
+
+        assertThat(r.noData()).isTrue();
+        assertThat(r.valid()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("valid row RU → error messages in Russian")
+    void invalidRow_ru_returnsRuError() {
+        ParseResult r = BulkAddParser.parse(List.of(",15.03.1990"), Set.of(), Lang.RU);
+
+        assertThat(r.errors()).hasSize(1);
+        assertThat(r.errors().getFirst())
+                .contains(com.festiva.i18n.Messages.get(Lang.RU, com.festiva.i18n.Messages.BULK_ERROR_NAME_EMPTY, 1));
     }
 
     @Test

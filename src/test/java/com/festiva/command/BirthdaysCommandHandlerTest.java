@@ -73,6 +73,15 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
         assertThat(allLabels).anyMatch(label -> label.contains("(1)") && label.toLowerCase(Locale.ROOT).contains("jan"));
     }
 
+    @Test
+    @DisplayName("handle RU → prompt in Russian")
+    void handle_ru_containsRuPrompt() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.BIRTHDAYS_PICK));
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

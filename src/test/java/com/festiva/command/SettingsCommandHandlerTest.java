@@ -80,6 +80,14 @@ class SettingsCommandHandlerTest extends MessagesTestSupport {
         assertThat(activeBtn.getText()).startsWith("✅");
     }
 
+    @Test
+    @DisplayName("handle RU → response contains RU settings header")
+    void handle_ru_containsRuHeader() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.SETTINGS_HEADER));
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

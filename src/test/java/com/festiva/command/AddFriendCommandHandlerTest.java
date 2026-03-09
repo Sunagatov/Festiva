@@ -34,6 +34,7 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
     @BeforeEach
     void defaults() {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userStateService.getState(anyLong())).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_NAME);
     }
 
     @Test
@@ -88,6 +89,38 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
 
         verify(userStateService).setPendingName(1L, "Alice");
         verify(userStateService).setState(1L, BotState.WAITING_FOR_ADD_FRIEND_DATE);
+    }
+
+    @Test
+    @DisplayName("handleState in non-name state → returns USE_BUTTONS")
+    void handleState_nonNameState_returnsUseButtons() {
+        when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_DATE);
+
+        assertThat(handler.handleState(update("anything")).getText())
+                .contains(Messages.get(Lang.EN, Messages.USE_BUTTONS));
+    }
+
+    @Test
+    @DisplayName("handle prompt contains /cancel hint")
+    void handle_prompt_containsCancelHint() {
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        assertThat(handler.handle(update("")).getText()).contains("/cancel");
+    }
+
+    @Test
+    @DisplayName("handleState blank name error contains /cancel hint")
+    void handleState_blankName_containsCancelHint() {
+        assertThat(handler.handleState(update("   ")).getText()).contains("/cancel");
+    }
+
+    @Test
+    @DisplayName("handleState RU blank name → returns RU error")
+    void handleState_ruBlankName_returnsRuError() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+
+        assertThat(handler.handleState(update("   ")).getText())
+                .contains(Messages.get(Lang.RU, Messages.NAME_EMPTY));
     }
 
     private Update update(String text) {

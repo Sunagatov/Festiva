@@ -72,6 +72,27 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).containsPattern("turns.*30|30.*turns");
     }
 
+    @Test
+    @DisplayName("empty list RU → returns RU friends-empty")
+    void emptyList_ru_returnsFriendsEmpty() {
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.FRIENDS_EMPTY));
+    }
+
+    @Test
+    @DisplayName("with friends → keyboard has sort buttons")
+    void withFriends_keyboardHasSortButtons() {
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(
+                new Friend("Alice", LocalDate.now().plusDays(1).minusYears(30))));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
+                handler.handle(update()).getReplyMarkup();
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getFirst()).hasSize(2);
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

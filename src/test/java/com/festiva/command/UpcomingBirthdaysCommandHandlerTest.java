@@ -65,6 +65,25 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
                 .contains(Messages.get(Lang.EN, Messages.UPCOMING_NONE, 30));
     }
 
+    @Test
+    @DisplayName("no friends RU → returns RU upcoming-none")
+    void noFriends_ru_returnsRuNone() {
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.UPCOMING_NONE, 30));
+    }
+
+    @Test
+    @DisplayName("handle → filter keyboard has 3 day-range buttons")
+    void handle_filterKeyboardHas3Buttons() {
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
+                handler.handle(update()).getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst()).hasSize(3);
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

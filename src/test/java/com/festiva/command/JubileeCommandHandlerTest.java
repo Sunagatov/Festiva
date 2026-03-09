@@ -67,6 +67,26 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
                 .contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
     }
 
+    @Test
+    @DisplayName("no jubilees → jubilee-none contains /upcomingbirthdays hint")
+    void noJubilees_containsUpcomingHint() {
+        LocalDate today = LocalDate.now();
+        Friend friend = new Friend("Bob", today.minusDays(1).minusYears(30));
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(friendService.getFriends(1L)).thenReturn(List.of(friend));
+        assertThat(handler.handle(update()).getText()).contains("/upcomingbirthdays");
+    }
+
+    @Test
+    @DisplayName("jubilee friend RU → returns RU message")
+    void jubileeFriend_ru_returnsRuMessage() {
+        LocalDate today = LocalDate.now();
+        Friend friend = new Friend("Alice", today.plusDays(1).minusYears(30));
+        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(friendService.getFriends(1L)).thenReturn(List.of(friend));
+        assertThat(handler.handle(update()).getText()).contains("Alice");
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

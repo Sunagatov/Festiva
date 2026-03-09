@@ -60,7 +60,25 @@ class TodayCommandHandlerTest extends MessagesTestSupport {
         assertThat(result.getText()).contains("Bob");
     }
 
+    @Test
+    @DisplayName("birthday today → result contains next-step hint")
+    void birthdayToday_containsNextStepHint() {
+        when(friendService.getFriends(1L)).thenReturn(List.of(
+                new Friend("Bob", LocalDate.now().minusYears(25))));
+        assertThat(handler.handle(update()).getText()).contains("/list");
+    }
+
+    @Test
+    @DisplayName("no birthdays today RU → returns RU today-none message")
+    void noBirthdaysToday_ru_returnsRuNone() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.TODAY_NONE));
+    }
+
     private Update update() {
+
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);

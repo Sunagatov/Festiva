@@ -49,11 +49,11 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleEditSelect → friend not found returns unknown command")
-    void handleEditSelect_notFound_returnsUnknown() {
+    @DisplayName("handleEditSelect → friend not found returns SESSION_EXPIRED")
+    void handleEditSelect_notFound_returnsSessionExpired() {
         when(friendService.findFriendById("ghost")).thenReturn(Optional.empty());
         CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "ghost", Lang.EN);
-        assertThat(result.text).contains("?");
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test
@@ -67,11 +67,11 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleEditFieldName → friend not found returns unknown command")
-    void handleEditFieldName_notFound_returnsUnknown() {
+    @DisplayName("handleEditFieldName → friend not found returns SESSION_EXPIRED")
+    void handleEditFieldName_notFound_returnsSessionExpired() {
         when(friendService.findFriendById("ghost")).thenReturn(Optional.empty());
         CallbackResult result = handler.handleEditFieldName(EditCallbackHandler.EDIT_FIELD_NAME + "ghost", 1L, Lang.EN);
-        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.UNKNOWN_COMMAND));
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test
@@ -96,10 +96,34 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleEditNotify → friend not found returns unknown command")
-    void handleEditNotify_notFound_returnsUnknown() {
+    @DisplayName("handleEditNotify → friend not found returns SESSION_EXPIRED")
+    void handleEditNotify_notFound_returnsSessionExpired() {
         when(friendService.findFriendById("ghost")).thenReturn(Optional.empty());
         CallbackResult result = handler.handleEditNotify(EditCallbackHandler.EDIT_FIELD_NOTIFY + "ghost", 1L, Lang.EN);
-        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.UNKNOWN_COMMAND));
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("handleEditSelect prompt contains /cancel hint")
+    void handleEditSelect_prompt_containsCancelHint() {
+        CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "id-alice", Lang.EN);
+        assertThat(result.text).contains("/cancel");
+    }
+
+    @Test
+    @DisplayName("handleEditNotify success contains next-step hint")
+    void handleEditNotify_success_containsNextStepHint() {
+        when(friendService.toggleFriendNotify(1L, "Alice")).thenReturn(true);
+        CallbackResult result = handler.handleEditNotify(EditCallbackHandler.EDIT_FIELD_NOTIFY + "id-alice", 1L, Lang.EN);
+        assertThat(result.text).contains("/edit");
+    }
+
+    @Test
+    @DisplayName("handleEditNotify RU → returns RU message")
+    void handleEditNotify_ru_returnsRuMessage() {
+        when(friendService.toggleFriendNotify(1L, "Alice")).thenReturn(false);
+        CallbackResult result = handler.handleEditNotify(EditCallbackHandler.EDIT_FIELD_NOTIFY + "id-alice", 1L, Lang.RU);
+        assertThat(result.text).contains(Messages.get(Lang.RU, Messages.EDIT_NOTIFY_TOGGLED, "Alice",
+                Messages.get(Lang.RU, Messages.NOTIFY_STATUS_OFF)));
     }
 }

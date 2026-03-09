@@ -70,6 +70,15 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("🎂");
     }
 
+    @Test
+    @DisplayName("with friends RU → response contains friend count")
+    void withFriends_ru_containsCount() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(friendService.getFriends(1L)).thenReturn(List.of(
+                new Friend("Alice", LocalDate.now().plusDays(1).minusYears(30))));
+        assertThat(handler.handle(update()).getText()).contains("1");
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

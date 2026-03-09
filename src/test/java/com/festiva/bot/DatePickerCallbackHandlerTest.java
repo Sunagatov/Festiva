@@ -41,6 +41,118 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("handleYearPage with null pendingName → SESSION_EXPIRED")
+    void handleYearPage_nullName_returnsSessionExpired() {
+        when(userStateService.getPendingName(1L)).thenReturn(null);
+
+        CallbackResult result = handler.handleYearPage(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX + "0", 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("handleYearPick with null pendingName → SESSION_EXPIRED")
+    void handleYearPick_nullName_returnsSessionExpired() {
+        when(userStateService.getPendingName(1L)).thenReturn(null);
+
+        CallbackResult result = handler.handleYearPick(DatePickerKeyboard.DATE_YEAR_PREFIX + "1990", 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("handleMonthPick with null pendingName → SESSION_EXPIRED")
+    void handleMonthPick_nullName_returnsSessionExpired() {
+        when(userStateService.getPendingName(1L)).thenReturn(null);
+
+        CallbackResult result = handler.handleMonthPick(DatePickerKeyboard.DATE_MONTH_PREFIX + "3", 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("handleDayPick future date → error text AND keyboard returned")
+    void handleDayPick_futureDate_returnsErrorWithKeyboard() {
+        LocalDate future = LocalDate.now().plusYears(1);
+        when(userStateService.getPendingYear(1L)).thenReturn(future.getYear());
+        when(userStateService.getPendingMonth(1L)).thenReturn(future.getMonthValue());
+
+        CallbackResult result = handler.handleDayPick(
+                DatePickerKeyboard.DATE_DAY_PREFIX + future.getDayOfMonth(), 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.DATE_FUTURE_ERROR));
+        assertThat(result.markup).isNotNull();
+    }
+
+    @Test
+    @DisplayName("handleRelationship at cap → clears state and returns cap message")
+    void handleRelationship_atCap_clearsStateAndReturnsCap() {
+        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendService.getFriends(1L)).thenReturn(
+                java.util.Collections.nCopies(FriendService.FRIEND_CAP, null));
+
+        CallbackResult result = handler.handleRelationship(
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "FRIEND", 1L, Lang.EN);
+
+        verify(userStateService).clearState(1L);
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.FRIEND_CAP, FriendService.FRIEND_CAP));
+    }
+
+    @Test
+    @DisplayName("handleYearPick prompt contains /cancel hint")
+    void handleYearPick_prompt_containsCancelHint() {
+        CallbackResult result = handler.handleYearPick(DatePickerKeyboard.DATE_YEAR_PREFIX + "1990", 1L, Lang.EN);
+
+        assertThat(result.text).contains("/cancel");
+    }
+
+    @Test
+    @DisplayName("handleRelationship prompt contains /cancel hint")
+    void handleRelationship_prompt_containsCancelHint() {
+        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        CallbackResult result = handler.handleRelationship(
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.FRIEND_ADDED, "Alice"));
+    }
+
+    @Test
+    @DisplayName("handleRelationship RU → returns RU success message")
+    void handleRelationship_ru_returnsRuMessage() {
+        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        CallbackResult result = handler.handleRelationship(
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.RU);
+
+        assertThat(result.text).contains(Messages.get(Lang.RU, Messages.FRIEND_ADDED, "Alice"));
+    }
+
+    @Test
+    @DisplayName("handleDayPick add flow → relationship prompt contains /cancel hint")
+    void handleDayPick_addFlow_relationshipPromptContainsCancelHint() {
+        when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_DATE);
+
+        CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
+
+        assertThat(result.text).contains("/cancel");
+    }
+
+    @Test
+    @DisplayName("handleDayPick add flow success → friend_added message contains next-step hint")
+    void handleRelationship_success_containsNextStepHint() {
+        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        CallbackResult result = handler.handleRelationship(
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.EN);
+
+        assertThat(result.markup).isNotNull();
+    }
+
+    @Test
     @DisplayName("handleDayPick in add flow → transitions to relationship picker")
     void handleDayPick_addFlow_showsRelationshipPicker() {
         when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_DATE);
@@ -78,13 +190,13 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleDayPick with null session state → returns unknown command")
-    void handleDayPick_nullSession_returnsUnknown() {
+    @DisplayName("handleDayPick with null session state → returns SESSION_EXPIRED")
+    void handleDayPick_nullSession_returnsSessionExpired() {
         when(userStateService.getPendingYear(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 
-        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.UNKNOWN_COMMAND));
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test

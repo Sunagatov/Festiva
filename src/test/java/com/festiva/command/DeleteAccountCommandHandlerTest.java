@@ -55,6 +55,25 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
         verify(userStateService).clearState(1L);
     }
 
+    @Test
+    @DisplayName("/deleteaccount → keyboard has Yes and No buttons")
+    void handle_keyboardHasYesAndNoButtons() {
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
+                handler.handle(update()).getReplyMarkup();
+        var callbacks = markup.getKeyboard().getFirst().stream()
+                .map(b -> b.getCallbackData()).toList();
+        assertThat(callbacks).contains(DeleteAccountCommandHandler.CONFIRM_DELETE);
+        assertThat(callbacks).contains(DeleteAccountCommandHandler.CANCEL_DELETE);
+    }
+
+    @Test
+    @DisplayName("/deleteaccount RU → returns RU confirmation prompt")
+    void handle_ru_returnsRuPrompt() {
+        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.RU, Messages.DELETE_ACCOUNT_ASK));
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);
