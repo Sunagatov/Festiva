@@ -10,9 +10,9 @@ local.env
 target/
 
 # Temp scripts
-scripts/
-merge_selected_files.sh
-merged_output.txt
+.amazonq/scripts/
+.amazonq/scripts/merge_selected_files.sh
+.amazonq/docs/merged_output.txt
 
 ### Java template
 # Compiled class file

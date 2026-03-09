@@ -27,6 +27,8 @@ git clone https://github.com/Sunagatov/Festiva.git && cd Festiva
 # edit TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME in .env
 ```
 
+> ⚠️ **Never commit `.env` with real credentials.** It is listed in `.gitignore` — keep it that way.
+
 ---
 
 ### Option A — IntelliJ + infra in Docker *(recommended for development)*
@@ -40,7 +42,7 @@ Then run the app from IntelliJ using the **EnvFile plugin** pointed at `.env`, o
 
 ```bash
 # Linux / macOS:
-export $(cat .env | xargs) && mvn spring-boot:run
+set -a && source .env && set +a && mvn spring-boot:run
 ```
 
 ---
@@ -85,7 +87,7 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 | 🏗️ Framework | Spring Boot 4.0, Spring Scheduling, Spring Actuator |
 | 🗄️ Database | MongoDB Atlas, Spring Data MongoDB |
 | 📨 Messaging | Apache Kafka (optional metrics) |
-| 🤖 Telegram | telegrambots-springboot-longpolling-starter 9.0 |
+| 🤖 Telegram | telegrambots-longpolling + telegrambots-client 9.0 |
 | 🧪 Testing | JUnit 5, Mockito, Testcontainers, AssertJ |
 | 🚢 Deployment | Docker |
 
@@ -112,6 +114,9 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 | 🎯 Command | 📝 Description |
 |---|---|
 | `/start` | Welcome message and command overview |
+| `/menu` | Show the command menu |
+| `/help` | Alias for `/menu` |
+| `/about` | About Festiva |
 | `/add` | Add a friend with their birthdate |
 | `/addmany` | Bulk-add friends via CSV file or paste |
 | `/edit` | Edit a friend's name, date, or relationship |
@@ -136,8 +141,12 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 ```
 src/main/java/com/festiva/
 ├── 🤖 bot/            # BirthdayBot, CallbackQueryHandler, sub-handlers
-├── 💬 command/        # CommandRouter, all command handlers
-├── 👥 friend/         # Friend entity, FriendService, MongoDB repository
+├── 💬 command/
+│   └── handler/       # All command handlers (Start, Add, Edit, …)
+├── 👥 friend/
+│   ├── api/           # FriendService interface
+│   ├── entity/        # Friend, Relationship
+│   └── repository/    # FriendMongoRepository
 ├── 🌐 i18n/           # Lang enum, Messages (EN + RU)
 ├── 📊 metrics/        # Kafka metrics sender
 ├── 🔔 notification/   # BirthdayReminder scheduler
