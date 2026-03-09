@@ -9,6 +9,9 @@ local.env
 # Maven build output
 target/
 
+# Production config
+docker-compose.prod.yml
+
 # Temp scripts
 .amazonq/scripts/
 .amazonq/scripts/merge_selected_files.sh
