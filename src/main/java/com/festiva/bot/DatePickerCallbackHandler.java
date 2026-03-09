@@ -33,24 +33,30 @@ class DatePickerCallbackHandler {
 
     CallbackResult handleYearPage(String data, long userId, Lang lang) {
         int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX.length()));
+        String name = userStateService.getPendingName(userId);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setYearPageOffset(userId, offset);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, userStateService.getPendingName(userId)),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
     CallbackResult handleYearPick(String data, long userId, Lang lang) {
+        String name = userStateService.getPendingName(userId);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         int year = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_YEAR_PREFIX.length()));
         userStateService.setPendingYear(userId, year);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, userStateService.getPendingName(userId)),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
 
     CallbackResult handleMonthPick(String data, long userId, Lang lang) {
         int month = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_MONTH_PREFIX.length()));
         Integer year = userStateService.getPendingYear(userId);
-        if (year == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (year == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        String name = userStateService.getPendingName(userId);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingMonth(userId, month);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, userStateService.getPendingName(userId)),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, name),
                 DatePickerKeyboard.dayKeyboard(year, month, lang));
     }
 
@@ -60,10 +66,11 @@ class DatePickerCallbackHandler {
         Integer month = userStateService.getPendingMonth(userId);
         String name = userStateService.getPendingName(userId);
         if (year == null || month == null || name == null)
-            return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         LocalDate birthDate = LocalDate.of(year, month, day);
         if (birthDate.isAfter(LocalDate.now()))
-            return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR), null);
+            return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
+                    DatePickerKeyboard.dayKeyboard(year, month, lang));
         if (userStateService.getState(userId) == BotState.WAITING_FOR_EDIT_DATE) {
             friendService.updateFriendDate(userId, name, birthDate);
             userStateService.clearState(userId);
@@ -78,16 +85,20 @@ class DatePickerCallbackHandler {
     }
 
     CallbackResult handleBackToYear(String data, long userId, Lang lang) {
+        String name = userStateService.getPendingName(userId);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         int offset = Integer.parseInt(data.substring(DatePickerKeyboard.DATE_BACK_TO_YEAR.length() + 1));
         userStateService.setYearPageOffset(userId, offset);
         userStateService.setPendingYear(userId, null);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, userStateService.getPendingName(userId)),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
     CallbackResult handleBackToMonth(long userId, Lang lang) {
+        String name = userStateService.getPendingName(userId);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingMonth(userId, null);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, userStateService.getPendingName(userId)),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
 
@@ -97,12 +108,14 @@ class DatePickerCallbackHandler {
         Integer month = userStateService.getPendingMonth(userId);
         Integer day = userStateService.getPendingDay(userId);
         if (year == null || month == null || day == null || name == null)
-            return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         LocalDate birthDate = LocalDate.of(year, month, day);
         Relationship rel = "SKIP".equals(data.substring(RELATIONSHIP_PREFIX.length())) ? null
                 : Relationship.valueOf(data.substring(RELATIONSHIP_PREFIX.length()));
-        if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP)
+        if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
+            userStateService.clearState(userId);
             return new CallbackResult(Messages.get(lang, Messages.FRIEND_CAP, FriendService.FRIEND_CAP), null);
+        }
         friendService.addFriend(userId, new Friend(name, birthDate, rel));
         userStateService.clearState(userId);
         log.debug("friend.added: userId={}, name={}, relationship={}", userId, name, rel);
@@ -116,7 +129,7 @@ class DatePickerCallbackHandler {
     CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
         String id = data.substring(EditCallbackHandler.EDIT_FIELD_REL.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_RELATIONSHIP);
@@ -126,17 +139,16 @@ class DatePickerCallbackHandler {
     CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
         String id = userStateService.getPendingId(userId);
         String name = userStateService.getPendingName(userId);
-        if (name == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String value = data.substring(EDIT_REL_PREFIX.length());
         Relationship rel = "SKIP".equals(value) ? null : Relationship.valueOf(value);
         if (id != null) {
             Friend friend = friendService.findFriendById(id).orElse(null);
-            if (friend != null) {
-                friendService.updateFriendRelationship(userId, friend.getName(), rel);
-                userStateService.clearState(userId);
-                log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
-                return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, friend.getName()), null);
-            }
+            if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            friendService.updateFriendRelationship(userId, friend.getName(), rel);
+            userStateService.clearState(userId);
+            log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
+            return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, friend.getName()), null);
         }
         friendService.updateFriendRelationship(userId, name, rel);
         userStateService.clearState(userId);

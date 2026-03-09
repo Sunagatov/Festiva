@@ -24,7 +24,7 @@ public final class BulkAddParser {
 
     private BulkAddParser() {}
 
-    public record ParseResult(List<Friend> valid, List<String> errors) {}
+    public record ParseResult(List<Friend> valid, List<String> errors, boolean noData) {}
 
     public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang) {
         List<Friend> valid = new ArrayList<>();
@@ -34,20 +34,24 @@ public final class BulkAddParser {
         List<String> rows = lines.stream().map(String::trim).filter(l -> !l.isBlank()).toList();
         if (rows.isEmpty()) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
-            return new ParseResult(valid, errors);
+            return new ParseResult(valid, errors, true);
         }
 
         int start = rows.getFirst().toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
         List<String> data = rows.subList(start, rows.size());
+        if (data.isEmpty()) {
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
+            return new ParseResult(valid, errors, true);
+        }
         if (data.size() > MAX_ENTRIES) {
-            errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, MAX_ENTRIES, MAX_ENTRIES));
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, data.size(), MAX_ENTRIES, MAX_ENTRIES));
             data = data.subList(0, MAX_ENTRIES);
         }
 
         for (int i = 0; i < data.size(); i++) {
             parseRow(data.get(i), start + i + 1, existingNames, seenInBatch, lang, valid, errors);
         }
-        return new ParseResult(valid, errors);
+        return new ParseResult(valid, errors, false);
     }
 
     private static void parseRow(String line, int lineNum, Set<String> existingNames,
@@ -71,9 +75,10 @@ public final class BulkAddParser {
         LocalDate date = parseDate(dateStr, name, lineNum, lang, errors);
         if (date == null) return;
 
-        Relationship rel = parseRelationship(relStr, lineNum);
+        RelationshipParseResult relResult = parseRelationship(relStr, name, lineNum, lang);
+        if (relResult.warning() != null) errors.add(relResult.warning());
         seenInBatch.add(name.toLowerCase(Locale.ROOT));
-        valid.add(new Friend(name, date, rel));
+        valid.add(new Friend(name, date, relResult.relationship()));
     }
 
     private static String validateName(String name, int lineNum, Set<String> existingNames,
@@ -102,10 +107,16 @@ public final class BulkAddParser {
         return date;
     }
 
-    private static Relationship parseRelationship(String relStr, int lineNum) {
-        if (relStr.isBlank()) return null;
-        try { return Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)); }
-        catch (IllegalArgumentException e) { log.debug("bulk.parse.unknown.relationship: line={}, value={}", lineNum, relStr, e); }
-        return null;
+    private record RelationshipParseResult(Relationship relationship, String warning) {}
+
+    private static RelationshipParseResult parseRelationship(String relStr, String name, int lineNum, Lang lang) {
+        if (relStr.isBlank()) return new RelationshipParseResult(null, null);
+        try {
+            return new RelationshipParseResult(Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)), null);
+        } catch (IllegalArgumentException e) {
+            log.debug("bulk.parse.unknown.relationship: line={}, value={}", lineNum, relStr, e);
+            return new RelationshipParseResult(null,
+                    Messages.get(lang, Messages.BULK_ERROR_RELATIONSHIP_INVALID, lineNum, name, relStr));
+        }
     }
 }

@@ -63,7 +63,7 @@ public class JubileeCommandHandler implements CommandHandler {
                     : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
             sb.append("– <b>").append(next.format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> <i>").append(f.getName()).append("</i> ")
-                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, f.getNextAge(today)))
+                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, Messages.yearsRu(lang, f.getNextAge(today))))
                     .append(daysLabel).append("\n");
         });
         return sb.toString();

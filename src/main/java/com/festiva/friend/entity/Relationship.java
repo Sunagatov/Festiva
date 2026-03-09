@@ -19,6 +19,8 @@ public enum Relationship {
     COUSIN("🧑 Cousin",        "🧑 Кузен/а"),
     FRIEND("👫 Friend",        "👫 Друг"),
     BEST_FRIEND("🌟 Best Friend", "🌟 Лучший друг"),
+    MOTHER_IN_LAW("👩 Mother-in-law", "👩 Тёща"),
+    FATHER_IN_LAW("👨 Father-in-law", "👨 Тесть"),
     COLLEAGUE("🤝 Colleague",  "🤝 Коллега"),
     CLASSMATE("🎓 Classmate",  "🎓 Одноклассник"),
     NEIGHBOUR("🏠 Neighbour",  "🏠 Сосед"),

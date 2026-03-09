@@ -32,7 +32,7 @@ class EditCallbackHandler {
     CallbackResult handleEditNotify(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_NOTIFY.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         boolean enabled = friendService.toggleFriendNotify(userId, friend.getName());
         return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, friend.getName(),
                 Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)), null);
@@ -41,7 +41,7 @@ class EditCallbackHandler {
     CallbackResult handleEditFieldName(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_NAME.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
@@ -51,7 +51,7 @@ class EditCallbackHandler {
     CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_DATE.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
         userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
@@ -63,9 +63,10 @@ class EditCallbackHandler {
     CallbackResult handleEditSelect(String data, Lang lang) {
         String id = data.substring(EDIT_PREFIX.length());
         Friend found = friendService.findFriendById(id).orElse(null);
-        String name = found != null ? found.getName() : "?";
-        String currentDate = found != null ? found.getBirthDate().format(MessageBuilder.DATE_FORMATTER) : "?";
-        boolean notifyOn = found == null || found.isNotifyEnabled();
+        if (found == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        String name = found.getName();
+        String currentDate = found.getBirthDate().format(MessageBuilder.DATE_FORMATTER);
+        boolean notifyOn = found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
                 new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_NAME_BTN)).callbackData(EDIT_FIELD_NAME + id).build(),

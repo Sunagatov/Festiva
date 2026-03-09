@@ -65,6 +65,7 @@ public class ExportCommandHandler implements CommandHandler {
                     .build());
         } catch (TelegramApiException e) {
             log.error("export.failed: userId={}, message={}", userId, e.getMessage(), e);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED));
         }
         return null;
     }

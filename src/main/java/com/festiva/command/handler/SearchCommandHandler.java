@@ -45,23 +45,28 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        String query = update.getMessage().getText().trim().toLowerCase(Locale.ROOT);
-        userStateService.clearState(userId);
+        String rawQuery = update.getMessage().getText().trim();
+        String query = rawQuery.toLowerCase(Locale.ROOT);
 
         if (query.isBlank()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_PROMPT));
         }
+        if (rawQuery.length() > 100) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_TOO_LONG));
+        }
+        userStateService.clearState(userId);
 
         List<Friend> matches = friendService.getFriendsSortedByDayMonth(userId).stream()
                 .filter(f -> f.getName().toLowerCase(Locale.ROOT).contains(query))
                 .toList();
 
         if (matches.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_NONE, query));
+            userStateService.setState(userId, BotState.WAITING_FOR_SEARCH);
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_NONE, rawQuery));
         }
 
         LocalDate today = LocalDate.now();
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, query));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, rawQuery));
         matches.forEach(f -> {
             long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
             String daysLabel = days == 0
@@ -72,6 +77,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
                     .append(" <i>").append(f.getName()).append("</i>")
                     .append(daysLabel).append("\n");
         });
+        sb.append("\n").append(Messages.get(lang, Messages.SEARCH_RESULTS_HINT));
         return MessageBuilder.html(chatId, sb.toString());
     }
 }

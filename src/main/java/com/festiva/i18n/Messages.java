@@ -31,20 +31,19 @@ public final class Messages {
     public static final String LIST_SORT_NAME         = "list_sort_name";
     public static final String SEARCH_PROMPT          = "search_prompt";
     public static final String SEARCH_RESULTS         = "search_results";
+    public static final String SEARCH_RESULTS_HINT    = "search_results_hint";
     public static final String SEARCH_NONE            = "search_none";
+    public static final String SEARCH_TOO_LONG        = "search_too_long";
     public static final String STATS_HEADER           = "stats_header";
     public static final String SETTINGS_HEADER        = "settings_header";
     public static final String SETTINGS_HOUR_SET      = "settings_hour_set";
-    public static final String START_ADD_FIRST        = "start_add_first";
     public static final String WELCOME                = "welcome";
     public static final String MENU                   = "menu";
     public static final String ABOUT                  = "about";
     public static final String ENTER_NAME             = "enter_name";
-    public static final String ENTER_DATE             = "enter_date";
     public static final String NAME_EMPTY             = "name_empty";
     public static final String NAME_TOO_LONG          = "name_too_long";
     public static final String NAME_EXISTS            = "name_exists";
-    public static final String DATE_FORMAT_ERROR      = "date_format_error";
     public static final String DATE_FUTURE_ERROR      = "date_future_error";
     public static final String FRIEND_ADDED           = "friend_added";
     public static final String FRIEND_NOT_FOUND       = "friend_not_found";
@@ -72,6 +71,7 @@ public final class Messages {
     public static final String CANCEL_ACTIVE          = "cancel_active";
     public static final String CANCEL_IDLE            = "cancel_idle";
     public static final String UNKNOWN_COMMAND        = "unknown_command";
+    public static final String SESSION_EXPIRED         = "session_expired";
     public static final String LANGUAGE_CHOOSE        = "language_choose";
     public static final String LANGUAGE_SET           = "language_set";
     public static final String MONTH_PARSE_ERROR      = "month_parse_error";
@@ -108,6 +108,7 @@ public final class Messages {
     public static final String BULK_ADD_CSV_CAPTION   = "bulk_add_csv_caption";
     public static final String EXPORT_CAPTION         = "export_caption";
     public static final String EXPORT_EMPTY           = "export_empty";
+    public static final String EXPORT_FAILED          = "export_failed";
     public static final String EDIT_FIELD_REL_BTN     = "edit_field_rel_btn";
     public static final String EDIT_REL_DONE          = "edit_rel_done";
     public static final String LIST_PAGE              = "list_page";
@@ -117,6 +118,7 @@ public final class Messages {
     public static final String DELETE_ACCOUNT_CANCEL = "delete_account_cancel";
     public static final String TODAY_HEADER            = "today_header";
     public static final String TODAY_NONE              = "today_none";
+    public static final String TODAY_HINT              = "today_hint";
     public static final String BULK_ERROR_NO_DATA      = "bulk_error_no_data";
     public static final String BULK_ERROR_TOO_MANY     = "bulk_error_too_many";
     public static final String BULK_ERROR_FORMAT       = "bulk_error_format";
@@ -126,6 +128,11 @@ public final class Messages {
     public static final String BULK_ERROR_DATE_FUTURE  = "bulk_error_date_future";
     public static final String BULK_ERROR_EXISTS       = "bulk_error_exists";
     public static final String BULK_ERROR_DUPLICATE    = "bulk_error_duplicate";
+    public static final String BULK_ERROR_RELATIONSHIP_INVALID = "bulk_error_relationship_invalid";
+    public static final String USE_BUTTONS                    = "use_buttons";
+    public static final String YEARS_OLD_ONE           = "years_old_one";
+    public static final String YEARS_OLD_FEW           = "years_old_few";
+    public static final String YEARS_OLD_MANY          = "years_old_many";
 
     private static MessageSource messageSource;
 
@@ -145,5 +152,18 @@ public final class Messages {
     public static String get(Lang lang, String key, Object... args) {
         String pattern = Objects.requireNonNullElse(messageSource.getMessage(key, null, key, lang.locale()), key).replace("\\n", "\n");
         return String.format(pattern, args);
+    }
+
+    /** Russian plural form for age/year words. */
+    public static String yearsRu(Lang lang, int n) {
+        if (lang != Lang.RU) return String.valueOf(n);
+        int mod100 = n % 100;
+        int mod10  = n % 10;
+        String form;
+        if (mod100 >= 11 && mod100 <= 19)          form = get(lang, YEARS_OLD_MANY);
+        else if (mod10 == 1)                        form = get(lang, YEARS_OLD_ONE);
+        else if (mod10 >= 2 && mod10 <= 4)          form = get(lang, YEARS_OLD_FEW);
+        else                                        form = get(lang, YEARS_OLD_MANY);
+        return n + " " + form;
     }
 }

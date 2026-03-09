@@ -51,6 +51,12 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
+
+        BotState state = userStateService.getState(userId);
+        if (state != BotState.WAITING_FOR_ADD_FRIEND_NAME) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.USE_BUTTONS));
+        }
+
         String name = update.getMessage().getText().trim();
 
         if (name.isBlank()) {

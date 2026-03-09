@@ -121,7 +121,7 @@ public class BirthdayReminder {
                     friend.getName(),
                     friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                     friend.getZodiac(),
-                    friend.getNextAge(today),
+                    Messages.yearsRu(lang, friend.getNextAge(today)),
                     botUsername));
             log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}", userId, friend.getName(), daysUntil);
             return true;

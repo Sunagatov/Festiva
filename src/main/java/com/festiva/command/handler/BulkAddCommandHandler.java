@@ -116,8 +116,8 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
         BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang);
 
-        if (result.valid().isEmpty() && result.errors().isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_EMPTY));
+        if (result.noData()) {
+            return MessageBuilder.html(chatId, result.errors().getFirst());
         }
 
         int currentCount = existing.size();
@@ -135,7 +135,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         userStateService.clearState(userId);
         log.debug("bulk.add.done: userId={}, added={}, errors={}", userId, toAdd.size(), errors.size());
 
-        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(toAdd, errors)));
+        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(toAdd, errors, false)));
     }
 
     private String buildResponse(Lang lang, BulkAddParser.ParseResult result) {
@@ -149,6 +149,9 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                     .collect(Collectors.joining("\n"));
             if (!sb.isEmpty()) sb.append("\n\n");
             sb.append(Messages.get(lang, Messages.BULK_ADD_ERRORS, result.errors().size(), errorList));
+        }
+        if (sb.isEmpty()) {
+            sb.append(Messages.get(lang, Messages.BULK_ADD_EMPTY));
         }
         return sb.toString();
     }

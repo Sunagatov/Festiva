@@ -80,13 +80,16 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         String newName = update.getMessage().getText().trim();
         String oldName = userStateService.getPendingName(userId);
 
+        if (oldName == null) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SESSION_EXPIRED));
+        }
         if (newName.isBlank()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (newName.length() > 100) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
-        if (friendService.friendExists(userId, newName)) {
+        if (friendService.friendExists(userId, newName) && !newName.equalsIgnoreCase(oldName)) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, newName));
         }
 

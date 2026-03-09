@@ -222,7 +222,7 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard);
         } catch (IllegalArgumentException e) {
             log.warn("callback.language.unknown: code={}", code, e);
-            return new CallbackResult(Messages.get(userStateService.getLanguage(userId), Messages.UNKNOWN_COMMAND), null);
+            return new CallbackResult(Messages.get(userStateService.getLanguage(userId), Messages.SESSION_EXPIRED), null);
         }
     }
 
@@ -231,6 +231,7 @@ public class CallbackQueryHandler {
     private CallbackResult handleRemovePage(String data, long userId, Lang lang) {
         int page = Integer.parseInt(data.substring(RemoveCommandHandler.REMOVE_PAGE_PREFIX.length()));
         var friends = friendService.getFriendsSortedByDayMonth(userId);
+        if (friends.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
         return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
                 removeCommandHandler.keyboard(friends, page));
     }
@@ -238,6 +239,7 @@ public class CallbackQueryHandler {
     private CallbackResult handleEditPage(String data, long userId, Lang lang) {
         int page = Integer.parseInt(data.substring(EditFriendCommandHandler.EDIT_PAGE_PREFIX.length()));
         var friends = friendService.getFriendsSortedByDayMonth(userId);
+        if (friends.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
                 editFriendCommandHandler.keyboard(friends, page));
     }
@@ -245,7 +247,8 @@ public class CallbackQueryHandler {
     private CallbackResult handleRemove(String data, long userId, Lang lang) {
         String id = data.substring(REMOVE_PREFIX.length());
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.UNKNOWN_COMMAND), null);
+        if (friend == null || friend.getTelegramUserId() != userId)
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String name = friend.getName();
         userStateService.setPendingName(userId, name);
         userStateService.setPendingId(userId, id);
@@ -255,7 +258,8 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleConfirmRemove(long userId, String id, Lang lang) {
         Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null) return new CallbackResult(Messages.get(lang, Messages.FRIEND_NOT_FOUND, "?"), null);
+        if (friend == null || friend.getTelegramUserId() != userId)
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String name = friend.getName();
         friendService.deleteFriend(userId, name);
         userStateService.clearState(userId);
@@ -297,8 +301,8 @@ public class CallbackQueryHandler {
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
         filtered.forEach(f -> {
             boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
-            String ageLabel = alreadyCelebrated ? Messages.get(lang, Messages.YEARS_OLD, f.getAge(today))
-                    : Messages.get(lang, Messages.YEARS_TURNS, f.getNextAge(today));
+            String ageLabel = alreadyCelebrated ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
+                    : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));
             sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
                     .append("</b> ").append(f.getName())
                     .append(" (<i>").append(ageLabel).append("</i>)\n");

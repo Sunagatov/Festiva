@@ -2,6 +2,7 @@ package com.festiva.command;
 
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.i18n.Messages;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -51,7 +52,13 @@ public class CommandRouter {
 
     private SendMessage routeDocument(Update update, long userId, BotState state) {
         StatefulCommandHandler h = statefulHandlers.get(state);
-        if (h == null) return null;
+        if (h == null) {
+            if (state != BotState.IDLE) {
+                return MessageBuilder.html(update.getMessage().getChatId(),
+                        Messages.get(userStateService.getLanguage(userId), Messages.USE_BUTTONS));
+            }
+            return null;
+        }
         log.debug("router.document: userId={}, state={}", userId, state);
         return h.handleState(update);
     }
@@ -76,6 +83,12 @@ public class CommandRouter {
         if (h != null) {
             log.debug("router.state: userId={}, state={}, input={}", userId, state, text);
             return h.handleState(update);
+        }
+
+        if (state != BotState.IDLE) {
+            log.debug("router.state.unhandled: userId={}, state={}, input={}", userId, state, text);
+            return MessageBuilder.html(update.getMessage().getChatId(),
+                    Messages.get(userStateService.getLanguage(userId), Messages.USE_BUTTONS));
         }
 
         log.debug("router.command: userId={}, command={}", userId, command);
