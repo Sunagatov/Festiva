@@ -140,6 +140,7 @@ public final class Messages {
     public static final String ICS_PREVIEW         = "ics_preview";
     public static final String ICS_PREVIEW_NO_VALID = "ics_preview_no_valid";
     public static final String ICS_CONFIRM_BTN     = "ics_confirm_btn";
+    public static final String ICS_CANCEL_BTN      = "ics_cancel_btn";
     public static final String ICS_DONE            = "ics_done";
     public static final String ICS_CANCELLED       = "ics_cancelled";
     public static final String YEARS_OLD_ONE           = "years_old_one";

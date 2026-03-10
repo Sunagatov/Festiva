@@ -140,7 +140,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                                 .text(Messages.get(lang, Messages.ICS_CONFIRM_BTN, toSave.size()))
                                 .callbackData(CALLBACK_ICS_CONFIRM).build(),
                         InlineKeyboardButton.builder()
-                                .text("\u274c Cancel")
+                                .text(Messages.get(lang, Messages.ICS_CANCEL_BTN))
                                 .callbackData(CALLBACK_ICS_CANCEL).build()
                 ))).build();
         return MessageBuilder.html(chatId, text, kb);
@@ -193,7 +193,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         try {
             return icsNameExtractorService.extractName(summary);
         } catch (Exception e) {
-            log.warn("ics.ai.name_extraction.failed summary={} cause={}", summary, e.getMessage());
+            log.warn("ics.ai.name_extraction.failed summary={}", summary, e);
             return summary;
         }
     }
@@ -215,6 +215,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         try {
             return LocalDate.parse(datePart, ICS_DATE_FMT);
         } catch (Exception e) {
+            log.debug("ics.date.parse.failed value={}", value, e);
             return null;
         }
     }
