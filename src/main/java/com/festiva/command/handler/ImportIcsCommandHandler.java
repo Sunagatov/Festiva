@@ -1,5 +1,6 @@
 package com.festiva.command.handler;
 
+import com.festiva.ai.IcsNameExtractorService;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
@@ -10,6 +11,7 @@ import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
@@ -48,6 +50,9 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
+
+    @Autowired(required = false)
+    private IcsNameExtractorService icsNameExtractorService;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -91,11 +96,15 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR));
         }
 
-        List<String> csvLines = extractYearlyCsvLines(lines);
-        if (csvLines.isEmpty()) {
+        List<IcsEntry> entries = extractYearlyEntries(lines);
+        if (entries.isEmpty()) {
             userStateService.clearState(userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS));
         }
+
+        List<String> csvLines = entries.stream()
+                .map(e -> resolveName(e.summary()) + "," + e.date().format(CSV_DATE_FMT))
+                .toList();
 
         Set<String> existing = friendService.getFriends(userId).stream()
                 .map(f -> f.getName().toLowerCase(Locale.ROOT))
@@ -103,7 +112,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
         BulkAddParser.ParseResult result = BulkAddParser.parse(csvLines, existing, lang);
 
-        // enforce friend cap on valid entries
         List<Friend> toSave = result.valid();
         List<String> errors = new ArrayList<>(result.errors());
         int currentCount = existing.size();
@@ -112,7 +120,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             toSave = toSave.subList(0, allowed);
         }
 
-        int yearlyCount = csvLines.size();
+        int yearlyCount = entries.size();
 
         if (toSave.isEmpty()) {
             userStateService.clearState(userId);
@@ -140,10 +148,12 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Unfolds ICS lines and extracts VEVENT blocks with RRULE:FREQ=YEARLY, returning "Name,DD.MM.YYYY" lines. */
-    public static List<String> extractYearlyCsvLines(List<String> raw) {
+    record IcsEntry(String summary, LocalDate date) {}
+
+    /** Unfolds ICS lines and extracts VEVENT blocks with RRULE:FREQ=YEARLY. */
+    public static List<IcsEntry> extractYearlyEntries(List<String> raw) {
         List<String> unfolded = unfold(raw);
-        List<String> result = new ArrayList<>();
+        List<IcsEntry> result = new ArrayList<>();
         String summary = null, dtstart = null;
         boolean inEvent = false, yearly = false;
 
@@ -153,16 +163,13 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             } else if (line.equals("END:VEVENT")) {
                 if (inEvent && yearly && summary != null && dtstart != null) {
                     LocalDate date = parseIcsDate(dtstart);
-                    if (date != null) {
-                        result.add(summary.trim() + "," + date.format(CSV_DATE_FMT));
-                    }
+                    if (date != null) result.add(new IcsEntry(summary.trim(), date));
                 }
                 inEvent = false;
             } else if (inEvent) {
                 if (line.startsWith("SUMMARY:")) {
                     summary = line.substring(8);
                 } else if (line.startsWith("DTSTART")) {
-                    // DTSTART:YYYYMMDD or DTSTART;VALUE=DATE:YYYYMMDD or DTSTART:YYYYMMDDTHHMMSSZ
                     int colon = line.indexOf(':');
                     if (colon >= 0) dtstart = line.substring(colon + 1).trim();
                 } else if (line.startsWith("RRULE:") && line.contains("FREQ=YEARLY")) {
@@ -171,6 +178,24 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             }
         }
         return result;
+    }
+
+    /** Kept for backward compatibility with existing unit tests. */
+    public static List<String> extractYearlyCsvLines(List<String> raw) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
+        return extractYearlyEntries(raw).stream()
+                .map(e -> e.summary() + "," + e.date().format(fmt))
+                .toList();
+    }
+
+    private String resolveName(String summary) {
+        if (icsNameExtractorService == null) return summary;
+        try {
+            return icsNameExtractorService.extractName(summary);
+        } catch (Exception e) {
+            log.warn("ics.ai.name_extraction.failed summary={} cause={}", summary, e.getMessage());
+            return summary;
+        }
     }
 
     private static List<String> unfold(List<String> lines) {
@@ -186,7 +211,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     }
 
     private static LocalDate parseIcsDate(String value) {
-        // strip time part if present: YYYYMMDDTHHMMSSZ → YYYYMMDD
         String datePart = value.length() >= 8 ? value.substring(0, 8) : value;
         try {
             return LocalDate.parse(datePart, ICS_DATE_FMT);

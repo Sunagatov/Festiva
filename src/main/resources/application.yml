@@ -36,3 +36,9 @@ kafka:
   bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
   api-key: ${KAFKA_API_KEY:}
   api-secret: ${KAFKA_API_SECRET:}
+
+ai:
+  enabled: ${AI_ENABLED:false}
+  api-key: ${OPENAI_API_KEY:}
+  base-url: ${AI_BASE_URL:https://api.openai.com/v1}
+  model-name: ${AI_MODEL_NAME:gpt-4o-mini}

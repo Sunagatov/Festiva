@@ -20,6 +20,7 @@
 
     <properties>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <langchain4j.version>1.11.0</langchain4j.version>
         <java.version>25</java.version>
         <telegrambots.version>9.0.0</telegrambots.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
@@ -96,6 +97,18 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- LangChain4j -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <!-- Jackson JSON -->

@@ -1,0 +1,33 @@
+package com.festiva.ai;
+
+import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.service.AiServices;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
+class AiIcsNameExtractorConfig {
+
+    @Bean
+    OpenAiChatModel openAiChatModel(
+            @Value("${ai.api-key}") String apiKey,
+            @Value("${ai.base-url}") String baseUrl,
+            @Value("${ai.model-name}") String modelName) {
+        return OpenAiChatModel.builder()
+                .apiKey(apiKey)
+                .baseUrl(baseUrl)
+                .modelName(modelName)
+                .temperature(0.0)
+                .build();
+    }
+
+    @Bean
+    IcsNameExtractorService icsNameExtractorService(OpenAiChatModel model) {
+        return AiServices.builder(IcsNameExtractorService.class)
+                .chatModel(model)
+                .build();
+    }
+}

@@ -1,6 +1,6 @@
 # Feature: Import from Google Calendar (.ics)
 
-> **Status:** `Draft`
+> **Status:** `In Progress`
 > **Command:** `/importics`
 > **Handlers:** `ImportIcsCommandHandler.java` (to be created)
 > **Interface:** implements `StatefulCommandHandler` — must implement `handledStates()` returning `Set.of(WAITING_FOR_ICS_FILE)`
@@ -11,6 +11,8 @@
 
 Allows a user to upload a `.ics` file exported from Google Calendar (or any iCalendar-compatible app).
 The bot parses the file, extracts events that repeat yearly (`RRULE:FREQ=YEARLY`) — treating them as birthdays — and bulk-imports them as friends.
+
+Because Google Calendar birthday events often have summaries like `"День рождения Даши"` or `"Birthday of John"` instead of just the person's name, the bot uses an optional AI step (LangChain4j + OpenAI `gpt-4o-mini`) to extract the clean name from the summary. If AI is disabled or unavailable, the raw `SUMMARY` value is used as-is.
 
 ---
 
@@ -29,7 +31,7 @@ The bot parses the file, extracts events that repeat yearly (`RRULE:FREQ=YEARLY`
 3. Max file size: **512 KB**.
 4. The bot parses the file and extracts `VEVENT` blocks where `RRULE` contains `FREQ=YEARLY`.
 5. From each qualifying event:
-   - **Name** → `SUMMARY` property (stripped of leading/trailing whitespace).
+   - **Name** → extracted from `SUMMARY` via AI (see §16 AI Name Extraction). Falls back to raw `SUMMARY` if AI is disabled or fails.
    - **Date** → `DTSTART` property. Supports both `DTSTART;VALUE=DATE:YYYYMMDD` and `DTSTART:YYYYMMDDTHHMMSSZ`.
 6. Events without `SUMMARY`, without `DTSTART`, or without `RRULE:FREQ=YEARLY` are silently skipped — they do **not** appear in the preview.
 7. Extracted entries go through the **same validation pipeline as bulk-add** by calling `BulkAddParser.parse()` directly. To do this, the ICS parser converts each extracted event into a synthetic CSV line `"Name,DD.MM.YYYY"` — note the date must be reformatted from ICS `YYYYMMDD` to `DD.MM.YYYY` before building the line — and passes the list to `BulkAddParser.parse(lines, existingNames, lang)`.
@@ -50,6 +52,7 @@ The bot parses the file, extracts events that repeat yearly (`RRULE:FREQ=YEARLY`
 - Parsing must be tolerant of CRLF and LF line endings.
 - ICS line folding (lines starting with a space/tab are continuations) must be unfolded before parsing.
 - No external ICS library — parse with simple line-by-line logic (the subset needed is small).
+- AI name extraction is optional — controlled by `ai.enabled` property. When disabled, raw `SUMMARY` is used.
 - All messages must exist in `messages_en.properties` and `messages_ru.properties`.
 
 ---
@@ -215,7 +218,34 @@ New constants must be added to `Messages.java` and corresponding keys to both `m
 
 ---
 
-## 16. Open Questions
+## 16. AI Name Extraction
+
+Google Calendar exports birthday event summaries in natural language (e.g. `"День рождения Юли"`, `"Birthday of John"`, `"Happy birthday!"`). Stripping these prefixes reliably across languages is not feasible with regex.
+
+**Approach:** Use LangChain4j + OpenAI `gpt-4o-mini` (same stack as Iced-Latte) to extract just the person's name.
+
+**Implementation plan:**
+1. Add `langchain4j-open-ai` dependency to `pom.xml` (version `1.11.0`, same as Iced-Latte).
+2. Add `OPENAI_API_KEY` env var to `.env` and `.env.prod`.
+3. Create `IcsNameExtractorService` interface with a single method annotated with `@SystemMessage`:
+   > *"Extract only the person's name from a birthday event title. Return just the name, nothing else. If no name can be identified, return the original text unchanged."*
+4. Create `AiIcsNameExtractorConfig` annotated with `@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")` — wires `OpenAiChatModel` + `AiServices`.
+5. In `ImportIcsCommandHandler`, inject `Optional<IcsNameExtractorService>` — call it per SUMMARY if present, otherwise use raw SUMMARY.
+
+**Env vars:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | only if `ai.enabled=true` | OpenAI API key |
+| `ai.enabled` | ❌ | `true` to enable AI name extraction (default: `false`) |
+| `ai.model-name` | ❌ | Defaults to `gpt-4o-mini` |
+| `ai.base-url` | ❌ | Defaults to `https://api.openai.com/v1` |
+
+**Fallback behaviour:** If AI is disabled, unavailable, or throws, the raw `SUMMARY` is used — import never fails due to AI.
+
+---
+
+## 17. Open Questions
 
 - [ ] Should the bot attempt to detect the year-of-birth from the `DTSTART` year, or always use it as-is? (Google Calendar stores the actual birth year in `DTSTART` for birthday events.)
 - [ ] Should relationship be guessable from the event title? (e.g. "Mom's Birthday" → `MUM`) — probably out of scope for v1.
@@ -223,7 +253,7 @@ New constants must be added to `Messages.java` and corresponding keys to both `m
 
 ---
 
-## 17. Testing Notes
+## 18. Testing Notes
 
 **To be created:** `ImportIcsCommandHandlerTest.java`
 
@@ -240,8 +270,9 @@ Should cover:
 
 ---
 
-## 18. Changelog
+## 19. Changelog
 
 | Date | Change |
 |------|--------|
 | 2025 | Initial spec — Draft |
+| 2026 | Added AI name extraction section (§16) — LangChain4j + OpenAI gpt-4o-mini, optional via `ai.enabled` |
