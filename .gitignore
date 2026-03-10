@@ -43,3 +43,5 @@ docker-compose.prod.yml
 hs_err_pid*
 replay_pid*
 
+*.ics
+*.ical.zip
