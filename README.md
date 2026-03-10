@@ -173,6 +173,32 @@ See `.env` for local defaults and `.env.prod` for the production template.
 
 ---
 
+## 📖 Feature Documentation
+
+Each feature has a full spec covering user stories, functional & non-functional requirements, bot flows, state transitions, error messages, acceptance criteria, data model, security, observability, and known limitations.
+
+| Feature | Spec |
+|---|---|
+| Add Friend | [docs/features/add-friend.md](docs/features/add-friend.md) |
+| Bulk Add Friends | [docs/features/bulk-add.md](docs/features/bulk-add.md) |
+| Edit Friend | [docs/features/edit-friend.md](docs/features/edit-friend.md) |
+| Remove Friend | [docs/features/remove-friend.md](docs/features/remove-friend.md) |
+| List Friends | [docs/features/list.md](docs/features/list.md) |
+| Search Friends | [docs/features/search.md](docs/features/search.md) |
+| Export Friends | [docs/features/export.md](docs/features/export.md) |
+| Birthdays by Month | [docs/features/birthdays-by-month.md](docs/features/birthdays-by-month.md) |
+| Today's Birthdays | [docs/features/today.md](docs/features/today.md) |
+| Upcoming Birthdays | [docs/features/upcoming-birthdays.md](docs/features/upcoming-birthdays.md) |
+| Jubilee Birthdays | [docs/features/jubilee.md](docs/features/jubilee.md) |
+| Birthday Reminders | [docs/features/birthday-reminders.md](docs/features/birthday-reminders.md) |
+| Stats | [docs/features/stats.md](docs/features/stats.md) |
+| Settings | [docs/features/settings.md](docs/features/settings.md) |
+| Language | [docs/features/language.md](docs/features/language.md) |
+| Delete Account | [docs/features/delete-account.md](docs/features/delete-account.md) |
+
+
+---
+
 ## 🤝 Contributing
 
 🎉 Contributions are welcome.
