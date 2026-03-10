@@ -130,6 +130,17 @@ public final class Messages {
     public static final String BULK_ERROR_DUPLICATE    = "bulk_error_duplicate";
     public static final String BULK_ERROR_RELATIONSHIP_INVALID = "bulk_error_relationship_invalid";
     public static final String USE_BUTTONS                    = "use_buttons";
+    public static final String ICS_PROMPT          = "ics_prompt";
+    public static final String ICS_NOT_A_FILE      = "ics_not_a_file";
+    public static final String ICS_WRONG_TYPE      = "ics_wrong_type";
+    public static final String ICS_TOO_LARGE       = "ics_too_large";
+    public static final String ICS_PARSE_ERROR     = "ics_parse_error";
+    public static final String ICS_NO_EVENTS       = "ics_no_events";
+    public static final String ICS_PREVIEW         = "ics_preview";
+    public static final String ICS_PREVIEW_NO_VALID = "ics_preview_no_valid";
+    public static final String ICS_CONFIRM_BTN     = "ics_confirm_btn";
+    public static final String ICS_DONE            = "ics_done";
+    public static final String ICS_CANCELLED       = "ics_cancelled";
     public static final String YEARS_OLD_ONE           = "years_old_one";
     public static final String YEARS_OLD_FEW           = "years_old_few";
     public static final String YEARS_OLD_MANY          = "years_old_many";

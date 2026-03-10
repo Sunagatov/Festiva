@@ -72,7 +72,8 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                     new BotCommand("menu",              "Show all commands"),
                     new BotCommand("about",             "About Festiva"),
                     new BotCommand("deleteaccount",     "Delete my data"),
-                    new BotCommand("cancel",            "Cancel")
+                    new BotCommand("cancel",            "Cancel"),
+                    new BotCommand("importics",         "Import from Google Calendar")
             );
             List<BotCommand> commandsRu = List.of(
                     new BotCommand("start",             "Запустить"),
@@ -93,7 +94,8 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                     new BotCommand("menu",              "Все команды"),
                     new BotCommand("about",             "О боте"),
                     new BotCommand("deleteaccount",     "Удалить данные"),
-                    new BotCommand("cancel",            "Отмена")
+                    new BotCommand("cancel",            "Отмена"),
+                    new BotCommand("importics",         "Импорт из Google Календаря")
             );
             telegramClient.execute(SetMyCommands.builder().commands(commands).build());
             telegramClient.execute(SetMyCommands.builder().commands(commandsRu)

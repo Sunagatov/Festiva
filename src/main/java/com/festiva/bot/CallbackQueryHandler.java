@@ -5,6 +5,7 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.DeleteAccountCommandHandler;
 import com.festiva.command.handler.EditFriendCommandHandler;
+import com.festiva.command.handler.ImportIcsCommandHandler;
 import com.festiva.command.handler.ListCommandHandler;
 import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
@@ -56,6 +57,7 @@ public class CallbackQueryHandler {
     private final EditCallbackHandler editHandler;
     private final RemoveCommandHandler removeCommandHandler;
     private final EditFriendCommandHandler editFriendCommandHandler;
+    private final ImportIcsCommandHandler importIcsHandler;
     private final DeleteAccountCommandHandler deleteAccountHandler;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
@@ -146,6 +148,13 @@ public class CallbackQueryHandler {
             }
             case DeleteAccountCommandHandler.CANCEL_DELETE -> {
                 return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_CANCEL), null);
+            }
+            case ImportIcsCommandHandler.CALLBACK_ICS_CONFIRM -> {
+                return handleIcsConfirm(userId, lang);
+            }
+            case ImportIcsCommandHandler.CALLBACK_ICS_CANCEL -> {
+                userStateService.clearState(userId);
+                return new CallbackResult(Messages.get(lang, Messages.ICS_CANCELLED), null);
             }
         }
         return null;
@@ -275,6 +284,20 @@ public class CallbackQueryHandler {
     private CallbackResult handleConfirmDeleteAccount(long userId, Lang lang) {
         deleteAccountHandler.deleteAccount(userId);
         return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_DONE), null);
+    }
+
+    private CallbackResult handleIcsConfirm(long userId, Lang lang) {
+        java.util.List<com.festiva.friend.entity.Friend> pending = userStateService.getPendingIcsImport(userId);
+        int saved = 0;
+        if (pending != null) {
+            for (com.festiva.friend.entity.Friend f : pending) {
+                friendService.addFriend(userId, f);
+                saved++;
+            }
+        }
+        userStateService.clearState(userId);
+        log.debug("ics.import.done: userId={}, added={}", userId, saved);
+        return new CallbackResult(Messages.get(lang, Messages.ICS_DONE, saved), null);
     }
 
     // ── Month ─────────────────────────────────────────────────────────────────

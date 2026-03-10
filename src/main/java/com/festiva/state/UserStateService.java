@@ -1,5 +1,6 @@
 package com.festiva.state;
 
+import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
@@ -21,6 +22,7 @@ public class UserStateService {
         Integer pendingDay = null;
         int yearPageOffset = 0;
         Lang lang = null;
+        java.util.List<Friend> pendingIcsImport = null;
     }
 
     private final ConcurrentHashMap<Long, UserSession> sessions = new ConcurrentHashMap<>();
@@ -42,6 +44,7 @@ public class UserStateService {
         s.pendingMonth = null;
         s.pendingDay = null;
         s.yearPageOffset = 0;
+        s.pendingIcsImport = null;
     }
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
@@ -61,6 +64,9 @@ public class UserStateService {
 
     public void setPendingDay(long userId, Integer day) { session(userId).pendingDay = day; }
     public Integer getPendingDay(long userId) { return session(userId).pendingDay; }
+
+    public void setPendingIcsImport(long userId, java.util.List<Friend> friends) { session(userId).pendingIcsImport = friends; }
+    public java.util.List<Friend> getPendingIcsImport(long userId) { return session(userId).pendingIcsImport; }
 
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);
