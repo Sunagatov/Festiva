@@ -105,6 +105,7 @@ public final class Messages {
     public static final String BULK_ADD_CHOOSE        = "bulk_add_choose";
     public static final String BULK_ADD_PASTE_BTN     = "bulk_add_paste_btn";
     public static final String BULK_ADD_CSV_BTN       = "bulk_add_csv_btn";
+    public static final String BULK_ADD_ICS_BTN       = "bulk_add_ics_btn";
     public static final String BULK_ADD_CSV_CAPTION   = "bulk_add_csv_caption";
     public static final String EXPORT_CAPTION         = "export_caption";
     public static final String EXPORT_EMPTY           = "export_empty";

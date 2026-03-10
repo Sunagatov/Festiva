@@ -14,6 +14,7 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -142,6 +143,10 @@ public class CallbackQueryHandler {
             case BulkAddCommandHandler.CALLBACK_CSV -> {
                 bulkAddHandler.sendCsvTemplate(chatId, lang);
                 return null;
+            }
+            case BulkAddCommandHandler.CALLBACK_ICS -> {
+                userStateService.setState(userId, BotState.WAITING_FOR_ICS_FILE);
+                return new CallbackResult(Messages.get(lang, Messages.ICS_PROMPT), null);
             }
             case DeleteAccountCommandHandler.CONFIRM_DELETE -> {
                 return handleConfirmDeleteAccount(userId, lang);

@@ -41,6 +41,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
     public static final String CALLBACK_PASTE = "BULK_PASTE";
     public static final String CALLBACK_CSV   = "BULK_CSV";
+    public static final String CALLBACK_ICS   = "BULK_ICS";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -62,10 +63,15 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_PASTE_BTN)).callbackData(CALLBACK_PASTE).build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_CSV_BTN)).callbackData(CALLBACK_CSV).build()
-                ))).build();
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_PASTE_BTN)).callbackData(CALLBACK_PASTE).build(),
+                                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_CSV_BTN)).callbackData(CALLBACK_CSV).build()
+                        ),
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_ICS_BTN)).callbackData(CALLBACK_ICS).build()
+                        )
+                )).build();
 
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_CHOOSE), keyboard);
     }
