@@ -45,7 +45,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
         int currentMonth = LocalDate.now().getMonthValue();
 
         Map<Integer, Long> countByMonth = friendService.getFriends(userId).stream()
-                .collect(Collectors.groupingBy(f -> f.getBirthDate().getMonthValue(), Collectors.counting()));
+                .collect(Collectors.groupingBy(f -> f.getBirthMonthDay().getMonthValue(), Collectors.counting()));
 
         return MessageBuilder.html(chatId,
                 Messages.get(lang, Messages.BIRTHDAYS_PICK),

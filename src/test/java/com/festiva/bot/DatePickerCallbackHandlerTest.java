@@ -171,7 +171,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 
-        verify(friendService).updateFriendDate(eq(1L), eq("Alice"), eq(LocalDate.of(1990, 3, 15)));
+        verify(friendService).updateFriendDate(eq(1L), eq("Alice"), eq(1990), eq(3), eq(15));
         verify(userStateService).clearState(1L);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.EDIT_DATE_DONE, "Alice"));
     }
@@ -193,6 +193,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick with null session state → returns SESSION_EXPIRED")
     void handleDayPick_nullSession_returnsSessionExpired() {
         when(userStateService.getPendingYear(1L)).thenReturn(null);
+        when(userStateService.getPendingMonth(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 

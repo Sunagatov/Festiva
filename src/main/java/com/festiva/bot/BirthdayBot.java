@@ -1,6 +1,7 @@
 package com.festiva.bot;
 
 import com.festiva.command.CommandRouter;
+import com.festiva.i18n.Lang;
 import com.festiva.metrics.MetricsSender;
 import com.festiva.notification.NotificationSender;
 import jakarta.annotation.PostConstruct;
@@ -14,11 +15,8 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
-
-import java.util.List;
 
 @Slf4j
 @Component
@@ -30,17 +28,20 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final CommandRouter commandRouter;
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
+    private final BotCommandsProvider commandsProvider;
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
                        TelegramClient telegramClient,
                        @Value("${telegram.bot.token}") String botToken,
-                       MetricsSender metricsSender) {
+                       MetricsSender metricsSender,
+                       BotCommandsProvider commandsProvider) {
         this.botToken = botToken;
         this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
+        this.commandsProvider = commandsProvider;
     }
 
     @PostConstruct
@@ -53,53 +54,16 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             throw new RuntimeException("bot.start.failed", e);
         }
         try {
-            List<BotCommand> commands = List.of(
-                    new BotCommand("start",             "Start"),
-                    new BotCommand("add",               "Add friend"),
-                    new BotCommand("addmany",           "Bulk add friends"),
-                    new BotCommand("list",              "List friends"),
-                    new BotCommand("edit",              "Edit friend"),
-                    new BotCommand("remove",            "Remove friend"),
-                    new BotCommand("search",            "Search friends"),
-                    new BotCommand("birthdays",         "Birthdays by month"),
-                    new BotCommand("today",             "Today's birthdays"),
-                    new BotCommand("upcomingbirthdays", "Upcoming birthdays"),
-                    new BotCommand("jubilee",           "Milestone birthdays"),
-                    new BotCommand("stats",             "Statistics"),
-                    new BotCommand("export",            "Export friends"),
-                    new BotCommand("settings",          "Settings"),
-                    new BotCommand("language",          "Change language"),
-                    new BotCommand("menu",              "Show all commands"),
-                    new BotCommand("about",             "About Festiva"),
-                    new BotCommand("deleteaccount",     "Delete my data"),
-                    new BotCommand("cancel",            "Cancel"),
-                    new BotCommand("importics",         "Import from Google Calendar")
-            );
-            List<BotCommand> commandsRu = List.of(
-                    new BotCommand("start",             "Запустить"),
-                    new BotCommand("add",               "Добавить друга"),
-                    new BotCommand("addmany",           "Добавить несколько"),
-                    new BotCommand("list",              "Список друзей"),
-                    new BotCommand("edit",              "Редактировать друга"),
-                    new BotCommand("remove",            "Удалить друга"),
-                    new BotCommand("search",            "Поиск друзей"),
-                    new BotCommand("birthdays",         "Дни рождения по месяцам"),
-                    new BotCommand("today",             "Сегодняшние дни рождения"),
-                    new BotCommand("upcomingbirthdays", "Ближайшие дни рождения"),
-                    new BotCommand("jubilee",           "Юбилейные дни рождения"),
-                    new BotCommand("stats",             "Статистика"),
-                    new BotCommand("export",            "Экспорт друзей"),
-                    new BotCommand("settings",          "Настройки"),
-                    new BotCommand("language",          "Сменить язык"),
-                    new BotCommand("menu",              "Все команды"),
-                    new BotCommand("about",             "О боте"),
-                    new BotCommand("deleteaccount",     "Удалить данные"),
-                    new BotCommand("cancel",            "Отмена"),
-                    new BotCommand("importics",         "Импорт из Google Календаря")
-            );
-            telegramClient.execute(SetMyCommands.builder().commands(commands).build());
-            telegramClient.execute(SetMyCommands.builder().commands(commandsRu)
-                    .languageCode("ru").build());
+            // Set default commands (English)
+            telegramClient.execute(SetMyCommands.builder()
+                    .commands(commandsProvider.getCommandsForLanguage(Lang.EN))
+                    .languageCode(Lang.EN.code())
+                    .build());
+            // Set Russian commands
+            telegramClient.execute(SetMyCommands.builder()
+                    .commands(commandsProvider.getCommandsForLanguage(Lang.RU))
+                    .languageCode(Lang.RU.code())
+                    .build());
             log.info("bot.commands.registered");
         } catch (TelegramApiException e) {
             log.error("bot.commands.register.failed: message={}", e.getMessage(), e);
@@ -140,6 +104,18 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
         } catch (TelegramApiException e) {
             log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
+        }
+    }
+
+    public void updateCommandsForUser(long chatId, Lang lang) {
+        try {
+            telegramClient.execute(SetMyCommands.builder()
+                    .commands(commandsProvider.getCommandsForLanguage(lang))
+                    .scope(new org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeChat(String.valueOf(chatId)))
+                    .build());
+            log.debug("bot.commands.updated: chatId={}, lang={}", chatId, lang);
+        } catch (TelegramApiException e) {
+            log.error("bot.commands.update.failed: chatId={}, message={}", chatId, e.getMessage(), e);
         }
     }
 }
