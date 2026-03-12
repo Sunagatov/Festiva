@@ -50,7 +50,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Mock EditCallbackHandler editHandler;
     @Mock RemoveCommandHandler removeCommandHandler;
     @Mock EditFriendCommandHandler editFriendCommandHandler;
-    @Mock BirthdayBot birthdayBot;
+    @Mock BotCommandsService commandsService;
     @InjectMocks CallbackQueryHandler handler;
 
     @BeforeEach

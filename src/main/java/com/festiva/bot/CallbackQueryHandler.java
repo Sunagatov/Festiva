@@ -60,7 +60,7 @@ public class CallbackQueryHandler {
     private final EditFriendCommandHandler editFriendCommandHandler;
     private final ImportIcsCommandHandler importIcsHandler;
     private final DeleteAccountCommandHandler deleteAccountHandler;
-    private final BirthdayBot birthdayBot;
+    private final BotCommandsService commandsService;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
         if (callbackQuery == null) return null;
@@ -231,7 +231,7 @@ public class CallbackQueryHandler {
             log.debug("callback.language.changed: userId={}, lang={}", userId, newLang);
             
             // Update bot commands menu for this user
-            birthdayBot.updateCommandsForUser(userId, newLang);
+            commandsService.updateCommandsForUser(userId, newLang);
             
             InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(new InlineKeyboardRow(

@@ -28,20 +28,20 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final CommandRouter commandRouter;
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
-    private final BotCommandsProvider commandsProvider;
+    private final BotCommandsService commandsService;
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
                        TelegramClient telegramClient,
                        @Value("${telegram.bot.token}") String botToken,
                        MetricsSender metricsSender,
-                       BotCommandsProvider commandsProvider) {
+                       BotCommandsService commandsService) {
         this.botToken = botToken;
         this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
-        this.commandsProvider = commandsProvider;
+        this.commandsService = commandsService;
     }
 
     @PostConstruct
@@ -53,21 +53,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         } catch (TelegramApiException e) {
             throw new RuntimeException("bot.start.failed", e);
         }
-        try {
-            // Set default commands (English)
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(commandsProvider.getCommandsForLanguage(Lang.EN))
-                    .languageCode(Lang.EN.code())
-                    .build());
-            // Set Russian commands
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(commandsProvider.getCommandsForLanguage(Lang.RU))
-                    .languageCode(Lang.RU.code())
-                    .build());
-            log.info("bot.commands.registered");
-        } catch (TelegramApiException e) {
-            log.error("bot.commands.register.failed: message={}", e.getMessage(), e);
-        }
+        commandsService.registerGlobalCommands();
     }
 
     @Override
@@ -104,18 +90,6 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
         } catch (TelegramApiException e) {
             log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
-        }
-    }
-
-    public void updateCommandsForUser(long chatId, Lang lang) {
-        try {
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(commandsProvider.getCommandsForLanguage(lang))
-                    .scope(new org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeChat(String.valueOf(chatId)))
-                    .build());
-            log.debug("bot.commands.updated: chatId={}, lang={}", chatId, lang);
-        } catch (TelegramApiException e) {
-            log.error("bot.commands.update.failed: chatId={}, message={}", chatId, e.getMessage(), e);
         }
     }
 }
