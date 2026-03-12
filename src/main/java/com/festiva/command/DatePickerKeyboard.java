@@ -17,6 +17,7 @@ public final class DatePickerKeyboard {
     public static final String DATE_MONTH_PREFIX     = "DATE_MONTH_";
     public static final String DATE_DAY_PREFIX       = "DATE_DAY_";
     public static final String DATE_YEAR_PAGE_PREFIX = "DATE_YEAR_PAGE_";
+    public static final String DATE_SKIP_YEAR        = "DATE_SKIP_YEAR";
 
     private static final int YEARS_PER_PAGE = 8;
     public static final int DEFAULT_YEAR_OFFSET =
@@ -44,6 +45,11 @@ public final class DatePickerKeyboard {
             nav.add(btn(com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_YEAR_LATER), DATE_YEAR_PAGE_PREFIX + (pageOffset - YEARS_PER_PAGE)));
         }
         rows.add(nav);
+        
+        // Add "Skip year" button
+        rows.add(new InlineKeyboardRow(btn(
+                com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_SKIP_YEAR),
+                DATE_SKIP_YEAR)));
 
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }

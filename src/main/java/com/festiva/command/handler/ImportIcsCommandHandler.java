@@ -87,7 +87,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE));
         }
-        if (doc.getFileSize() != null && doc.getFileSize() > 512_000) {
+        if (doc.getFileSize() != null && doc.getFileSize() > 15_000_000) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE));
         }
 

@@ -95,6 +95,7 @@ public class CallbackQueryHandler {
     private CallbackResult dispatchDatePicker(String data, long userId, Lang lang) {
         if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX))      return datePickerHandler.handleYearPage(data, userId, lang);
         if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PREFIX))           return datePickerHandler.handleYearPick(data, userId, lang);
+        if (DatePickerKeyboard.DATE_SKIP_YEAR.equals(data))                 return datePickerHandler.handleSkipYear(userId, lang);
         if (data.startsWith(DatePickerKeyboard.DATE_MONTH_PREFIX))          return datePickerHandler.handleMonthPick(data, userId, lang);
         if (data.startsWith(DatePickerKeyboard.DATE_DAY_PREFIX))            return datePickerHandler.handleDayPick(data, userId, lang);
         if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR))          return datePickerHandler.handleBackToYear(data, userId, lang);
@@ -320,7 +321,7 @@ public class CallbackQueryHandler {
             }
         }
         var filtered = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .filter(f -> f.getBirthDate().getMonthValue() == month).toList();
+                .filter(f -> f.getBirthMonthDay().getMonthValue() == month).toList();
         String raw = Month.of(month).getDisplayName(TextStyle.FULL_STANDALONE, lang.locale());
         String monthName = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
         if (filtered.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), null);
@@ -328,12 +329,22 @@ public class CallbackQueryHandler {
         LocalDate today = LocalDate.now();
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
         filtered.forEach(f -> {
-            boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
-            String ageLabel = alreadyCelebrated ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
-                    : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));
-            sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
-                    .append("</b> ").append(f.getName())
-                    .append(" (<i>").append(ageLabel).append("</i>)\n");
+            String dateStr = f.hasYear() 
+                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                    : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            
+            sb.append("– <b>").append(dateStr)
+                    .append("</b> ").append(f.getName());
+            
+            if (f.hasYear()) {
+                boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
+                String ageLabel = alreadyCelebrated 
+                        ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
+                        : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));
+                sb.append(" (<i>").append(ageLabel).append("</i>)");
+            }
+            
+            sb.append("\n");
         });
         return new CallbackResult(sb.toString(), null);
     }

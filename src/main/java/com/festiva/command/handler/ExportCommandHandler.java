@@ -50,8 +50,14 @@ public class ExportCommandHandler implements CommandHandler {
                     ? "\"" + n.replace("\"", "\"\"") + "\""
                     : n;
             String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase(Locale.ROOT) : "";
+            
+            // Format birthday based on whether year is known
+            String birthday = f.hasYear()
+                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                    : String.format("%02d.%02d.", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            
             csv.append(name).append(",")
-                    .append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)).append(",")
+                    .append(birthday).append(",")
                     .append(rel).append("\n");
         });
 

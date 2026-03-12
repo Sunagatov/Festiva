@@ -46,7 +46,25 @@ public class FriendService {
     }
 
     public void updateFriendDate(long telegramUserId, String name, java.time.LocalDate date) {
-        update(telegramUserId, name, f -> f.setBirthDate(date));
+        update(telegramUserId, name, f -> {
+            f.setBirthYear(date.getYear());
+            f.setBirthMonth(date.getMonthValue());
+            f.setBirthDay(date.getDayOfMonth());
+        });
+    }
+    
+    public void updateFriendDate(long telegramUserId, String name, Integer year, int month, int day) {
+        update(telegramUserId, name, f -> {
+            // Validate before updating
+            if (year != null) {
+                java.time.LocalDate.of(year, month, day);
+            } else {
+                java.time.MonthDay.of(month, day);
+            }
+            f.setBirthYear(year);
+            f.setBirthMonth(month);
+            f.setBirthDay(day);
+        });
     }
 
     public void updateFriendRelationship(long telegramUserId, String name, com.festiva.friend.entity.Relationship relationship) {
@@ -75,7 +93,7 @@ public class FriendService {
 
     public List<Friend> getFriendsSortedByDayMonth(long telegramUserId) {
         return friendRepository.findByTelegramUserId(telegramUserId).stream()
-                .sorted(Comparator.comparing(f -> f.getBirthDate().withYear(LEAP_YEAR)))
+                .sorted(Comparator.comparing(f -> java.time.LocalDate.of(LEAP_YEAR, f.getBirthMonth(), f.getBirthDay())))
                 .toList();
     }
 

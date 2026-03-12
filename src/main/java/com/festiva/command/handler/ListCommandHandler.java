@@ -122,15 +122,26 @@ public class ListCommandHandler implements CommandHandler {
                 ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
                 : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
         String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
-        sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+        
+        // Format date based on whether year is known
+        String dateStr = f.hasYear() 
+                ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+        
+        sb.append("– <b>").append(dateStr)
                 .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i>")
                 .append(relLabel).append(" ");
-        boolean alreadyHadBirthday = f.nextBirthday(today).getYear() > today.getYear();
-        if (alreadyHadBirthday) {
-            sb.append(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
-        } else {
-            sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getAge(today)), Messages.yearsRu(lang, f.getNextAge(today))));
+        
+        // Show age only if year is known
+        if (f.hasYear()) {
+            boolean alreadyHadBirthday = f.nextBirthday(today).getYear() > today.getYear();
+            if (alreadyHadBirthday) {
+                sb.append(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
+            } else {
+                sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getAge(today)), Messages.yearsRu(lang, f.getNextAge(today))));
+            }
         }
+        
         sb.append(daysLabel).append("\n");
     }
 }

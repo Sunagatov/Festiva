@@ -25,6 +25,8 @@ public final class BulkAddParser {
     private BulkAddParser() {}
 
     public record ParseResult(List<Friend> valid, List<String> errors, boolean noData) {}
+    
+    private record DateParseResult(Integer year, int month, int day) {}
 
     public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang) {
         List<Friend> valid = new ArrayList<>();
@@ -72,13 +74,13 @@ public final class BulkAddParser {
         String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
         if (nameError != null) { errors.add(nameError); return; }
 
-        LocalDate date = parseDate(dateStr, name, lineNum, lang, errors);
-        if (date == null) return;
+        DateParseResult dateResult = parseDate(dateStr, name, lineNum, lang, errors);
+        if (dateResult == null) return;
 
         RelationshipParseResult relResult = parseRelationship(relStr, name, lineNum, lang);
         if (relResult.warning() != null) errors.add(relResult.warning());
         seenInBatch.add(name.toLowerCase(Locale.ROOT));
-        valid.add(new Friend(name, date, relResult.relationship()));
+        valid.add(new Friend(name, dateResult.year(), dateResult.month(), dateResult.day(), relResult.relationship()));
     }
 
     private static String validateName(String name, int lineNum, Set<String> existingNames,
@@ -91,20 +93,34 @@ public final class BulkAddParser {
         return null;
     }
 
-    private static LocalDate parseDate(String dateStr, String name, int lineNum, Lang lang, List<String> errors) {
-        LocalDate date;
+    private static DateParseResult parseDate(String dateStr, String name, int lineNum, Lang lang, List<String> errors) {
         try {
-            date = LocalDate.parse(dateStr, FMT);
-        } catch (DateTimeParseException e) {
+            // Check if year is missing (format: DD.MM. or DD.MM)
+            if (dateStr.endsWith(".") || dateStr.matches("\\d{2}\\.\\d{2}$")) {
+                // Parse as DD.MM without year
+                String normalized = dateStr.endsWith(".") ? dateStr.substring(0, dateStr.length() - 1) : dateStr;
+                String[] parts = normalized.split("\\.");
+                if (parts.length == 2) {
+                    int day = Integer.parseInt(parts[0]);
+                    int month = Integer.parseInt(parts[1]);
+                    // Validate using MonthDay
+                    java.time.MonthDay.of(month, day);
+                    return new DateParseResult(null, month, day);
+                }
+            }
+            
+            // Parse full date with year
+            LocalDate date = LocalDate.parse(dateStr, FMT);
+            if (date.isAfter(LocalDate.now())) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
+                return null;
+            }
+            return new DateParseResult(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+        } catch (Exception e) {
             log.debug("bulk.parse.date.invalid: line={}, value={}", lineNum, dateStr, e);
             errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum, name, dateStr));
             return null;
         }
-        if (date.isAfter(LocalDate.now())) {
-            errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
-            return null;
-        }
-        return date;
     }
 
     private record RelationshipParseResult(Relationship relationship, String warning) {}

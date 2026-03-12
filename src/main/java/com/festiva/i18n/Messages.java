@@ -46,6 +46,7 @@ public final class Messages {
     public static final String NAME_EXISTS            = "name_exists";
     public static final String DATE_FUTURE_ERROR      = "date_future_error";
     public static final String FRIEND_ADDED           = "friend_added";
+    public static final String FRIEND_ADDED_NO_YEAR   = "friend_added_no_year";
     public static final String FRIEND_NOT_FOUND       = "friend_not_found";
     public static final String FRIEND_REMOVED         = "friend_removed";
     public static final String FRIENDS_EMPTY          = "friends_empty";
@@ -80,12 +81,16 @@ public final class Messages {
     public static final String NOTIFY_TODAY           = "notify_today";
     public static final String NOTIFY_TOMORROW        = "notify_tomorrow";
     public static final String NOTIFY_WEEK            = "notify_week";
+    public static final String NOTIFY_TODAY_NO_YEAR   = "notify_today_no_year";
+    public static final String NOTIFY_TOMORROW_NO_YEAR = "notify_tomorrow_no_year";
+    public static final String NOTIFY_WEEK_NO_YEAR    = "notify_week_no_year";
     public static final String DATE_PICK_YEAR         = "date_pick_year";
     public static final String DATE_PICK_MONTH        = "date_pick_month";
     public static final String DATE_PICK_DAY          = "date_pick_day";
     public static final String DATE_PICK_BACK         = "date_pick_back";
     public static final String DATE_YEAR_EARLIER      = "date_year_earlier";
     public static final String DATE_YEAR_LATER        = "date_year_later";
+    public static final String DATE_SKIP_YEAR         = "date_skip_year";
     public static final String JUBILEE_DAYS_LEFT      = "jubilee_days_left";
     public static final String JUBILEE_DAYS_TODAY     = "jubilee_days_today";
     public static final String LIST_UPCOMING_HEADER   = "list_upcoming_header";

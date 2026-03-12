@@ -47,6 +47,7 @@ public class JubileeCommandHandler implements CommandHandler {
     private String buildText(List<Friend> friends, Lang lang) {
         LocalDate today = LocalDate.now();
         List<Friend> jubilee = friends.stream()
+                .filter(Friend::hasYear)  // Only friends with known year
                 .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .toList();
 

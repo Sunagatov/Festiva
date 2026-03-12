@@ -61,13 +61,24 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER));
         upcoming.forEach(e -> {
-            String suffix = e.days() == 0
-                    ? Messages.get(lang, Messages.UPCOMING_TODAY, Messages.yearsRu(lang, e.friend().getNextAge(today)))
-                    : Messages.get(lang, Messages.UPCOMING_TURNS, Messages.yearsRu(lang, e.friend().getNextAge(today)), e.days());
             sb.append("– <b>")
                     .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))
-                    .append("</b> <i>").append(e.friend().getName()).append("</i> ")
-                    .append(suffix).append("\n");
+                    .append("</b> <i>").append(e.friend().getName()).append("</i>");
+            
+            if (e.friend().hasYear()) {
+                String suffix = e.days() == 0
+                        ? Messages.get(lang, Messages.UPCOMING_TODAY, Messages.yearsRu(lang, e.friend().getNextAge(today)))
+                        : Messages.get(lang, Messages.UPCOMING_TURNS, Messages.yearsRu(lang, e.friend().getNextAge(today)), e.days());
+                sb.append(" ").append(suffix);
+            } else {
+                if (e.days() > 0) {
+                    sb.append(" (in ").append(e.days()).append("d)");
+                } else {
+                    sb.append(" 🎂 <b>TODAY!</b>");
+                }
+            }
+            
+            sb.append("\n");
         });
         return sb.toString();
     }

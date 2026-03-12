@@ -37,9 +37,10 @@ public class StatsCommandHandler implements CommandHandler {
 
         int total = friends.size();
         int thisMonth = (int) friends.stream()
-                .filter(f -> f.getBirthDate().getMonthValue() == today.getMonthValue())
+                .filter(f -> f.getBirthMonthDay().getMonthValue() == today.getMonthValue())
                 .count();
         int jubilees = (int) friends.stream()
+                .filter(Friend::hasYear)  // Only count friends with known year
                 .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .count();
         record Entry(Friend friend, long days) {}
