@@ -58,10 +58,15 @@ public class RemoveCommandHandler implements CommandHandler {
         int to = Math.min(from + PAGE_SIZE, friends.size());
 
         List<InlineKeyboardRow> rows = new ArrayList<>();
-        friends.subList(from, to).forEach(f -> rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text(f.getName() + " (" + f.getBirthDate().format(MessageBuilder.DATE_FORMATTER) + ")")
-                        .callbackData("REMOVE_" + f.getId()).build())));
+        friends.subList(from, to).forEach(f -> {
+            String dateStr = f.hasYear()
+                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                    : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            rows.add(new InlineKeyboardRow(
+                    InlineKeyboardButton.builder()
+                            .text(f.getName() + " (" + dateStr + ")")
+                            .callbackData("REMOVE_" + f.getId()).build()));
+        });
 
         int totalPages = (int) Math.ceil((double) friends.size() / PAGE_SIZE);
         if (totalPages > 1) {

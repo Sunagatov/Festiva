@@ -223,8 +223,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     private static String buildPreviewLines(List<Friend> valid, List<String> errors) {
         StringBuilder sb = new StringBuilder();
         for (Friend f : valid) {
+            String dateStr = f.hasYear()
+                    ? f.getBirthDate().format(CSV_DATE_FMT)
+                    : String.format("%02d.%02d.", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
             sb.append("\u2705 ").append(f.getName())
-              .append(" \u2014 ").append(f.getBirthDate().format(CSV_DATE_FMT)).append("\n");
+              .append(" \u2014 ").append(dateStr).append("\n");
         }
         for (String err : errors) {
             sb.append("\u274c ").append(err).append("\n");

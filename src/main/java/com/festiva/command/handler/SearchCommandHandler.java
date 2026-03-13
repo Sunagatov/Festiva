@@ -72,7 +72,10 @@ public class SearchCommandHandler implements StatefulCommandHandler {
             String daysLabel = days == 0
                     ? " 🎂"
                     : " (" + days + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")";
-            sb.append("– <b>").append(f.getBirthDate().format(MessageBuilder.DATE_FORMATTER))
+            String dateStr = f.hasYear()
+                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                    : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            sb.append("– <b>").append(dateStr)
                     .append("</b> ").append(f.getZodiac())
                     .append(" <i>").append(f.getName()).append("</i>")
                     .append(daysLabel).append("\n");

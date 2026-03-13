@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class FestivaApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(FestivaApplication.class, args);
     }
 }

@@ -65,7 +65,9 @@ class EditCallbackHandler {
         Friend found = friendService.findFriendById(id).orElse(null);
         if (found == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String name = found.getName();
-        String currentDate = found.getBirthDate().format(MessageBuilder.DATE_FORMATTER);
+        String currentDate = found.hasYear()
+                ? found.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                : String.format("%02d.%02d", found.getBirthMonthDay().getDayOfMonth(), found.getBirthMonthDay().getMonthValue());
         boolean notifyOn = found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
                 new InlineKeyboardRow(
