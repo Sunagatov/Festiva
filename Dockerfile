@@ -1,5 +1,5 @@
 # =============================================================================
-# BUILD STAGE
+# BUILD STAGE — Modern 2026 approach with BuildKit cache mounts
 # =============================================================================
 FROM maven:3.9-eclipse-temurin-25-alpine AS build
 
@@ -7,9 +7,20 @@ ARG MAVEN_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 ARG VERSION=1.0
 
 WORKDIR /app
+
+# Copy POM first for dependency caching
 COPY pom.xml ./
+
+# Download dependencies with BuildKit cache mount
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -B --no-transfer-progress
+
+# Copy source code
 COPY src ./src
-RUN mvn package -DskipTests -B --no-transfer-progress
+
+# Build with cached dependencies
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn package -DskipTests -B --no-transfer-progress
 
 # =============================================================================
 # EXTRACT STAGE — split fat JAR into layers for Docker cache efficiency
