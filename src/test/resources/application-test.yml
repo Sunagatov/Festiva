@@ -1,8 +1,4 @@
 spring:
-  data:
-    mongodb:
-      uri: ${MONGO_TEST_URI:mongodb://localhost:27017}
-      database: festiva-test
   autoconfigure:
     exclude: org.telegram.telegrambots.longpolling.starter.TelegramBotStarterConfiguration
   main:
@@ -15,3 +11,10 @@ telegram:
 
 kafka:
   enabled: false
+
+festiva:
+  reminder:
+    startup-check:
+      enabled: false
+    schedule:
+      enabled: false

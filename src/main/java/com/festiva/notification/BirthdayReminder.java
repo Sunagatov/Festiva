@@ -32,12 +32,18 @@ public class BirthdayReminder {
     @Value("${telegram.bot.username}")
     private String botUsername;
 
+    @Value("${festiva.reminder.startup-check.enabled:true}")
+    private boolean startupCheckEnabled;
+
+    @Value("${festiva.reminder.schedule.enabled:true}")
+    private boolean scheduleEnabled;
+
     private static final Map<Long, String> TEMPLATE_KEYS = Map.of(
             0L, Messages.NOTIFY_TODAY,
             1L, Messages.NOTIFY_TOMORROW,
             7L, Messages.NOTIFY_WEEK
     );
-    
+
     private static final Map<Long, String> TEMPLATE_KEYS_NO_YEAR = Map.of(
             0L, Messages.NOTIFY_TODAY_NO_YEAR,
             1L, Messages.NOTIFY_TOMORROW_NO_YEAR,
@@ -50,6 +56,10 @@ public class BirthdayReminder {
 
     @PostConstruct
     public void checkBirthdaysOnStartup() {
+        if (!startupCheckEnabled) {
+            return;
+        }
+
         try {
             checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
         } catch (Exception e) {
@@ -59,6 +69,10 @@ public class BirthdayReminder {
 
     @Scheduled(cron = "0 0 * * * *", zone = "UTC")
     public void checkBirthdays() {
+        if (!scheduleEnabled) {
+            return;
+        }
+
         checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
     }
 
@@ -121,16 +135,14 @@ public class BirthdayReminder {
     private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang) {
         if (!friend.isNotifyEnabled()) return false;
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
-        
-        // Select appropriate template based on whether year is known
+
         Map<Long, String> templates = friend.hasYear() ? TEMPLATE_KEYS : TEMPLATE_KEYS_NO_YEAR;
         String key = templates.get(daysUntil);
         if (key == null) return false;
-        
+
         try {
             String message;
             if (friend.hasYear()) {
-                // With year: 5 parameters (name, relationship, zodiac, age, botUsername)
                 message = Messages.get(lang, key,
                         HtmlEscaper.escape(friend.getName()),
                         friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
@@ -138,20 +150,19 @@ public class BirthdayReminder {
                         Messages.yearsRu(lang, friend.getNextAge(today)),
                         botUsername);
             } else {
-                // Without year: 4 parameters (name, relationship, zodiac, botUsername)
                 message = Messages.get(lang, key,
                         HtmlEscaper.escape(friend.getName()),
                         friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                         friend.getZodiac(),
                         botUsername);
             }
-            
+
             notificationSender.send(userId, message);
-            log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}, hasYear={}", 
+            log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}, hasYear={}",
                     userId, friend.getName(), daysUntil, friend.hasYear());
             return true;
         } catch (RuntimeException e) {
-            log.error("reminder.notify.failed: userId={}, friend={}, message={}", 
+            log.error("reminder.notify.failed: userId={}, friend={}, message={}",
                     userId, friend.getName(), e.getMessage(), e);
             return false;
         }

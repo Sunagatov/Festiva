@@ -24,6 +24,6 @@ public abstract class IntegrationTestBase {
 
     @DynamicPropertySource
     static void mongoProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", MONGO::getReplicaSetUrl);
+        registry.add("spring.mongodb.uri", () -> MONGO.getReplicaSetUrl("festiva-test"));
     }
 }
