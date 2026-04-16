@@ -9,6 +9,9 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.friend.repository.FriendMongoRepository;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.state.UserSessionRepository;
+import com.festiva.state.UserStateService;
+import com.festiva.user.UserPreferenceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,13 +37,22 @@ class FriendCommandTest extends IntegrationTestBase {
     @Autowired CallbackQueryHandler callbackQueryHandler;
     @Autowired FriendService friendService;
     @Autowired FriendMongoRepository friendMongoRepository;
+    @Autowired UserStateService userStateService;
+    @Autowired UserSessionRepository userSessionRepository;
+    @Autowired UserPreferenceRepository userPreferenceRepository;
 
     @BeforeEach
-    void clean() { friendMongoRepository.deleteAll(); }
+    void clean() {
+        friendMongoRepository.deleteAll();
+        userSessionRepository.deleteAll();
+        userPreferenceRepository.deleteAll();
+    }
 
     @Test
     @DisplayName("/add → name → year/month/day callbacks → persists friend and confirms")
     void addFriend_persistsAndConfirms() {
+        userStateService.setLanguage(1L, L);
+
         commandRouter.route(update(1L, "/add"));
         commandRouter.route(update(1L, "Alice"));
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_YEAR_PREFIX + "1990"));
@@ -56,6 +68,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/add duplicate name → returns name-exists error containing the name")
     void addDuplicateFriend_returnsError() {
+        userStateService.setLanguage(2L, L);
         friendService.addFriend(2L, new Friend("Bob", LocalDate.of(1985, 3, 20)));
 
         commandRouter.route(update(2L, "/add"));
@@ -67,6 +80,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/remove existing friend → confirms removal, list is empty")
     void removeFriend_confirmsAndListIsEmpty() {
+        userStateService.setLanguage(3L, L);
         friendService.addFriend(3L, new Friend("Carol", LocalDate.of(2000, 1, 1)));
         String friendId = friendService.getFriends(3L).getFirst().getId();
 
@@ -80,6 +94,8 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/cancel during /add flow → confirms cancel, no friend saved")
     void cancelDuringAdd_clearsState() {
+        userStateService.setLanguage(6L, L);
+
         commandRouter.route(update(6L, "/add"));
         var result = commandRouter.route(update(6L, "/cancel"));
 
@@ -90,11 +106,13 @@ class FriendCommandTest extends IntegrationTestBase {
     private Update update(long userId, String text) {
         User user = mock(User.class);
         when(user.getId()).thenReturn(userId);
+
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
         when(message.getChatId()).thenReturn(userId);
         when(message.getText()).thenReturn(text);
         when(message.hasText()).thenReturn(true);
+
         Update update = mock(Update.class);
         when(update.hasMessage()).thenReturn(true);
         when(update.getMessage()).thenReturn(message);
@@ -104,9 +122,11 @@ class FriendCommandTest extends IntegrationTestBase {
     private CallbackQuery callback(long userId, String data) {
         User user = mock(User.class);
         when(user.getId()).thenReturn(userId);
+
         MaybeInaccessibleMessage message = mock(MaybeInaccessibleMessage.class);
         when(message.getChatId()).thenReturn(userId);
         when(message.getMessageId()).thenReturn(1);
+
         CallbackQuery cq = mock(CallbackQuery.class);
         when(cq.getFrom()).thenReturn(user);
         when(cq.getData()).thenReturn(data);
