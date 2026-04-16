@@ -16,6 +16,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -60,6 +61,7 @@ public class CallbackQueryHandler {
     private final EditFriendCommandHandler editFriendCommandHandler;
     private final DeleteAccountCommandHandler deleteAccountHandler;
     private final BotCommandsService commandsService;
+    private final UserDateService userDateService;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
         if (callbackQuery == null) return null;
@@ -111,7 +113,7 @@ public class CallbackQueryHandler {
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NAME))      return editHandler.handleEditFieldName(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_DATE))      return editHandler.handleEditFieldDate(data, userId, lang);
         if (data.startsWith(EditCallbackHandler.EDIT_FIELD_REL))       return datePickerHandler.handleEditFieldRel(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_PREFIX))          return editHandler.handleEditSelect(data, lang);
+        if (data.startsWith(EditCallbackHandler.EDIT_PREFIX))          return editHandler.handleEditSelect(data, userId, lang);
         return null;
     }
 
@@ -169,14 +171,31 @@ public class CallbackQueryHandler {
     // ── Settings ─────────────────────────────────────────────────────────────
 
     private CallbackResult handleSettingsHour(String data, long userId, Lang lang) {
-        int hour = Integer.parseInt(data.substring(SettingsCommandHandler.SETTINGS_HOUR_PREFIX.length()));
-        userStateService.setNotifyHour(userId, hour);
-        return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
-                SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
+        try {
+            int hour = Integer.parseInt(data.substring(SettingsCommandHandler.SETTINGS_HOUR_PREFIX.length()));
+            if (hour < 0 || hour > 23) {
+                log.warn("callback.settings.hour.invalid: userId={}, hour={}", userId, hour);
+                return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            }
+            userStateService.setNotifyHour(userId, hour);
+            return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
+                    SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
+        } catch (NumberFormatException e) {
+            log.warn("callback.settings.hour.parse.failed: data={}", data, e);
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        }
     }
 
     private CallbackResult handleSettingsTz(String data, long userId, Lang lang) {
         String tz = data.substring(SettingsCommandHandler.SETTINGS_TZ_PREFIX.length());
+        // Validate timezone (throws ZoneRulesException if invalid)
+        try {
+            @SuppressWarnings("unused")
+            java.time.ZoneId validatedZone = java.time.ZoneId.of(tz);
+        } catch (java.time.zone.ZoneRulesException e) {
+            log.warn("callback.settings.tz.invalid: userId={}, tz={}", userId, tz, e);
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        }
         userStateService.setTimezone(userId, tz);
         return new CallbackResult(Messages.get(lang, Messages.SETTINGS_TZ_SET, tz),
                 SettingsCommandHandler.combined(userStateService.getNotifyHour(userId), tz));
@@ -188,7 +207,7 @@ public class CallbackQueryHandler {
         boolean byDate = data.startsWith(LIST_SORT_DATE);
         int page = parsePageSuffix(data);
         var friends = friendService.getFriendsSortedByDayMonth(userId);
-        return new CallbackResult(listHandler.buildText(friends, lang, byDate, page),
+        return new CallbackResult(listHandler.buildText(friends, lang, byDate, page, userId),
                 listHandler.keyboard(lang, byDate, page, friends.size()));
     }
 
@@ -197,7 +216,7 @@ public class CallbackQueryHandler {
         boolean byDate = suffix.startsWith("DATE");
         int page = Integer.parseInt(suffix.substring(suffix.lastIndexOf('_') + 1));
         var friends = friendService.getFriendsSortedByDayMonth(userId);
-        return new CallbackResult(listHandler.buildText(friends, lang, byDate, page),
+        return new CallbackResult(listHandler.buildText(friends, lang, byDate, page, userId),
                 listHandler.keyboard(lang, byDate, page, friends.size()));
     }
 
@@ -265,8 +284,8 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleRemove(String data, long userId, Lang lang) {
         String id = data.substring(REMOVE_PREFIX.length());
-        Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null || friend.getTelegramUserId() != userId)
+        Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
+        if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String name = friend.getName();
         userStateService.setPendingName(userId, name);
@@ -276,13 +295,13 @@ public class CallbackQueryHandler {
     }
 
     private CallbackResult handleConfirmRemove(long userId, String id, Lang lang) {
-        Friend friend = friendService.findFriendById(id).orElse(null);
-        if (friend == null || friend.getTelegramUserId() != userId)
+        Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
+        if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String name = friend.getName();
-        friendService.deleteFriend(userId, name);
+        friendService.deleteFriendById(id, userId);
         userStateService.clearState(userId);
-        log.debug("callback.friend.removed: userId={}, name={}", userId, name);
+        log.debug("callback.friend.removed: userId={}, id={}, name={}", userId, id, name);
         return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, name), null);
     }
 
@@ -316,7 +335,7 @@ public class CallbackQueryHandler {
         String value = data.substring(MONTH_PREFIX.length());
         int month;
         if (CURRENT_MONTH.equalsIgnoreCase(value)) {
-            month = LocalDate.now().getMonthValue();
+            month = userDateService.todayFor(userId).getMonthValue();
         } else {
             try { month = Integer.parseInt(value); }
             catch (NumberFormatException e) {
@@ -330,7 +349,7 @@ public class CallbackQueryHandler {
         String monthName = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
         if (filtered.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), null);
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(userId);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
         filtered.forEach(f -> {
             String dateStr = f.hasYear() 

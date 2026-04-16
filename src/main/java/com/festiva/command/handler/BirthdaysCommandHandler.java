@@ -6,6 +6,7 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,7 +15,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
-import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
@@ -31,6 +31,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() {
@@ -42,7 +43,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         var lang = userStateService.getLanguage(userId);
-        int currentMonth = LocalDate.now().getMonthValue();
+        int currentMonth = userDateService.todayFor(userId).getMonthValue();
 
         Map<Integer, Long> countByMonth = friendService.getFriends(userId).stream()
                 .collect(Collectors.groupingBy(f -> f.getBirthMonthDay().getMonthValue(), Collectors.counting()));

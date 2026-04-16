@@ -6,10 +6,14 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,43 +37,53 @@ public final class BulkAddParser {
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
 
-        List<String> rows = lines.stream().map(String::trim).filter(l -> !l.isBlank()).toList();
-        if (rows.isEmpty()) {
+        String csvContent = String.join("\n", lines);
+        if (csvContent.trim().isEmpty()) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
             return new ParseResult(valid, errors, true);
         }
 
-        int start = rows.getFirst().toLowerCase(Locale.ROOT).contains("name") ? 1 : 0;
-        List<String> data = rows.subList(start, rows.size());
-        if (data.isEmpty()) {
-            errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
-            return new ParseResult(valid, errors, true);
-        }
-        if (data.size() > MAX_ENTRIES) {
-            errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, data.size(), MAX_ENTRIES, MAX_ENTRIES));
-            data = data.subList(0, MAX_ENTRIES);
-        }
+        try (CSVParser parser = CSVParser.parse(new StringReader(csvContent), 
+                CSVFormat.DEFAULT.builder()
+                    .setHeader()
+                    .setSkipHeaderRecord(true)
+                    .setIgnoreHeaderCase(true)
+                    .setTrim(true)
+                    .build())) {
+            
+            List<CSVRecord> records = parser.getRecords();
+            if (records.isEmpty()) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
+                return new ParseResult(valid, errors, true);
+            }
+            
+            if (records.size() > MAX_ENTRIES) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, records.size(), MAX_ENTRIES, MAX_ENTRIES));
+                records = records.subList(0, MAX_ENTRIES);
+            }
 
-        for (int i = 0; i < data.size(); i++) {
-            parseRow(data.get(i), start + i + 1, existingNames, seenInBatch, lang, valid, errors);
+            for (int i = 0; i < records.size(); i++) {
+                parseRow(records.get(i), i + 1, existingNames, seenInBatch, lang, valid, errors);
+            }
+        } catch (IOException e) {
+            log.error("CSV parsing failed", e);
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, 0));
         }
+        
         return new ParseResult(valid, errors, false);
     }
 
-    private static void parseRow(String line, int lineNum, Set<String> existingNames,
+    private static void parseRow(CSVRecord record, int lineNum, Set<String> existingNames,
                                   Set<String> seenInBatch, Lang lang,
                                   List<Friend> valid, List<String> errors) {
-        String[] parts = line.split(",", 3);
-        if (parts.length < 2) {
+        if (record.size() < 2) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
             return;
         }
 
-        String name = parts[0].trim();
-        if (name.startsWith("\"") && name.endsWith("\""))
-            name = name.substring(1, name.length() - 1).replace("\"\"", "\"").trim();
-        String dateStr = parts[1].trim();
-        String relStr  = parts.length > 2 ? parts[2].trim() : "";
+        String name = record.get(0).trim();
+        String dateStr = record.get(1).trim();
+        String relStr = record.size() > 2 ? record.get(2).trim() : "";
 
         String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
         if (nameError != null) { errors.add(nameError); return; }

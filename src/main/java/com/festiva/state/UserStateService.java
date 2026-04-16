@@ -13,77 +13,107 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class UserStateService {
 
-    private static class UserSession {
-        BotState state = BotState.IDLE;
-        String pendingName = null;
-        String pendingId = null;
-        Integer pendingYear = null;
-        Integer pendingMonth = null;
-        Integer pendingDay = null;
-        int yearPageOffset = 0;
-        Lang lang = null;
-        java.util.List<Friend> pendingIcsImport = null;
-    }
-
-    private final ConcurrentHashMap<Long, UserSession> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, UserSession> cache = new ConcurrentHashMap<>();
+    private final UserSessionRepository sessionRepository;
     private final UserPreferenceRepository userPreferenceRepository;
 
     private UserSession session(long userId) {
-        return sessions.computeIfAbsent(userId, _ -> new UserSession());
+        return cache.computeIfAbsent(userId, id -> {
+            UserSession session = sessionRepository.findById(id).orElse(new UserSession());
+            session.setUserId(id);
+            session.touch();
+            return session;
+        });
+    }
+    
+    private void saveSession(long userId) {
+        UserSession session = cache.get(userId);
+        if (session != null) {
+            session.touch();
+            sessionRepository.save(session);
+        }
     }
 
-    public BotState getState(long userId) { return session(userId).state; }
-    public void setState(long userId, BotState state) { session(userId).state = state; }
+    public BotState getState(long userId) { return session(userId).getState(); }
+    public void setState(long userId, BotState state) { 
+        session(userId).setState(state);
+        saveSession(userId);
+    }
 
     public void clearState(long userId) {
         UserSession s = session(userId);
-        s.state = BotState.IDLE;
-        s.pendingName = null;
-        s.pendingId = null;
-        s.pendingYear = null;
-        s.pendingMonth = null;
-        s.pendingDay = null;
-        s.yearPageOffset = 0;
-        s.pendingIcsImport = null;
+        s.setState(BotState.IDLE);
+        s.setPendingName(null);
+        s.setPendingId(null);
+        s.setPendingYear(null);
+        s.setPendingMonth(null);
+        s.setPendingDay(null);
+        s.setYearPageOffset(0);
+        s.setPendingIcsImport(null);
+        saveSession(userId);
     }
 
     public void removeSession(long userId) {
-        sessions.remove(userId);
+        cache.remove(userId);
+        sessionRepository.deleteById(userId);
     }
 
-    public void setPendingName(long userId, String name) { session(userId).pendingName = name; }
-    public String getPendingName(long userId) { return session(userId).pendingName; }
+    public void setPendingName(long userId, String name) { 
+        session(userId).setPendingName(name);
+        saveSession(userId);
+    }
+    public String getPendingName(long userId) { return session(userId).getPendingName(); }
 
-    public void setPendingId(long userId, String id) { session(userId).pendingId = id; }
-    public String getPendingId(long userId) { return session(userId).pendingId; }
+    public void setPendingId(long userId, String id) { 
+        session(userId).setPendingId(id);
+        saveSession(userId);
+    }
+    public String getPendingId(long userId) { return session(userId).getPendingId(); }
 
-    public void setPendingYear(long userId, Integer year) { session(userId).pendingYear = year; }
-    public Integer getPendingYear(long userId) { return session(userId).pendingYear; }
+    public void setPendingYear(long userId, Integer year) { 
+        session(userId).setPendingYear(year);
+        saveSession(userId);
+    }
+    public Integer getPendingYear(long userId) { return session(userId).getPendingYear(); }
 
-    public void setPendingMonth(long userId, Integer month) { session(userId).pendingMonth = month; }
-    public Integer getPendingMonth(long userId) { return session(userId).pendingMonth; }
+    public void setPendingMonth(long userId, Integer month) { 
+        session(userId).setPendingMonth(month);
+        saveSession(userId);
+    }
+    public Integer getPendingMonth(long userId) { return session(userId).getPendingMonth(); }
 
-    public void setYearPageOffset(long userId, int offset) { session(userId).yearPageOffset = offset; }
-    public int getYearPageOffset(long userId) { return session(userId).yearPageOffset; }
+    public void setYearPageOffset(long userId, int offset) { 
+        session(userId).setYearPageOffset(offset);
+        saveSession(userId);
+    }
+    public int getYearPageOffset(long userId) { return session(userId).getYearPageOffset(); }
 
-    public void setPendingDay(long userId, Integer day) { session(userId).pendingDay = day; }
-    public Integer getPendingDay(long userId) { return session(userId).pendingDay; }
+    public void setPendingDay(long userId, Integer day) { 
+        session(userId).setPendingDay(day);
+        saveSession(userId);
+    }
+    public Integer getPendingDay(long userId) { return session(userId).getPendingDay(); }
 
-    public void setPendingIcsImport(long userId, java.util.List<Friend> friends) { session(userId).pendingIcsImport = friends; }
-    public java.util.List<Friend> getPendingIcsImport(long userId) { return session(userId).pendingIcsImport; }
+    public void setPendingIcsImport(long userId, java.util.List<Friend> friends) { 
+        session(userId).setPendingIcsImport(friends);
+        saveSession(userId);
+    }
+    public java.util.List<Friend> getPendingIcsImport(long userId) { return session(userId).getPendingIcsImport(); }
 
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);
-        if (s.lang == null) {
-            s.lang = userPreferenceRepository.findById(userId)
+        if (s.getLang() == null) {
+            Lang lang = userPreferenceRepository.findById(userId)
                     .map(UserPreference::getLang)
-                    .orElse(Lang.RU);
+                    .orElse(UserPreference.DEFAULT_LANG);
+            s.setLang(lang);
         }
-        return s.lang;
+        return s.getLang();
     }
 
     public void setLanguage(long userId, Lang lang) {
-        session(userId).lang = lang;
+        session(userId).setLang(lang);
+        saveSession(userId);
         UserPreference pref = getOrCreatePref(userId);
         pref.setLang(lang);
         userPreferenceRepository.save(pref);
@@ -115,6 +145,6 @@ public class UserStateService {
 
     private UserPreference getOrCreatePref(long userId) {
         return userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, getLanguage(userId), -1, UserPreference.DEFAULT_TIMEZONE, null));
+                .orElse(new UserPreference(userId, UserPreference.DEFAULT_LANG, 9, UserPreference.DEFAULT_TIMEZONE, null));
     }
 }

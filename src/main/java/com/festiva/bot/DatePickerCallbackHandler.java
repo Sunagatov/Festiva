@@ -75,22 +75,30 @@ class DatePickerCallbackHandler {
         Integer year = userStateService.getPendingYear(userId);
         Integer month = userStateService.getPendingMonth(userId);
         String name = userStateService.getPendingName(userId);
+        String id = userStateService.getPendingId(userId);
         if (month == null || name == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         
         // Validate date
         if (year != null) {
-            LocalDate birthDate = LocalDate.of(year, month, day);
-            if (birthDate.isAfter(LocalDate.now())) {
+            try {
+                LocalDate birthDate = LocalDate.of(year, month, day);
+                if (birthDate.isAfter(LocalDate.now())) {
+                    return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
+                            DatePickerKeyboard.dayKeyboard(year, month, lang));
+                }
+            } catch (java.time.DateTimeException e) {
+                log.warn("callback.date.invalid: userId={}, date={}-{}-{}", userId, year, month, day, e);
                 return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
                         DatePickerKeyboard.dayKeyboard(year, month, lang));
             }
         }
         
         if (userStateService.getState(userId) == BotState.WAITING_FOR_EDIT_DATE) {
-            friendService.updateFriendDate(userId, name, year, month, day);
+            if (id == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            friendService.updateFriendDateById(id, userId, year, month, day);
             userStateService.clearState(userId);
-            log.debug("friend.date.updated: userId={}, name={}, hasYear={}", userId, name, year != null);
+            log.debug("friend.date.updated: userId={}, id={}, hasYear={}", userId, id, year != null);
             return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), null);
         }
         
@@ -149,7 +157,7 @@ class DatePickerCallbackHandler {
 
     CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
         String id = data.substring(EditCallbackHandler.EDIT_FIELD_REL.length());
-        Friend friend = friendService.findFriendById(id).orElse(null);
+        Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
         if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
@@ -160,20 +168,12 @@ class DatePickerCallbackHandler {
     CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
         String id = userStateService.getPendingId(userId);
         String name = userStateService.getPendingName(userId);
-        if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        if (id == null || name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         String value = data.substring(EDIT_REL_PREFIX.length());
         Relationship rel = "SKIP".equals(value) ? null : Relationship.valueOf(value);
-        if (id != null) {
-            Friend friend = friendService.findFriendById(id).orElse(null);
-            if (friend == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
-            friendService.updateFriendRelationship(userId, friend.getName(), rel);
-            userStateService.clearState(userId);
-            log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
-            return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, friend.getName()), null);
-        }
-        friendService.updateFriendRelationship(userId, name, rel);
+        friendService.updateFriendRelationshipById(id, userId, rel);
         userStateService.clearState(userId);
-        log.debug("friend.relationship.updated: userId={}, name={}, rel={}", userId, name, rel);
+        log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, name), null);
     }
 

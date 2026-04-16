@@ -83,9 +83,9 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         String newName = update.getMessage().getText().trim();
-        String oldName = userStateService.getPendingName(userId);
+        String id = userStateService.getPendingId(userId);
 
-        if (oldName == null) {
+        if (id == null) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.SESSION_EXPIRED));
         }
         if (newName.isBlank()) {
@@ -94,11 +94,18 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         if (newName.length() > 100) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
-        if (friendService.friendExists(userId, newName) && !newName.equalsIgnoreCase(oldName)) {
+        
+        // Check if new name already exists for this user (excluding current friend)
+        Friend currentFriend = friendService.findOwnedFriend(id, userId).orElse(null);
+        if (currentFriend == null) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SESSION_EXPIRED));
+        }
+        
+        if (friendService.friendExists(userId, newName) && !newName.equalsIgnoreCase(currentFriend.getName())) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, newName));
         }
 
-        friendService.updateFriendName(userId, oldName, newName);
+        friendService.updateFriendNameById(id, userId, newName);
         userStateService.clearState(userId);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_NAME_DONE, newName));
     }

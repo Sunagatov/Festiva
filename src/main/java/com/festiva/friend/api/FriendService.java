@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -22,54 +21,68 @@ public class FriendService {
 
     public void addFriend(long telegramUserId, Friend friend) {
         friend.setTelegramUserId(telegramUserId);
+        friend.setName(friend.getName()); // Ensures normalizedName is set
         friendRepository.save(friend);
     }
 
     public boolean friendExists(long telegramUserId, String name) {
-        return friendRepository.existsByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
+        return friendRepository.existsByTelegramUserIdAndNormalizedName(telegramUserId, Friend.normalizeName(name));
     }
 
     public void deleteFriend(long telegramUserId, String name) {
         friendRepository.deleteByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
     }
+    
+    public void deleteFriendById(String id, long telegramUserId) {
+        friendRepository.deleteByIdAndTelegramUserId(id, telegramUserId);
+    }
 
     public java.util.Optional<Friend> findFriendById(String id) {
         return friendRepository.findById(id);
+    }
+    
+    public java.util.Optional<Friend> findOwnedFriend(String id, long telegramUserId) {
+        return friendRepository.findByIdAndTelegramUserId(id, telegramUserId);
     }
 
     public void deleteAllFriends(long telegramUserId) {
         friendRepository.deleteByTelegramUserId(telegramUserId);
     }
 
-    public void updateFriendName(long telegramUserId, String oldName, String newName) {
-        update(telegramUserId, oldName, f -> f.setName(newName));
+    public void updateFriendNameById(String id, long telegramUserId, String newName) {
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
+            f.setName(newName);
+            friendRepository.save(f);
+        });
     }
 
-    public void updateFriendDate(long telegramUserId, String name, Integer year, int month, int day) {
-        update(telegramUserId, name, f -> {
-            // Validate date before updating
+    public void updateFriendDateById(String id, long telegramUserId, Integer year, int month, int day) {
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
+            // Validate date before updating (throws DateTimeException if invalid)
             try {
                 if (year != null) {
-                    java.time.LocalDate.of(year, month, day);
+                    @SuppressWarnings("unused")
+                    java.time.LocalDate validDate = java.time.LocalDate.of(year, month, day);
                 } else {
-                    java.time.MonthDay.of(month, day);
+                    @SuppressWarnings("unused")
+                    java.time.MonthDay validMonthDay = java.time.MonthDay.of(month, day);
                 }
             } catch (java.time.DateTimeException e) {
-                throw new IllegalArgumentException("Invalid date: " + year + "-" + month + "-" + day, e);
+                throw new IllegalArgumentException("Invalid date: " + 
+                    (year != null ? year + "-" : "") + month + "-" + day, e);
             }
             f.setBirthYear(year);
             f.setBirthMonth(month);
             f.setBirthDay(day);
+            friendRepository.save(f);
         });
     }
 
-    public void updateFriendRelationship(long telegramUserId, String name, com.festiva.friend.entity.Relationship relationship) {
-        update(telegramUserId, name, f -> f.setRelationship(relationship));
-    }
-
-    private void update(long telegramUserId, String name, Consumer<Friend> mutator) {
-        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> { mutator.accept(f); friendRepository.save(f); });
+    public void updateFriendRelationshipById(String id, long telegramUserId, com.festiva.friend.entity.Relationship relationship) {
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
+            f.setRelationship(relationship);
+            friendRepository.save(f);
+        });
     }
 
     public boolean toggleFriendNotify(long telegramUserId, String name) {
@@ -83,14 +96,13 @@ public class FriendService {
         return ref.newValue;
     }
 
-    public boolean toggleFriendNotifyById(String id) {
+    public boolean toggleFriendNotifyById(String id, long telegramUserId) {
         var ref = new Object() { boolean newValue = true; };
-        friendRepository.findById(id)
-                .ifPresent(f -> {
-                    f.setNotifyEnabled(!f.isNotifyEnabled());
-                    friendRepository.save(f);
-                    ref.newValue = f.isNotifyEnabled();
-                });
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
+            f.setNotifyEnabled(!f.isNotifyEnabled());
+            friendRepository.save(f);
+            ref.newValue = f.isNotifyEnabled();
+        });
         return ref.newValue;
     }
 

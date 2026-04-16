@@ -14,10 +14,16 @@ public interface FriendMongoRepository extends MongoRepository<Friend, String> {
     List<Friend> findByTelegramUserIdIn(List<Long> telegramUserIds);
 
     java.util.Optional<Friend> findByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
+    
+    java.util.Optional<Friend> findByIdAndTelegramUserId(String id, long telegramUserId);
 
     boolean existsByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
+    
+    boolean existsByTelegramUserIdAndNormalizedName(long telegramUserId, String normalizedName);
 
     void deleteByTelegramUserIdAndNameIgnoreCase(long telegramUserId, String name);
+    
+    void deleteByIdAndTelegramUserId(String id, long telegramUserId);
 
     void deleteByTelegramUserId(long telegramUserId);
 

@@ -3,6 +3,7 @@ package com.festiva.friend.entity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -14,6 +15,7 @@ import java.time.Period;
 @Data
 @Document(collection = "friends")
 @NoArgsConstructor
+@CompoundIndex(name = "user_normalized_name", def = "{'telegramUserId': 1, 'normalizedName': 1}", unique = true)
 public class Friend {
 
     @Id
@@ -21,6 +23,7 @@ public class Friend {
     @Indexed
     private long telegramUserId;
     private String name;
+    private String normalizedName;  // lowercase trimmed for uniqueness
     
     // New fields replacing birthDate
     private Integer birthYear;    // Nullable (null = year unknown)
@@ -43,12 +46,20 @@ public class Friend {
     // Constructor with validation (supports optional year)
     public Friend(String name, Integer year, int month, int day) {
         this.name = name;
+        this.normalizedName = normalizeName(name);
         
-        // VALIDATE using Java's built-in types
-        if (year != null) {
-            LocalDate.of(year, month, day);  // Validates full date (throws if invalid)
-        } else {
-            MonthDay.of(month, day);  // Validates month+day only (throws if invalid)
+        // VALIDATE using Java's built-in types (throws DateTimeException if invalid)
+        try {
+            if (year != null) {
+                @SuppressWarnings("unused")
+                LocalDate validDate = LocalDate.of(year, month, day);
+            } else {
+                @SuppressWarnings("unused")
+                MonthDay validMonthDay = MonthDay.of(month, day);
+            }
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("Invalid date: " + 
+                (year != null ? year + "-" : "") + month + "-" + day, e);
         }
         
         // Only store if validation passed
@@ -60,6 +71,17 @@ public class Friend {
     public Friend(String name, Integer year, int month, int day, Relationship relationship) {
         this(name, year, month, day);
         this.relationship = relationship;
+    }
+    
+    // Normalize name for uniqueness checks
+    public static String normalizeName(String name) {
+        return name == null ? "" : name.trim().toLowerCase();
+    }
+    
+    // Update normalized name when name changes
+    public void setName(String name) {
+        this.name = name;
+        this.normalizedName = normalizeName(name);
     }
     
     // Helper methods
@@ -86,25 +108,15 @@ public class Friend {
     }
 
     public LocalDate nextBirthday(LocalDate from) {
-        // Special handling for Feb 29 when year is known
-        if (hasYear() && birthMonth == 2 && birthDay == 29) {
-            // Find next leap year from current date
-            int year = from.getYear();
-            if (!java.time.Year.isLeap(year) || LocalDate.of(year, 2, 29).isBefore(from)) {
-                year++;
-                while (!java.time.Year.isLeap(year)) {
-                    year++;
-                }
-            }
-            return LocalDate.of(year, 2, 29);
-        }
+        // Unified leap day handling: Feb 29 birthdays always fall on Feb 28 in non-leap years
+        // This applies regardless of whether the birth year is known
         
         // Try to create the birthday in the current year
         LocalDate next;
         try {
             next = LocalDate.of(from.getYear(), birthMonth, birthDay);
         } catch (DateTimeException e) {
-            // Feb 29 in non-leap year (when year is unknown) → use Feb 28
+            // Feb 29 in non-leap year → use Feb 28
             next = LocalDate.of(from.getYear(), 2, 28);
         }
         

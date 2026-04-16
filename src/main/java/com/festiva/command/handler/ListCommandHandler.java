@@ -50,11 +50,11 @@ public class ListCommandHandler implements CommandHandler {
                             InlineKeyboardButton.builder().text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
                                     .callbackData(CallbackQueryHandler.ACTION_ADD).build()))).build());
         }
-        return MessageBuilder.html(chatId, buildText(friends, lang, true, 0), keyboard(lang, true, 0, friends.size()));
+        return MessageBuilder.html(chatId, buildText(friends, lang, true, 0, userId), keyboard(lang, true, 0, friends.size()));
     }
 
-    public String buildText(List<Friend> friends, Lang lang, boolean byDate, int page) {
-        LocalDate today = userDateService.todayFor(0L);
+    public String buildText(List<Friend> friends, Lang lang, boolean byDate, int page, long userId) {
+        LocalDate today = userDateService.todayFor(userId);
         List<Friend> sorted = byDate ? friends
                 : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase(java.util.Locale.ROOT))).toList();
 

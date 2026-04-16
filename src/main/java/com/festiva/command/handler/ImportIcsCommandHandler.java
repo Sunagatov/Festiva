@@ -102,38 +102,51 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS));
         }
 
-        List<String> csvLines = entries.stream()
-                .map(e -> resolveName(e.summary()) + "," + e.date().format(CSV_DATE_FMT))
+        // Convert entries to friends, respecting year trust
+        List<Friend> candidates = entries.stream()
+                .map(this::convertToFriend)
                 .toList();
 
         Set<String> existing = friendService.getFriends(userId).stream()
-                .map(f -> f.getName().toLowerCase(Locale.ROOT))
+                .map(f -> Friend.normalizeName(f.getName()))
                 .collect(Collectors.toSet());
 
-        BulkAddParser.ParseResult result = BulkAddParser.parse(csvLines, existing, lang);
-
-        List<Friend> toSave = result.valid();
-        List<String> errors = new ArrayList<>(result.errors());
+        // Filter out duplicates and validate
+        List<Friend> toSave = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        Set<String> seenInBatch = new java.util.HashSet<>();
+        
+        for (Friend f : candidates) {
+            String normalized = Friend.normalizeName(f.getName());
+            if (existing.contains(normalized)) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_EXISTS, 0, f.getName()));
+            } else if (seenInBatch.contains(normalized)) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, 0, f.getName()));
+            } else if (f.getName().length() > 100) {
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, 0));
+            } else {
+                seenInBatch.add(normalized);
+                toSave.add(f);
+            }
+        }
         int currentCount = existing.size();
         if (currentCount + toSave.size() > FriendService.FRIEND_CAP) {
             int allowed = Math.max(0, FriendService.FRIEND_CAP - currentCount);
             toSave = toSave.subList(0, allowed);
         }
 
-        int yearlyCount = entries.size();
-
         if (toSave.isEmpty()) {
             userStateService.clearState(userId);
             String preview = buildPreviewLines(List.of(), errors);
             return MessageBuilder.html(chatId,
-                    Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, yearlyCount, preview));
+                    Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview));
         }
 
         userStateService.setPendingIcsImport(userId, toSave);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_CONFIRM);
 
         String preview = buildPreviewLines(toSave, errors);
-        String text = Messages.get(lang, Messages.ICS_PREVIEW, yearlyCount, preview, toSave.size());
+        String text = Messages.get(lang, Messages.ICS_PREVIEW, entries.size(), preview, toSave.size());
         InlineKeyboardMarkup kb = InlineKeyboardMarkup.builder()
                 .keyboard(List.of(new InlineKeyboardRow(
                         InlineKeyboardButton.builder()
@@ -148,22 +161,45 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    record IcsEntry(String summary, LocalDate date) {}
+    public record IcsEntry(String summary, LocalDate date, boolean yearTrusted) {}
 
-    /** Unfolds ICS lines and extracts VEVENT blocks with RRULE:FREQ=YEARLY. */
+    /** 
+     * Extracts birthday events from ICS file.
+     * Supports:
+     * - RRULE:FREQ=YEARLY (recurring birthdays)
+     * - BDAY property (vCard birthdays)
+     * - Events with "birthday" or "bday" in summary
+     * - Events with X-GOOGLE-CALENDAR-CONTENT-TYPE:birthday
+     */
     public static List<IcsEntry> extractYearlyEntries(List<String> raw) {
         List<String> unfolded = unfold(raw);
         List<IcsEntry> result = new ArrayList<>();
         String summary = null, dtstart = null;
-        boolean inEvent = false, yearly = false;
+        boolean inEvent = false, yearly = false, isBirthday = false;
 
         for (String line : unfolded) {
             if (line.equals("BEGIN:VEVENT")) {
-                inEvent = true; summary = null; dtstart = null; yearly = false;
+                inEvent = true; 
+                summary = null; 
+                dtstart = null; 
+                yearly = false;
+                isBirthday = false;
             } else if (line.equals("END:VEVENT")) {
-                if (inEvent && yearly && summary != null && dtstart != null) {
-                    LocalDate date = parseIcsDate(dtstart);
-                    if (date != null) result.add(new IcsEntry(summary.trim(), date));
+                if (inEvent && dtstart != null) {
+                    // Accept if: yearly recurrence OR birthday indicator OR birthday in summary
+                    boolean accept = yearly || isBirthday || 
+                                   (summary != null && summary.toLowerCase().matches(".*(birthday|bday|born).*"));
+                    
+                    if (accept && summary != null) {
+                        LocalDate date = parseIcsDate(dtstart);
+                        if (date != null) {
+                            // Year is trusted only if it's in the past and not a placeholder
+                            boolean yearTrusted = date.isBefore(LocalDate.now()) && 
+                                                date.getYear() > 1900 && 
+                                                date.getYear() < LocalDate.now().getYear();
+                            result.add(new IcsEntry(summary.trim(), date, yearTrusted));
+                        }
+                    }
                 }
                 inEvent = false;
             } else if (inEvent) {
@@ -174,6 +210,14 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                     if (colon >= 0) dtstart = line.substring(colon + 1).trim();
                 } else if (line.startsWith("RRULE:") && line.contains("FREQ=YEARLY")) {
                     yearly = true;
+                } else if (line.startsWith("X-GOOGLE-CALENDAR-CONTENT-TYPE:") && line.contains("birthday")) {
+                    isBirthday = true;
+                } else if (line.startsWith("CATEGORIES:") && line.toLowerCase().contains("birthday")) {
+                    isBirthday = true;
+                } else if (line.startsWith("BDAY:")) {
+                    // vCard birthday format
+                    dtstart = line.substring(5).trim();
+                    isBirthday = true;
                 }
             }
         }
@@ -198,11 +242,23 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         }
     }
 
+    private Friend convertToFriend(IcsEntry entry) {
+        String name = resolveName(entry.summary());
+        LocalDate date = entry.date();
+        
+        // If year is not trusted (placeholder or future), store without year
+        if (!entry.yearTrusted()) {
+            return new Friend(name, null, date.getMonthValue(), date.getDayOfMonth());
+        }
+        
+        return new Friend(name, date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+    }
+
     private static List<String> unfold(List<String> lines) {
         List<String> out = new ArrayList<>();
         for (String line : lines) {
             if (!line.isEmpty() && (line.charAt(0) == ' ' || line.charAt(0) == '\t')) {
-                if (!out.isEmpty()) out.set(out.size() - 1, out.get(out.size() - 1) + line.substring(1));
+                if (!out.isEmpty()) out.set(out.size() - 1, out.getLast() + line.substring(1));
             } else {
                 out.add(line.replace("\r", ""));
             }
@@ -226,11 +282,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             String dateStr = f.hasYear()
                     ? f.getBirthDate().format(CSV_DATE_FMT)
                     : String.format("%02d.%02d.", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
-            sb.append("\u2705 ").append(f.getName())
-              .append(" \u2014 ").append(dateStr).append("\n");
+            sb.append("✅ ").append(f.getName())
+              .append(" — ").append(dateStr).append("\n");
         }
         for (String err : errors) {
-            sb.append("\u274c ").append(err).append("\n");
+            sb.append("❌ ").append(err).append("\n");
         }
         return sb.toString().stripTrailing();
     }

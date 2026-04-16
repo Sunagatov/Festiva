@@ -89,7 +89,7 @@ public class BirthdayReminder {
         ZonedDateTime userNow = utcNow.withZoneSameInstant(zone);
         if (!shouldNotify(pref, userNow)) return 0;
         LocalDate today = userNow.toLocalDate();
-        Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : Lang.RU;
+        Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : UserPreference.DEFAULT_LANG;
 
         int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang)).count();
         if (count > 0 || !friends.isEmpty()) {
@@ -112,7 +112,7 @@ public class BirthdayReminder {
     }
 
     private boolean shouldNotify(UserPreference pref, ZonedDateTime userNow) {
-        int notifyHour = pref != null && pref.getNotifyHour() >= 0 ? pref.getNotifyHour() : 9;
+        int notifyHour = pref != null && pref.getNotifyHour() >= 0 && pref.getNotifyHour() <= 23 ? pref.getNotifyHour() : 9;
         if (notifyHour != userNow.getHour()) return false;
         LocalDate today = userNow.toLocalDate();
         return !today.equals(pref != null ? pref.getLastNotifiedDate() : null);
