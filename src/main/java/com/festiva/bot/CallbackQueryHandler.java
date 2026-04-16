@@ -317,16 +317,49 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleIcsConfirm(long userId, Lang lang) {
         java.util.List<com.festiva.friend.entity.Friend> pending = userStateService.getPendingIcsImport(userId);
-        int saved = 0;
-        if (pending != null) {
-            for (com.festiva.friend.entity.Friend f : pending) {
+        if (pending == null || pending.isEmpty()) {
+            userStateService.clearState(userId);
+            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        }
+        
+        int saved = 0, skipped = 0, failed = 0;
+        for (com.festiva.friend.entity.Friend f : pending) {
+            try {
+                // Revalidate: check if friend already exists
+                if (friendService.friendExists(userId, f.getName())) {
+                    skipped++;
+                    continue;
+                }
+                
+                // Validate name is not blank
+                if (f.getName() == null || f.getName().isBlank()) {
+                    failed++;
+                    continue;
+                }
+                
+                // Check cap
+                if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
+                    break;
+                }
+                
                 friendService.addFriend(userId, f);
                 saved++;
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                log.debug("ics.import.duplicate: userId={}, name={}", userId, f.getName());
+                skipped++;
+            } catch (Exception e) {
+                log.warn("ics.import.failed: userId={}, name={}", userId, f.getName(), e);
+                failed++;
             }
         }
+        
         userStateService.clearState(userId);
-        log.debug("ics.import.done: userId={}, added={}", userId, saved);
-        return new CallbackResult(Messages.get(lang, Messages.ICS_DONE, saved), null);
+        log.debug("ics.import.done: userId={}, saved={}, skipped={}, failed={}", userId, saved, skipped, failed);
+        
+        String message = saved > 0 
+            ? Messages.get(lang, Messages.ICS_DONE, saved)
+            : Messages.get(lang, Messages.ICS_NONE_SAVED);
+        return new CallbackResult(message, null);
     }
 
     // ── Month ─────────────────────────────────────────────────────────────────

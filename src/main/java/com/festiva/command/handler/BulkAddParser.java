@@ -37,19 +37,32 @@ public final class BulkAddParser {
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
 
-        String csvContent = String.join("\n", lines);
-        if (csvContent.trim().isEmpty()) {
+        // Filter out blank lines
+        List<String> nonBlankLines = lines.stream()
+            .filter(line -> line != null && !line.trim().isEmpty())
+            .toList();
+
+        if (nonBlankLines.isEmpty()) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
             return new ParseResult(valid, errors, true);
         }
 
-        try (CSVParser parser = CSVParser.parse(new StringReader(csvContent), 
-                CSVFormat.DEFAULT.builder()
-                    .setHeader()
-                    .setSkipHeaderRecord(true)
-                    .setIgnoreHeaderCase(true)
-                    .setTrim(true)
-                    .build())) {
+        // Check if first line looks like a header (contains common header keywords)
+        String firstLine = nonBlankLines.getFirst().toLowerCase(Locale.ROOT);
+        boolean hasHeader = firstLine.matches(".*\\b(name|birthday|date|relationship)\\b.*");
+
+        String csvContent = String.join("\n", nonBlankLines);
+
+        CSVFormat.Builder formatBuilder = CSVFormat.DEFAULT.builder()
+            .setIgnoreHeaderCase(true)
+            .setTrim(true)
+            .setAllowMissingColumnNames(true);
+        
+        if (hasHeader) {
+            formatBuilder.setHeader().setSkipHeaderRecord(true);
+        }
+
+        try (CSVParser parser = CSVParser.parse(new StringReader(csvContent), formatBuilder.build())) {
             
             List<CSVRecord> records = parser.getRecords();
             if (records.isEmpty()) {
@@ -81,9 +94,9 @@ public final class BulkAddParser {
             return;
         }
 
-        String name = record.get(0).trim();
-        String dateStr = record.get(1).trim();
-        String relStr = record.size() > 2 ? record.get(2).trim() : "";
+        String name = record.get(0) != null ? record.get(0).trim() : "";
+        String dateStr = record.get(1) != null ? record.get(1).trim() : "";
+        String relStr = record.size() > 2 && record.get(2) != null ? record.get(2).trim() : "";
 
         String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
         if (nameError != null) { errors.add(nameError); return; }

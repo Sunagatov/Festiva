@@ -45,6 +45,11 @@ public class Friend {
     
     // Constructor with validation (supports optional year)
     public Friend(String name, Integer year, int month, int day) {
+        // Validate name is not blank
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Friend name cannot be blank");
+        }
+        
         this.name = name;
         this.normalizedName = normalizeName(name);
         
@@ -108,24 +113,46 @@ public class Friend {
     }
 
     public LocalDate nextBirthday(LocalDate from) {
-        // Unified leap day handling: Feb 29 birthdays always fall on Feb 28 in non-leap years
-        // This applies regardless of whether the birth year is known
+        boolean isLeapDayBirthday = (birthMonth == 2 && birthDay == 29);
         
         // Try to create the birthday in the current year
         LocalDate next;
         try {
             next = LocalDate.of(from.getYear(), birthMonth, birthDay);
         } catch (DateTimeException e) {
-            // Feb 29 in non-leap year → use Feb 28
-            next = LocalDate.of(from.getYear(), 2, 28);
+            // Feb 29 in non-leap year → use Feb 28 if year is known, otherwise skip to next leap year
+            if (hasYear()) {
+                // With year: skip to next leap year
+                int year = from.getYear();
+                while (!LocalDate.of(year, 1, 1).isLeapYear()) {
+                    year++;
+                }
+                next = LocalDate.of(year, 2, 29);
+            } else {
+                // Without year: use Feb 28 in non-leap years
+                next = LocalDate.of(from.getYear(), 2, 28);
+            }
         }
         
-        // If already passed this year, move to next year
+        // If already passed this year, move to next occurrence
         if (next.isBefore(from)) {
-            try {
+            if (isLeapDayBirthday) {
+                if (hasYear()) {
+                    // With year: find next leap year
+                    int year = from.getYear() + 1;
+                    while (!LocalDate.of(year, 1, 1).isLeapYear()) {
+                        year++;
+                    }
+                    next = LocalDate.of(year, 2, 29);
+                } else {
+                    // Without year: try next year, use Feb 28 if not leap
+                    int year = from.getYear() + 1;
+                    next = LocalDate.of(year, 1, 1).isLeapYear() 
+                        ? LocalDate.of(year, 2, 29) 
+                        : LocalDate.of(year, 2, 28);
+                }
+            } else {
                 next = LocalDate.of(from.getYear() + 1, birthMonth, birthDay);
-            } catch (DateTimeException e) {
-                next = LocalDate.of(from.getYear() + 1, 2, 28);
             }
         }
         

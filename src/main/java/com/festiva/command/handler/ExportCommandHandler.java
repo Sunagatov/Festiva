@@ -46,6 +46,12 @@ public class ExportCommandHandler implements CommandHandler {
         StringBuilder csv = new StringBuilder("name,birthday,relationship\n");
         friends.forEach(f -> {
             String n = f.getName();
+            
+            // Prevent formula injection by prefixing dangerous characters
+            if (n.startsWith("=") || n.startsWith("+") || n.startsWith("-") || n.startsWith("@")) {
+                n = "'" + n;
+            }
+            
             String name = (n.contains(",") || n.contains("\""))
                     ? "\"" + n.replace("\"", "\"\"") + "\""
                     : n;

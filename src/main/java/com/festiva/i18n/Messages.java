@@ -149,6 +149,7 @@ public final class Messages {
     public static final String ICS_CONFIRM_BTN     = "ics_confirm_btn";
     public static final String ICS_CANCEL_BTN      = "ics_cancel_btn";
     public static final String ICS_DONE            = "ics_done";
+    public static final String ICS_NONE_SAVED      = "ics_none_saved";
     public static final String ICS_CANCELLED       = "ics_cancelled";
     public static final String YEARS_OLD_ONE           = "years_old_one";
     public static final String YEARS_OLD_FEW           = "years_old_few";

@@ -168,10 +168,11 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick in edit flow → updates date and clears state")
     void handleDayPick_editFlow_updatesDate() {
         when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_EDIT_DATE);
+        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 
-        verify(friendService).updateFriendDate(eq(1L), eq("Alice"), eq(1990), eq(3), eq(15));
+        verify(friendService).updateFriendDateById(eq("id-alice"), eq(1L), eq(1990), eq(3), eq(15));
         verify(userStateService).clearState(1L);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.EDIT_DATE_DONE, "Alice"));
     }
@@ -231,13 +232,13 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     void handleEditRelationship_withPendingId_updatesByFriend() {
         Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
         alice.setId("id-alice");
-        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
-        when(friendService.findFriendById("id-alice")).thenReturn(Optional.of(alice));
+        lenient().when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        lenient().when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(Optional.of(alice));
 
         CallbackResult result = handler.handleEditRelationship(
                 DatePickerCallbackHandler.EDIT_REL_PREFIX + "FRIEND", 1L, Lang.EN);
 
-        verify(friendService).updateFriendRelationship(1L, "Alice", Relationship.FRIEND);
+        verify(friendService).updateFriendRelationshipById("id-alice", 1L, Relationship.FRIEND);
         verify(userStateService).clearState(1L);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.EDIT_REL_DONE, "Alice"));
     }
@@ -247,11 +248,11 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     void handleEditRelationship_skip_setsNull() {
         Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
         alice.setId("id-alice");
-        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
-        when(friendService.findFriendById("id-alice")).thenReturn(Optional.of(alice));
+        lenient().when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        lenient().when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(Optional.of(alice));
 
         handler.handleEditRelationship(DatePickerCallbackHandler.EDIT_REL_PREFIX + "SKIP", 1L, Lang.EN);
 
-        verify(friendService).updateFriendRelationship(1L, "Alice", null);
+        verify(friendService).updateFriendRelationshipById("id-alice", 1L, null);
     }
 }

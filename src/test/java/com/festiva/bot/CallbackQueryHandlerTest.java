@@ -1,7 +1,5 @@
 package com.festiva.bot;
 
-import com.festiva.bot.DatePickerCallbackHandler;
-import com.festiva.bot.EditCallbackHandler;
 import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.DeleteAccountCommandHandler;
 import com.festiva.command.handler.EditFriendCommandHandler;
@@ -118,9 +116,9 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
         alice.setId("id-alice");
         alice.setTelegramUserId(1L);
-        when(friendService.findFriendById("id-alice")).thenReturn(java.util.Optional.of(alice));
+        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
         EditMessageText result = handler.handle(callback("REMOVE_id-alice"));
-        verify(friendService, never()).deleteFriend(anyLong(), anyString());
+        verify(friendService, never()).deleteFriendById(anyString(), anyLong());
         assertThat(result.getText()).contains("Alice");
         assertThat(result.getReplyMarkup()).isNotNull();
     }
@@ -131,16 +129,16 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
         alice.setId("id-alice");
         alice.setTelegramUserId(1L);
-        when(friendService.findFriendById("id-alice")).thenReturn(java.util.Optional.of(alice));
+        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
-        verify(friendService).deleteFriend(1L, "Alice");
+        verify(friendService).deleteFriendById("id-alice", 1L);
         assertThat(result.getText()).contains("Alice");
     }
 
     @Test
     @DisplayName("REMOVE_ callback → stale friend returns SESSION_EXPIRED")
     void removeCallback_stale_returnsSessionExpired() {
-        when(friendService.findFriendById("ghost")).thenReturn(java.util.Optional.empty());
+        when(friendService.findOwnedFriend("ghost", 1L)).thenReturn(java.util.Optional.empty());
         EditMessageText result = handler.handle(callback("REMOVE_ghost"));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
@@ -148,7 +146,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("CONFIRM_REMOVE_ callback → stale friend returns SESSION_EXPIRED")
     void confirmRemoveCallback_stale_returnsSessionExpired() {
-        when(friendService.findFriendById("id-ghost")).thenReturn(java.util.Optional.empty());
+        when(friendService.findOwnedFriend("id-ghost", 1L)).thenReturn(java.util.Optional.empty());
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-ghost"));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
@@ -159,7 +157,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
         alice.setId("id-alice");
         alice.setTelegramUserId(1L);
-        when(friendService.findFriendById("id-alice")).thenReturn(java.util.Optional.of(alice));
+        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
         assertThat(result.getText()).contains("/list");
     }

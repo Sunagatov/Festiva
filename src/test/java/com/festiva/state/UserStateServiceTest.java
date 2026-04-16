@@ -26,14 +26,18 @@ class UserStateServiceTest {
     void setUp() {
         repo = mock(UserPreferenceRepository.class);
         when(repo.findById(anyLong())).thenReturn(Optional.empty());
-        service = new UserStateService(repo);
+        service = new UserStateService(
+            mock(UserSessionRepository.class),
+            repo,
+            mock(PendingImportRepository.class)
+        );
     }
 
     @Test
-    @DisplayName("new user defaults to IDLE state and RU language")
+    @DisplayName("new user defaults to IDLE state and EN language")
     void newUser_defaultsToIdleAndRu() {
         assertThat(service.getState(1L)).isEqualTo(BotState.IDLE);
-        assertThat(service.getLanguage(1L)).isEqualTo(Lang.RU);
+        assertThat(service.getLanguage(1L)).isEqualTo(Lang.EN);
     }
 
     @Test
@@ -83,17 +87,17 @@ class UserStateServiceTest {
     }
 
     @Test
-    @DisplayName("getTimezone() returns Europe/Moscow when no prefs saved")
+    @DisplayName("getTimezone() returns UTC when no prefs saved")
     void getTimezone_defaultsMoscow() {
-        assertThat(service.getTimezone(1L)).isEqualTo("Europe/Moscow");
+        assertThat(service.getTimezone(1L)).isEqualTo("UTC");
     }
 
     @Test
     @DisplayName("sessions are isolated per userId")
     void sessions_areIsolatedPerUser() {
         service.setState(1L, BotState.WAITING_FOR_ADD_FRIEND_NAME);
-        service.setLanguage(1L, Lang.EN);
+        service.setLanguage(1L, Lang.RU);
         assertThat(service.getState(2L)).isEqualTo(BotState.IDLE);
-        assertThat(service.getLanguage(2L)).isEqualTo(Lang.RU);
+        assertThat(service.getLanguage(2L)).isEqualTo(Lang.EN);
     }
 }

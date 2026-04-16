@@ -1,6 +1,5 @@
 package com.festiva.state;
 
-import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +9,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Document(collection = "user_sessions")
@@ -29,7 +27,6 @@ public class UserSession {
     private Integer pendingDay;
     private int yearPageOffset = 0;
     private Lang lang;
-    private List<Friend> pendingIcsImport;
     
     @Indexed(expireAfter = "1h")
     private LocalDateTime lastActivity;

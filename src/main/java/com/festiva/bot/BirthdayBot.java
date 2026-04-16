@@ -19,6 +19,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Slf4j
 @Component
 public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, NotificationSender {
@@ -31,6 +34,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final MetricsSender metricsSender;
     private final BotCommandsService commandsService;
     private final UserStateService userStateService;
+    private final ExecutorService heavyWorkExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
@@ -66,21 +70,39 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             log.warn("bot.update.null");
             return;
         }
+        
+        // Fast path: answer callback queries immediately
+        if (update.hasCallbackQuery()) {
+            String callbackId = update.getCallbackQuery().getId();
+            try {
+                telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackId).build());
+            } catch (TelegramApiException e) {
+                log.debug("bot.callback.answer.failed: callbackId={}", callbackId, e);
+            }
+        }
+        
+        // Offload heavy processing to virtual threads
+        heavyWorkExecutor.submit(() -> processUpdate(update));
+    }
+    
+    private void processUpdate(Update update) {
         long startTime = System.currentTimeMillis();
         String updateType = update.hasCallbackQuery() ? "callback" : update.hasMessage() ? "message" : "other";
         try {
             if (update.hasCallbackQuery()) {
-                String callbackId = update.getCallbackQuery().getId();
-
-                // Always answer callback query immediately
-                try {
-                    telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackId).build());
-                } catch (TelegramApiException e) {
-                    log.debug("bot.callback.answer.failed: callbackId={}", callbackId, e);
-                }
-                
                 EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
-                if (edit != null) telegramClient.execute(edit);
+                if (edit != null) {
+                    try {
+                        telegramClient.execute(edit);
+                    } catch (TelegramApiException e) {
+                        // Ignore "message is not modified" errors - they're harmless
+                        if (e.getMessage() != null && e.getMessage().contains("message is not modified")) {
+                            log.debug("callback.message.not.modified: userId={}", update.getCallbackQuery().getFrom().getId());
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
             } else if (update.hasMessage()) {
                 SendMessage response = commandRouter.route(update);
                 if (response != null) telegramClient.execute(response);
@@ -115,6 +137,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     @PreDestroy
     public void stop() throws Exception {
         if (botsApplication != null) botsApplication.close();
+        heavyWorkExecutor.shutdown();
     }
 
     @Override

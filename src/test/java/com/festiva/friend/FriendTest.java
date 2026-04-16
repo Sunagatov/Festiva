@@ -126,18 +126,22 @@ class FriendTest {
     @DisplayName("constructor validates invalid date")
     void constructor_invalidDate_throws() {
         assertThatThrownBy(() -> new Friend("Invalid", 2024, 2, 30))
-            .isInstanceOf(DateTimeException.class);
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasCauseInstanceOf(DateTimeException.class);
         assertThatThrownBy(() -> new Friend("Invalid", 2024, 13, 15))
-            .isInstanceOf(DateTimeException.class);
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasCauseInstanceOf(DateTimeException.class);
     }
     
     @Test
     @DisplayName("constructor validates invalid month-day without year")
     void constructor_noYear_invalidDate_throws() {
         assertThatThrownBy(() -> new Friend("Invalid", null, 2, 30))
-            .isInstanceOf(DateTimeException.class);
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasCauseInstanceOf(DateTimeException.class);
         assertThatThrownBy(() -> new Friend("Invalid", null, 13, 15))
-            .isInstanceOf(DateTimeException.class);
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasCauseInstanceOf(DateTimeException.class);
     }
     
     @Test

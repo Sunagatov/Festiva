@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -46,13 +47,13 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("deleteAccount() → deletes all friends and prefs, clears state")
+    @DisplayName("deleteAccount() → deletes all friends and prefs, removes session")
     void deleteAccount_deletesAllData() {
         handler.deleteAccount(1L);
 
         verify(friendService).deleteAllFriends(1L);
         verify(userPreferenceRepository).deleteById(1L);
-        verify(userStateService).clearState(1L);
+        verify(userStateService).removeSession(1L);
     }
 
     @Test
@@ -61,7 +62,7 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
         var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();
         var callbacks = markup.getKeyboard().getFirst().stream()
-                .map(b -> b.getCallbackData()).toList();
+                .map(InlineKeyboardButton::getCallbackData).toList();
         assertThat(callbacks).contains(DeleteAccountCommandHandler.CONFIRM_DELETE);
         assertThat(callbacks).contains(DeleteAccountCommandHandler.CANCEL_DELETE);
     }

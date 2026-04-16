@@ -4,30 +4,45 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class UserStateService {
 
-    private final ConcurrentHashMap<Long, UserSession> cache = new ConcurrentHashMap<>();
+    private final Cache<Long, UserSession> cache = Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofHours(1))
+            .build();
     private final UserSessionRepository sessionRepository;
     private final UserPreferenceRepository userPreferenceRepository;
+    private final PendingImportRepository pendingImportRepository;
 
     private UserSession session(long userId) {
-        return cache.computeIfAbsent(userId, id -> {
+        return cache.get(userId, id -> {
             UserSession session = sessionRepository.findById(id).orElse(new UserSession());
             session.setUserId(id);
             session.touch();
+            
+            // Reject stale sessions from DB
+            if (session.getLastActivity() != null && 
+                session.getLastActivity().isBefore(LocalDateTime.now().minusHours(1))) {
+                session = new UserSession();
+                session.setUserId(id);
+                session.touch();
+            }
+            
             return session;
         });
     }
     
     private void saveSession(long userId) {
-        UserSession session = cache.get(userId);
+        UserSession session = cache.getIfPresent(userId);
         if (session != null) {
             session.touch();
             sessionRepository.save(session);
@@ -49,12 +64,12 @@ public class UserStateService {
         s.setPendingMonth(null);
         s.setPendingDay(null);
         s.setYearPageOffset(0);
-        s.setPendingIcsImport(null);
+        pendingImportRepository.deleteByUserId(userId);
         saveSession(userId);
     }
 
     public void removeSession(long userId) {
-        cache.remove(userId);
+        cache.invalidate(userId);
         sessionRepository.deleteById(userId);
     }
 
@@ -94,11 +109,18 @@ public class UserStateService {
     }
     public Integer getPendingDay(long userId) { return session(userId).getPendingDay(); }
 
-    public void setPendingIcsImport(long userId, java.util.List<Friend> friends) { 
-        session(userId).setPendingIcsImport(friends);
-        saveSession(userId);
+    public void setPendingIcsImport(long userId, java.util.List<Friend> friends) {
+        pendingImportRepository.deleteByUserId(userId);
+        if (friends != null && !friends.isEmpty()) {
+            pendingImportRepository.save(new PendingImport(userId, friends));
+        }
     }
-    public java.util.List<Friend> getPendingIcsImport(long userId) { return session(userId).getPendingIcsImport(); }
+    
+    public java.util.List<Friend> getPendingIcsImport(long userId) {
+        return pendingImportRepository.findByUserId(userId)
+                .map(PendingImport::getFriends)
+                .orElse(null);
+    }
 
     public Lang getLanguage(long userId) {
         UserSession s = session(userId);

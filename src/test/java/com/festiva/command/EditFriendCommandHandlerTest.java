@@ -34,6 +34,13 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     void defaults() {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userStateService.getPendingName(anyLong())).thenReturn("Alice");
+        lenient().when(userStateService.getPendingId(anyLong())).thenReturn("id-alice");
+        
+        // Mock the current friend for edit operations
+        com.festiva.friend.entity.Friend alice = new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
+        alice.setId("id-alice");
+        alice.setTelegramUserId(1L);
+        lenient().when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
     }
 
     @Test
@@ -48,7 +55,7 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState with null oldName → SESSION_EXPIRED")
     void handleState_nullOldName_returnsSessionExpired() {
-        when(userStateService.getPendingName(1L)).thenReturn(null);
+        lenient().when(userStateService.getPendingName(1L)).thenReturn(null);
 
         assertThat(handler.handleState(update("NewName")).getText())
                 .contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
@@ -89,11 +96,12 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState valid new name → updates name, clears state, returns edit_name_done")
     void handleState_validName_updatesAndClearsState() {
+        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
         when(friendService.friendExists(1L, "Bob")).thenReturn(false);
 
         assertThat(handler.handleState(update("Bob")).getText())
                 .contains(Messages.get(Lang.EN, Messages.EDIT_NAME_DONE, "Bob"));
-        verify(friendService).updateFriendName(1L, "Alice", "Bob");
+        verify(friendService).updateFriendNameById("id-alice", 1L, "Bob");
         verify(userStateService).clearState(1L);
     }
 

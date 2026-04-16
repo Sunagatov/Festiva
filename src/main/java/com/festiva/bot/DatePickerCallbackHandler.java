@@ -64,8 +64,8 @@ class DatePickerCallbackHandler {
         if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingMonth(userId, month);
         
-        // For day picker, use current year if year is null (for validation purposes)
-        int yearForDayPicker = year != null ? year : LocalDate.now().getYear();
+        // For day picker, use 2000 (leap year) if year is null to allow Feb 29
+        int yearForDayPicker = year != null ? year : 2000;
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, name),
                 DatePickerKeyboard.dayKeyboard(yearForDayPicker, month, lang));
     }

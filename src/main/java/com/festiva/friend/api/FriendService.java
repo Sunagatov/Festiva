@@ -3,12 +3,14 @@ package com.festiva.friend.api;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.repository.FriendMongoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FriendService {
@@ -22,7 +24,12 @@ public class FriendService {
     public void addFriend(long telegramUserId, Friend friend) {
         friend.setTelegramUserId(telegramUserId);
         friend.setName(friend.getName()); // Ensures normalizedName is set
-        friendRepository.save(friend);
+        try {
+            friendRepository.save(friend);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            log.debug("friend.duplicate: userId={}, name={}", telegramUserId, friend.getName());
+            throw new IllegalArgumentException("Friend with this name already exists", e);
+        }
     }
 
     public boolean friendExists(long telegramUserId, String name) {
@@ -37,10 +44,6 @@ public class FriendService {
         friendRepository.deleteByIdAndTelegramUserId(id, telegramUserId);
     }
 
-    public java.util.Optional<Friend> findFriendById(String id) {
-        return friendRepository.findById(id);
-    }
-    
     public java.util.Optional<Friend> findOwnedFriend(String id, long telegramUserId) {
         return friendRepository.findByIdAndTelegramUserId(id, telegramUserId);
     }
@@ -83,17 +86,6 @@ public class FriendService {
             f.setRelationship(relationship);
             friendRepository.save(f);
         });
-    }
-
-    public boolean toggleFriendNotify(long telegramUserId, String name) {
-        var ref = new Object() { boolean newValue = true; };
-        friendRepository.findByTelegramUserIdAndNameIgnoreCase(telegramUserId, name)
-                .ifPresent(f -> {
-                    f.setNotifyEnabled(!f.isNotifyEnabled());
-                    friendRepository.save(f);
-                    ref.newValue = f.isNotifyEnabled();
-                });
-        return ref.newValue;
     }
 
     public boolean toggleFriendNotifyById(String id, long telegramUserId) {
