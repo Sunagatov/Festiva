@@ -8,7 +8,6 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
 import com.festiva.user.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -18,7 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.util.List;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DeleteAccountCommandHandler implements CommandHandler {

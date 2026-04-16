@@ -9,14 +9,12 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.Set;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AddFriendCommandHandler implements StatefulCommandHandler {
@@ -41,7 +39,6 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
-            log.warn("friend.add.rejected.cap: userId={}, cap={}", userId, FriendService.FRIEND_CAP);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_CAP, FriendService.FRIEND_CAP));
         }
 
@@ -57,22 +54,18 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
 
         BotState state = userStateService.getState(userId);
         if (state != BotState.WAITING_FOR_ADD_FRIEND_NAME) {
-            log.warn("friend.add.rejected.invalid.state: userId={}, state={}", userId, state);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.USE_BUTTONS));
         }
 
         String name = update.getMessage().getText().trim();
 
         if (name.isBlank()) {
-            log.warn("friend.add.rejected.empty.name: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EMPTY));
         }
         if (name.length() > 100) {
-            log.warn("friend.add.rejected.name.too.long: userId={}, length={}", userId, name.length());
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
         if (friendService.friendExists(userId, name)) {
-            log.warn("friend.add.rejected.duplicate.name: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, name));
         }
 
