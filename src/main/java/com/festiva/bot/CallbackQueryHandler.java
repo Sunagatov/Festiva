@@ -178,6 +178,7 @@ public class CallbackQueryHandler {
                 return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
             }
             userStateService.setNotifyHour(userId, hour);
+            log.info("settings.notify.hour.updated: userId={}, hour={}", userId, hour);
             return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
                     SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
         } catch (NumberFormatException e) {
@@ -188,7 +189,6 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleSettingsTz(String data, long userId, Lang lang) {
         String tz = data.substring(SettingsCommandHandler.SETTINGS_TZ_PREFIX.length());
-        // Validate timezone (throws ZoneRulesException if invalid)
         try {
             @SuppressWarnings("unused")
             java.time.ZoneId validatedZone = java.time.ZoneId.of(tz);
@@ -197,6 +197,7 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         }
         userStateService.setTimezone(userId, tz);
+        log.info("settings.timezone.updated: userId={}, tz={}", userId, tz);
         return new CallbackResult(Messages.get(lang, Messages.SETTINGS_TZ_SET, tz),
                 SettingsCommandHandler.combined(userStateService.getNotifyHour(userId), tz));
     }
@@ -246,11 +247,10 @@ public class CallbackQueryHandler {
         try {
             Lang newLang = Lang.valueOf(code);
             userStateService.setLanguage(userId, newLang);
-            log.debug("callback.language.changed: userId={}, lang={}", userId, newLang);
-            
-            // Update bot commands menu for this user
+            log.info("settings.language.updated: userId={}, lang={}", userId, newLang);
+
             commandsService.updateCommandsForUser(userId, newLang);
-            
+
             InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(new InlineKeyboardRow(
                             InlineKeyboardButton.builder().text((newLang == Lang.EN ? "✅ " : "") + Messages.get(newLang, Messages.LANG_EN_BTN)).callbackData(LANG_PREFIX + Lang.EN.name()).build(),
@@ -301,7 +301,6 @@ public class CallbackQueryHandler {
         String name = friend.getName();
         friendService.deleteFriendById(id, userId);
         userStateService.clearState(userId);
-        log.debug("callback.friend.removed: userId={}, id={}, name={}", userId, id, name);
         return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, name), null);
     }
 
@@ -321,44 +320,42 @@ public class CallbackQueryHandler {
             userStateService.clearState(userId);
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         }
-        
+
         int saved = 0, skipped = 0, failed = 0;
         for (com.festiva.friend.entity.Friend f : pending) {
             try {
-                // Revalidate: check if friend already exists
                 if (friendService.friendExists(userId, f.getName())) {
                     skipped++;
                     continue;
                 }
-                
-                // Validate name is not blank
+
                 if (f.getName() == null || f.getName().isBlank()) {
                     failed++;
                     continue;
                 }
-                
-                // Check cap
+
                 if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
+                    log.warn("ics.import.cap.reached: userId={}, cap={}", userId, FriendService.FRIEND_CAP);
                     break;
                 }
-                
+
                 friendService.addFriend(userId, f);
                 saved++;
             } catch (org.springframework.dao.DuplicateKeyException e) {
-                log.debug("ics.import.duplicate: userId={}, name={}", userId, f.getName());
+                log.debug("ics.import.duplicate: userId={}", userId);
                 skipped++;
             } catch (Exception e) {
-                log.warn("ics.import.failed: userId={}, name={}", userId, f.getName(), e);
+                log.warn("ics.import.save.failed: userId={}", userId, e);
                 failed++;
             }
         }
-        
+
         userStateService.clearState(userId);
-        log.debug("ics.import.done: userId={}, saved={}, skipped={}, failed={}", userId, saved, skipped, failed);
-        
-        String message = saved > 0 
-            ? Messages.get(lang, Messages.ICS_DONE, saved)
-            : Messages.get(lang, Messages.ICS_NONE_SAVED);
+        log.info("ics.import.completed: userId={}, saved={}, skipped={}, failed={}", userId, saved, skipped, failed);
+
+        String message = saved > 0
+                ? Messages.get(lang, Messages.ICS_DONE, saved)
+                : Messages.get(lang, Messages.ICS_NONE_SAVED);
         return new CallbackResult(message, null);
     }
 
@@ -385,21 +382,21 @@ public class CallbackQueryHandler {
         LocalDate today = userDateService.todayFor(userId);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
         filtered.forEach(f -> {
-            String dateStr = f.hasYear() 
+            String dateStr = f.hasYear()
                     ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
                     : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
-            
+
             sb.append("– <b>").append(dateStr)
                     .append("</b> ").append(com.festiva.util.HtmlEscaper.escape(f.getName()));
-            
+
             if (f.hasYear()) {
                 boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
-                String ageLabel = alreadyCelebrated 
+                String ageLabel = alreadyCelebrated
                         ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
                         : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));
                 sb.append(" (<i>").append(ageLabel).append("</i>)");
             }
-            
+
             sb.append("\n");
         });
         return new CallbackResult(sb.toString(), null);

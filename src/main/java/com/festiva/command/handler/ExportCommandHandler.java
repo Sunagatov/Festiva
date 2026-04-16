@@ -46,22 +46,20 @@ public class ExportCommandHandler implements CommandHandler {
         StringBuilder csv = new StringBuilder("name,birthday,relationship\n");
         friends.forEach(f -> {
             String n = f.getName();
-            
-            // Prevent formula injection by prefixing dangerous characters
+
             if (n.startsWith("=") || n.startsWith("+") || n.startsWith("-") || n.startsWith("@")) {
                 n = "'" + n;
             }
-            
+
             String name = (n.contains(",") || n.contains("\""))
                     ? "\"" + n.replace("\"", "\"\"") + "\""
                     : n;
             String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase(Locale.ROOT) : "";
-            
-            // Format birthday based on whether year is known
+
             String birthday = f.hasYear()
                     ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
                     : String.format("%02d.%02d.", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
-            
+
             csv.append(name).append(",")
                     .append(birthday).append(",")
                     .append(rel).append("\n");
@@ -75,6 +73,7 @@ public class ExportCommandHandler implements CommandHandler {
                             "friends.csv"))
                     .caption(Messages.get(lang, Messages.EXPORT_CAPTION))
                     .build());
+            log.info("export.sent: userId={}, friendCount={}", userId, friends.size());
         } catch (TelegramApiException e) {
             log.error("export.failed: userId={}, message={}", userId, e.getMessage(), e);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED));

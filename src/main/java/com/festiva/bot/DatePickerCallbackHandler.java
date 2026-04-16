@@ -48,7 +48,7 @@ class DatePickerCallbackHandler {
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
-    
+
     CallbackResult handleSkipYear(long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
@@ -63,8 +63,7 @@ class DatePickerCallbackHandler {
         String name = userStateService.getPendingName(userId);
         if (name == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingMonth(userId, month);
-        
-        // For day picker, use 2000 (leap year) if year is null to allow Feb 29
+
         int yearForDayPicker = year != null ? year : 2000;
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, name),
                 DatePickerKeyboard.dayKeyboard(yearForDayPicker, month, lang));
@@ -78,8 +77,7 @@ class DatePickerCallbackHandler {
         String id = userStateService.getPendingId(userId);
         if (month == null || name == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
-        
-        // Validate date
+
         if (year != null) {
             try {
                 LocalDate birthDate = LocalDate.of(year, month, day);
@@ -93,15 +91,14 @@ class DatePickerCallbackHandler {
                         DatePickerKeyboard.dayKeyboard(year, month, lang));
             }
         }
-        
+
         if (userStateService.getState(userId) == BotState.WAITING_FOR_EDIT_DATE) {
             if (id == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
             friendService.updateFriendDateById(id, userId, year, month, day);
             userStateService.clearState(userId);
-            log.debug("friend.date.updated: userId={}, id={}, hasYear={}", userId, id, year != null);
             return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), null);
         }
-        
+
         userStateService.setPendingYear(userId, year);
         userStateService.setPendingMonth(userId, month);
         userStateService.setPendingDay(userId, day);
@@ -134,19 +131,18 @@ class DatePickerCallbackHandler {
         Integer day = userStateService.getPendingDay(userId);
         if (month == null || day == null || name == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
-        
+
         Relationship rel = "SKIP".equals(data.substring(RELATIONSHIP_PREFIX.length())) ? null
                 : Relationship.valueOf(data.substring(RELATIONSHIP_PREFIX.length()));
-        
+
         if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
             userStateService.clearState(userId);
             return new CallbackResult(Messages.get(lang, Messages.FRIEND_CAP, FriendService.FRIEND_CAP), null);
         }
-        
+
         friendService.addFriend(userId, new Friend(name, year, month, day, rel));
         userStateService.clearState(userId);
-        log.debug("friend.added: userId={}, name={}, hasYear={}, relationship={}", userId, name, year != null, rel);
-        
+
         String messageKey = year != null ? Messages.FRIEND_ADDED : Messages.FRIEND_ADDED_NO_YEAR;
         return new CallbackResult(Messages.get(lang, messageKey, name),
                 InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
@@ -173,7 +169,6 @@ class DatePickerCallbackHandler {
         Relationship rel = "SKIP".equals(value) ? null : Relationship.valueOf(value);
         friendService.updateFriendRelationshipById(id, userId, rel);
         userStateService.clearState(userId);
-        log.debug("friend.relationship.updated: userId={}, id={}, rel={}", userId, id, rel);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, name), null);
     }
 

@@ -79,19 +79,22 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         if (!update.getMessage().hasDocument()) {
+            log.warn("ics.import.rejected.not.a.file: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NOT_A_FILE));
         }
 
         var doc = update.getMessage().getDocument();
         String mime = doc.getMimeType();
         if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
+            log.warn("ics.import.rejected.mime: userId={}, mime={}", userId, mime);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE));
         }
         if (doc.getFileSize() != null && doc.getFileSize() > 15_000_000) {
+            log.warn("ics.import.rejected.size: userId={}, size={}", userId, doc.getFileSize());
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE));
         }
 
-        List<String> lines = downloadLines(doc.getFileId());
+        List<String> lines = downloadLines(doc.getFileId(), userId);
         if (lines == null) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR));
         }
@@ -99,10 +102,10 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         List<IcsEntry> entries = extractYearlyEntries(lines);
         if (entries.isEmpty()) {
             userStateService.clearState(userId);
+            log.info("ics.import.no.events: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS));
         }
 
-        // Convert entries to friends, respecting year trust
         List<Friend> candidates = entries.stream()
                 .map(this::convertToFriend)
                 .toList();
@@ -111,11 +114,10 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 .map(f -> Friend.normalizeName(f.getName()))
                 .collect(Collectors.toSet());
 
-        // Filter out duplicates and validate
         List<Friend> toSave = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new java.util.HashSet<>();
-        
+
         for (Friend f : candidates) {
             String normalized = Friend.normalizeName(f.getName());
             if (existing.contains(normalized)) {
@@ -129,14 +131,21 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 toSave.add(f);
             }
         }
+
         int currentCount = existing.size();
         if (currentCount + toSave.size() > FriendService.FRIEND_CAP) {
             int allowed = Math.max(0, FriendService.FRIEND_CAP - currentCount);
+            if (allowed < toSave.size()) {
+                log.warn("ics.import.cap.reached: userId={}, currentCount={}, requested={}, allowed={}, cap={}",
+                        userId, currentCount, toSave.size(), allowed, FriendService.FRIEND_CAP);
+            }
             toSave = toSave.subList(0, allowed);
         }
 
         if (toSave.isEmpty()) {
             userStateService.clearState(userId);
+            log.info("ics.import.no.valid.entries: userId={}, entries={}, errors={}",
+                    userId, entries.size(), errors.size());
             String preview = buildPreviewLines(List.of(), errors);
             return MessageBuilder.html(chatId,
                     Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview));
@@ -144,6 +153,9 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
         userStateService.setPendingIcsImport(userId, toSave);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_CONFIRM);
+
+        log.info("ics.import.preview.ready: userId={}, entries={}, valid={}, errors={}",
+                userId, entries.size(), toSave.size(), errors.size());
 
         String preview = buildPreviewLines(toSave, errors);
         String text = Messages.get(lang, Messages.ICS_PREVIEW, entries.size(), preview, toSave.size());
@@ -163,7 +175,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     public record IcsEntry(String summary, LocalDate date, boolean yearTrusted) {}
 
-    /** 
+    /**
      * Extracts birthday events from ICS file.
      * Supports:
      * - RRULE:FREQ=YEARLY (recurring birthdays)
@@ -179,24 +191,22 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
         for (String line : unfolded) {
             if (line.equals("BEGIN:VEVENT")) {
-                inEvent = true; 
-                summary = null; 
-                dtstart = null; 
+                inEvent = true;
+                summary = null;
+                dtstart = null;
                 yearly = false;
                 isBirthday = false;
             } else if (line.equals("END:VEVENT")) {
                 if (inEvent && dtstart != null) {
-                    // Accept if: yearly recurrence OR birthday indicator OR birthday in summary
-                    boolean accept = yearly || isBirthday || 
-                                   (summary != null && summary.toLowerCase().matches(".*(birthday|bday|born).*"));
-                    
+                    boolean accept = yearly || isBirthday ||
+                            (summary != null && summary.toLowerCase().matches(".*(birthday|bday|born).*"));
+
                     if (accept && summary != null) {
                         LocalDate date = parseIcsDate(dtstart);
                         if (date != null) {
-                            // Year is trusted only if it's in the past and not a placeholder
-                            boolean yearTrusted = date.isBefore(LocalDate.now()) && 
-                                                date.getYear() > 1900 && 
-                                                date.getYear() < LocalDate.now().getYear();
+                            boolean yearTrusted = date.isBefore(LocalDate.now()) &&
+                                    date.getYear() > 1900 &&
+                                    date.getYear() < LocalDate.now().getYear();
                             result.add(new IcsEntry(summary.trim(), date, yearTrusted));
                         }
                     }
@@ -215,7 +225,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 } else if (line.startsWith("CATEGORIES:") && line.toLowerCase().contains("birthday")) {
                     isBirthday = true;
                 } else if (line.startsWith("BDAY:")) {
-                    // vCard birthday format
                     dtstart = line.substring(5).trim();
                     isBirthday = true;
                 }
@@ -237,7 +246,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         try {
             return icsNameExtractorService.extractName(summary);
         } catch (Exception e) {
-            log.warn("ics.ai.name_extraction.failed summary={}", summary, e);
+            log.warn("ics.ai.name.extraction.failed", e);
             return summary;
         }
     }
@@ -245,12 +254,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     private Friend convertToFriend(IcsEntry entry) {
         String name = resolveName(entry.summary());
         LocalDate date = entry.date();
-        
-        // If year is not trusted (placeholder or future), store without year
+
         if (!entry.yearTrusted()) {
             return new Friend(name, null, date.getMonthValue(), date.getDayOfMonth());
         }
-        
+
         return new Friend(name, date.getYear(), date.getMonthValue(), date.getDayOfMonth());
     }
 
@@ -271,7 +279,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         try {
             return LocalDate.parse(datePart, ICS_DATE_FMT);
         } catch (Exception e) {
-            log.debug("ics.date.parse.failed value={}", value, e);
+            log.debug("ics.date.parse.failed", e);
             return null;
         }
     }
@@ -283,7 +291,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                     ? f.getBirthDate().format(CSV_DATE_FMT)
                     : String.format("%02d.%02d.", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
             sb.append("✅ ").append(f.getName())
-              .append(" — ").append(dateStr).append("\n");
+                    .append(" — ").append(dateStr).append("\n");
         }
         for (String err : errors) {
             sb.append("❌ ").append(err).append("\n");
@@ -291,7 +299,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         return sb.toString().stripTrailing();
     }
 
-    private List<String> downloadLines(String fileId) {
+    private List<String> downloadLines(String fileId, long userId) {
         try {
             org.telegram.telegrambots.meta.api.objects.File tgFile =
                     telegramClient.execute(GetFile.builder().fileId(fileId).build());
@@ -301,7 +309,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {
-            log.warn("ics.import.invalid_file", e);
+            log.warn("ics.import.file.download.failed: userId={}", userId, e);
             return null;
         }
     }
