@@ -7,6 +7,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,6 +25,7 @@ public class JubileeCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() {
@@ -34,18 +37,17 @@ public class JubileeCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(userId);
         List<Friend> friends = friendService.getFriends(userId).stream()
                 .sorted(Comparator.comparing(f -> f.nextBirthday(today)))
                 .toList();
         String text = friends.isEmpty()
                 ? Messages.get(lang, Messages.FRIENDS_EMPTY)
-                : buildText(friends, lang);
+                : buildText(friends, lang, today);
         return MessageBuilder.html(chatId, text);
     }
 
-    private String buildText(List<Friend> friends, Lang lang) {
-        LocalDate today = LocalDate.now();
+    private String buildText(List<Friend> friends, Lang lang, LocalDate today) {
         List<Friend> jubilee = friends.stream()
                 .filter(Friend::hasYear)  // Only friends with known year
                 .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
@@ -63,7 +65,7 @@ public class JubileeCommandHandler implements CommandHandler {
                     ? " " + Messages.get(lang, Messages.JUBILEE_DAYS_TODAY)
                     : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
             sb.append("– <b>").append(next.format(MessageBuilder.DATE_FORMATTER))
-                    .append("</b> <i>").append(f.getName()).append("</i> ")
+                    .append("</b> <i>").append(HtmlEscaper.escape(f.getName())).append("</i> ")
                     .append(Messages.get(lang, Messages.JUBILEE_TURNS, Messages.yearsRu(lang, f.getNextAge(today))))
                     .append(daysLabel).append("\n");
         });

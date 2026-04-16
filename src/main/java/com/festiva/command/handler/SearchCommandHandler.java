@@ -8,6 +8,8 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -25,6 +27,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() { return "/search"; }
@@ -65,7 +68,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_NONE, rawQuery));
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(userId);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, rawQuery));
         matches.forEach(f -> {
             long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
@@ -77,7 +80,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
                     : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
             sb.append("– <b>").append(dateStr)
                     .append("</b> ").append(f.getZodiac())
-                    .append(" <i>").append(f.getName()).append("</i>")
+                    .append(" <i>").append(HtmlEscaper.escape(f.getName())).append("</i>")
                     .append(daysLabel).append("\n");
         });
         sb.append("\n").append(Messages.get(lang, Messages.SEARCH_RESULTS_HINT));

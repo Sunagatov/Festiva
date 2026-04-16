@@ -7,6 +7,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,6 +25,7 @@ public class StatsCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() { return "/stats"; }
@@ -33,7 +36,7 @@ public class StatsCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         List<Friend> friends = friendService.getFriends(userId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(userId);
 
         int total = friends.size();
         int thisMonth = (int) friends.stream()
@@ -48,8 +51,8 @@ public class StatsCommandHandler implements CommandHandler {
                 .map(f -> new Entry(f, ChronoUnit.DAYS.between(today, f.nextBirthday(today))))
                 .min(Comparator.comparingLong(Entry::days))
                 .map(e -> e.days() == 0
-                        ? e.friend().getName() + " 🎂"
-                        : e.friend().getName() + " (" + e.days() + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")")
+                        ? HtmlEscaper.escape(e.friend().getName()) + " 🎂"
+                        : HtmlEscaper.escape(e.friend().getName()) + " (" + e.days() + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")")
                 .orElse("—");
 
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.STATS_HEADER, total, nextBirthday, thisMonth, jubilees));

@@ -76,7 +76,9 @@ public final class DatePickerKeyboard {
     }
 
     public static InlineKeyboardMarkup dayKeyboard(int year, int month, Lang lang) {
-        int daysInMonth = YearMonth.of(year, month).lengthOfMonth();
+        // Use leap year 2000 for unknown-year birthdays to allow Feb 29
+        int effectiveYear = year > 0 ? year : 2000;
+        int daysInMonth = YearMonth.of(effectiveYear, month).lengthOfMonth();
         List<InlineKeyboardRow> rows = new ArrayList<>();
         for (int d = 1; d <= daysInMonth; d += 7) {
             InlineKeyboardRow row = new InlineKeyboardRow();

@@ -8,6 +8,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -31,6 +33,7 @@ public class ListCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() { return "/list"; }
@@ -51,7 +54,7 @@ public class ListCommandHandler implements CommandHandler {
     }
 
     public String buildText(List<Friend> friends, Lang lang, boolean byDate, int page) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(0L);
         List<Friend> sorted = byDate ? friends
                 : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase(java.util.Locale.ROOT))).toList();
 
@@ -129,7 +132,7 @@ public class ListCommandHandler implements CommandHandler {
                 : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
         
         sb.append("– <b>").append(dateStr)
-                .append("</b> ").append(f.getZodiac()).append(" <i>").append(f.getName()).append("</i>")
+                .append("</b> ").append(f.getZodiac()).append(" <i>").append(HtmlEscaper.escape(f.getName())).append("</i>")
                 .append(relLabel).append(" ");
         
         // Show age only if year is known

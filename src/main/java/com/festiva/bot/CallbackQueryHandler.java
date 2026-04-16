@@ -58,7 +58,6 @@ public class CallbackQueryHandler {
     private final EditCallbackHandler editHandler;
     private final RemoveCommandHandler removeCommandHandler;
     private final EditFriendCommandHandler editFriendCommandHandler;
-    private final ImportIcsCommandHandler importIcsHandler;
     private final DeleteAccountCommandHandler deleteAccountHandler;
     private final BotCommandsService commandsService;
 
@@ -235,8 +234,8 @@ public class CallbackQueryHandler {
             
             InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                     .keyboard(List.of(new InlineKeyboardRow(
-                            InlineKeyboardButton.builder().text((newLang == Lang.EN ? "\u2705 " : "") + Messages.get(newLang, Messages.LANG_EN_BTN)).callbackData(LANG_PREFIX + Lang.EN.name()).build(),
-                            InlineKeyboardButton.builder().text((newLang == Lang.RU ? "\u2705 " : "") + Messages.get(newLang, Messages.LANG_RU_BTN)).callbackData(LANG_PREFIX + Lang.RU.name()).build()
+                            InlineKeyboardButton.builder().text((newLang == Lang.EN ? "✅ " : "") + Messages.get(newLang, Messages.LANG_EN_BTN)).callbackData(LANG_PREFIX + Lang.EN.name()).build(),
+                            InlineKeyboardButton.builder().text((newLang == Lang.RU ? "✅ " : "") + Messages.get(newLang, Messages.LANG_RU_BTN)).callbackData(LANG_PREFIX + Lang.RU.name()).build()
                     )))
                     .build();
             return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard);

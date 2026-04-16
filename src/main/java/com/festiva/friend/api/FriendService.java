@@ -45,21 +45,17 @@ public class FriendService {
         update(telegramUserId, oldName, f -> f.setName(newName));
     }
 
-    public void updateFriendDate(long telegramUserId, String name, java.time.LocalDate date) {
-        update(telegramUserId, name, f -> {
-            f.setBirthYear(date.getYear());
-            f.setBirthMonth(date.getMonthValue());
-            f.setBirthDay(date.getDayOfMonth());
-        });
-    }
-    
     public void updateFriendDate(long telegramUserId, String name, Integer year, int month, int day) {
         update(telegramUserId, name, f -> {
-            // Validate before updating
-            if (year != null) {
-                java.time.LocalDate.of(year, month, day);
-            } else {
-                java.time.MonthDay.of(month, day);
+            // Validate date before updating
+            try {
+                if (year != null) {
+                    java.time.LocalDate.of(year, month, day);
+                } else {
+                    java.time.MonthDay.of(month, day);
+                }
+            } catch (java.time.DateTimeException e) {
+                throw new IllegalArgumentException("Invalid date: " + year + "-" + month + "-" + day, e);
             }
             f.setBirthYear(year);
             f.setBirthMonth(month);
