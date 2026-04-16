@@ -96,6 +96,8 @@ public final class Messages {
     public static final String LIST_UPCOMING_HEADER   = "list_upcoming_header";
     public static final String LIST_CELEBRATED_HEADER = "list_celebrated_header";
     public static final String UPCOMING_DAYS_SUFFIX   = "upcoming_days_suffix";
+    public static final String UPCOMING_IN_DAYS       = "upcoming_in_days";
+    public static final String UPCOMING_TODAY_NO_YEAR = "upcoming_today_no_year";
     public static final String EDIT_SELECT            = "edit_select";
     public static final String EDIT_CHOOSE_FIELD      = "edit_choose_field";
     public static final String EDIT_ENTER_NAME        = "edit_enter_name";

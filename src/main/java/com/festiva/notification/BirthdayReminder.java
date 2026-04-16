@@ -6,6 +6,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.user.UserPreference;
 import com.festiva.user.UserPreferenceRepository;
+import com.festiva.util.HtmlEscaper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +102,7 @@ public class BirthdayReminder {
     }
 
     private ZoneId resolveZone(UserPreference pref) {
-        String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : "UTC";
+        String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : UserPreference.DEFAULT_TIMEZONE;
         try {
             return ZoneId.of(tz);
         } catch (java.time.zone.ZoneRulesException e) {
@@ -131,7 +132,7 @@ public class BirthdayReminder {
             if (friend.hasYear()) {
                 // With year: 5 parameters (name, relationship, zodiac, age, botUsername)
                 message = Messages.get(lang, key,
-                        friend.getName(),
+                        HtmlEscaper.escape(friend.getName()),
                         friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                         friend.getZodiac(),
                         Messages.yearsRu(lang, friend.getNextAge(today)),
@@ -139,7 +140,7 @@ public class BirthdayReminder {
             } else {
                 // Without year: 4 parameters (name, relationship, zodiac, botUsername)
                 message = Messages.get(lang, key,
-                        friend.getName(),
+                        HtmlEscaper.escape(friend.getName()),
                         friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
                         friend.getZodiac(),
                         botUsername);

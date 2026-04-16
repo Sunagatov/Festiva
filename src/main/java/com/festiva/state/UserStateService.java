@@ -29,7 +29,7 @@ public class UserStateService {
     private final UserPreferenceRepository userPreferenceRepository;
 
     private UserSession session(long userId) {
-        return sessions.computeIfAbsent(userId, k -> new UserSession());
+        return sessions.computeIfAbsent(userId, _ -> new UserSession());
     }
 
     public BotState getState(long userId) { return session(userId).state; }
@@ -45,6 +45,10 @@ public class UserStateService {
         s.pendingDay = null;
         s.yearPageOffset = 0;
         s.pendingIcsImport = null;
+    }
+
+    public void removeSession(long userId) {
+        sessions.remove(userId);
     }
 
     public void setPendingName(long userId, String name) { session(userId).pendingName = name; }

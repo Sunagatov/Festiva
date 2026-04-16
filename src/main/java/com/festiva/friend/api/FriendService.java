@@ -87,6 +87,17 @@ public class FriendService {
         return ref.newValue;
     }
 
+    public boolean toggleFriendNotifyById(String id) {
+        var ref = new Object() { boolean newValue = true; };
+        friendRepository.findById(id)
+                .ifPresent(f -> {
+                    f.setNotifyEnabled(!f.isNotifyEnabled());
+                    friendRepository.save(f);
+                    ref.newValue = f.isNotifyEnabled();
+                });
+        return ref.newValue;
+    }
+
     public List<Friend> getFriends(long telegramUserId) {
         return friendRepository.findByTelegramUserId(telegramUserId);
     }

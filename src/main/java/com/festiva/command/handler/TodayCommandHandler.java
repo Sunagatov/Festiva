@@ -7,6 +7,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -21,6 +23,7 @@ public class TodayCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() { return "/today"; }
@@ -30,7 +33,7 @@ public class TodayCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = userDateService.todayFor(userId);
 
         List<Friend> todayFriends = friendService.getFriends(userId).stream()
                 .filter(f -> f.nextBirthday(today).equals(today))
@@ -42,7 +45,7 @@ public class TodayCommandHandler implements CommandHandler {
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER));
         todayFriends.forEach(f -> {
-            sb.append("🎂 <b>").append(f.getName()).append("</b>");
+            sb.append("🎂 <b>").append(HtmlEscaper.escape(f.getName())).append("</b>");
             if (f.hasYear()) {
                 sb.append(" — ")
                   .append(Messages.get(lang, Messages.JUBILEE_TURNS, Messages.yearsRu(lang, f.getNextAge(today))));

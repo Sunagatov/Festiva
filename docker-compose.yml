@@ -21,22 +21,45 @@ services:
     networks:
       - festiva-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
+    restart: unless-stopped
 
-  # ── Bot (profile: bot) ─────────────────────────────────────────────────────
+  # Optional local MongoDB UI for development/debugging
+  mongo-express:
+    image: mongo-express:1
+    container_name: festiva-mongo-express
+    profiles: [tools]
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - '8081:8081'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - festiva-network
+    restart: unless-stopped
+
+  # ── Bot (profile: bot) ──────────────────────────────────────────────────────
 
   bot:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        BUILD_PROFILE: ${BUILD_PROFILE:-}
+        IMAGE_VERSION: ${IMAGE_VERSION:-1.0.0}
     container_name: festiva-bot
     profiles: [bot]
     env_file: .env
     environment:
       MONGO_URI: mongodb://mongo:27017
+      MONGO_DATABASE_NAME: ${MONGO_DATABASE_NAME:-FestivaDatabase}
     ports:
       - '8080:8080'
     depends_on:
@@ -44,9 +67,32 @@ services:
         condition: service_healthy
     networks:
       - festiva-network
+    init: true
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── Observability (profile: monitoring) ─────────────────────────────────────
+  # Optional local/remote telemetry collector sidecar, similar in spirit to
+  # the Iced-Latte setup. Useful later if Festiva exports OTLP/Datadog data.
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    container_name: festiva-datadog-agent
+    profiles: [monitoring]
+    hostname: festiva-local
+    environment:
+      - DD_API_KEY=${DD_API_KEY}
+      - DD_SITE=${DD_SITE:-datadoghq.eu}
+      - DD_HOSTNAME=festiva-local
+      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT=0.0.0.0:4318
+      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT=0.0.0.0:4317
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - festiva-network
     restart: unless-stopped

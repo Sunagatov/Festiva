@@ -49,7 +49,7 @@ public class DeleteAccountCommandHandler implements CommandHandler {
     public void deleteAccount(long userId) {
         friendService.deleteAllFriends(userId);
         userPreferenceRepository.deleteById(userId);
-        userStateService.clearState(userId);
+        userStateService.removeSession(userId);
         log.info("account.deleted: userId={}", userId);
     }
 }

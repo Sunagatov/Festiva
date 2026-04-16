@@ -214,7 +214,7 @@ public class CallbackQueryHandler {
     private CallbackResult handleUpcoming(String data, long userId, Lang lang) {
         int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
         var friends = friendService.getFriends(userId);
-        return new CallbackResult(upcomingHandler.buildText(friends, lang, days), upcomingHandler.filterKeyboard(lang, days));
+        return new CallbackResult(upcomingHandler.buildText(friends, lang, days, userId), upcomingHandler.filterKeyboard(lang, days));
     }
 
     // ── Add / Language ────────────────────────────────────────────────────────
@@ -339,7 +339,7 @@ public class CallbackQueryHandler {
                     : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
             
             sb.append("– <b>").append(dateStr)
-                    .append("</b> ").append(f.getName());
+                    .append("</b> ").append(com.festiva.util.HtmlEscaper.escape(f.getName()));
             
             if (f.hasYear()) {
                 boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();

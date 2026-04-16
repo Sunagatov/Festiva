@@ -6,6 +6,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +30,13 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserDateService userDateService;
     @InjectMocks UpcomingBirthdaysCommandHandler handler;
+
+    @BeforeEach
+    void setup() {
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
+    }
 
     @Test
     @DisplayName("friend with birthday in 5 days → appears in upcoming list")

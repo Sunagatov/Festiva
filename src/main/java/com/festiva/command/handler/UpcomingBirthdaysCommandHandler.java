@@ -7,6 +7,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -29,6 +31,7 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     @Override
     public String command() { return "/upcomingbirthdays"; }
@@ -39,11 +42,11 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
         List<Friend> friends = friendService.getFriends(userId);
-        return MessageBuilder.html(chatId, buildText(friends, lang, DEFAULT_DAYS), filterKeyboard(lang, DEFAULT_DAYS));
+        return MessageBuilder.html(chatId, buildText(friends, lang, DEFAULT_DAYS, userId), filterKeyboard(lang, DEFAULT_DAYS));
     }
 
-    public String buildText(List<Friend> friends, Lang lang, int daysLimit) {
-        LocalDate today = LocalDate.now();
+    public String buildText(List<Friend> friends, Lang lang, int daysLimit, long userId) {
+        LocalDate today = userDateService.todayFor(userId);
         record Entry(Friend friend, LocalDate next, long days) {}
 
         List<Entry> upcoming = friends.stream()
@@ -63,7 +66,7 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         upcoming.forEach(e -> {
             sb.append("– <b>")
                     .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))
-                    .append("</b> <i>").append(e.friend().getName()).append("</i>");
+                    .append("</b> <i>").append(HtmlEscaper.escape(e.friend().getName())).append("</i>");
             
             if (e.friend().hasYear()) {
                 String suffix = e.days() == 0
@@ -72,9 +75,9 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
                 sb.append(" ").append(suffix);
             } else {
                 if (e.days() > 0) {
-                    sb.append(" (in ").append(e.days()).append("d)");
+                    sb.append(" ").append(Messages.get(lang, Messages.UPCOMING_IN_DAYS, e.days()));
                 } else {
-                    sb.append(" 🎂 <b>TODAY!</b>");
+                    sb.append(" ").append(Messages.get(lang, Messages.UPCOMING_TODAY_NO_YEAR));
                 }
             }
             
