@@ -90,7 +90,7 @@ public class CallbackQueryHandler {
         if ((r = dispatchEdit(data, userId, lang)) != null)       return r;
         if ((r = dispatchRemove(data, userId, lang)) != null)     return r;
         if ((r = dispatchMisc(data, chatId, userId, lang)) != null) return r;
-        log.debug("callback.unknown: data={}", data);
+        log.warn("callback.unknown: userId={}, data={}", userId, data);
         return null;
     }
 
@@ -178,7 +178,6 @@ public class CallbackQueryHandler {
                 return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
             }
             userStateService.setNotifyHour(userId, hour);
-            log.info("settings.notify.hour.updated: userId={}, hour={}", userId, hour);
             return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
                     SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
         } catch (NumberFormatException e) {
@@ -197,7 +196,6 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         }
         userStateService.setTimezone(userId, tz);
-        log.info("settings.timezone.updated: userId={}, tz={}", userId, tz);
         return new CallbackResult(Messages.get(lang, Messages.SETTINGS_TZ_SET, tz),
                 SettingsCommandHandler.combined(userStateService.getNotifyHour(userId), tz));
     }
@@ -224,8 +222,12 @@ public class CallbackQueryHandler {
     private int parsePageSuffix(String data) {
         int idx = data.lastIndexOf('_');
         if (idx < 0) return 0;
-        try { return Integer.parseInt(data.substring(idx + 1)); }
-        catch (NumberFormatException e) { log.debug("callback.page.parse.failed: data={}", data, e); return 0; }
+        try {
+            return Integer.parseInt(data.substring(idx + 1));
+        } catch (NumberFormatException e) {
+            log.warn("callback.page.parse.failed: data={}", data, e);
+            return 0;
+        }
     }
 
     // ── Upcoming ─────────────────────────────────────────────────────────────
@@ -247,7 +249,6 @@ public class CallbackQueryHandler {
         try {
             Lang newLang = Lang.valueOf(code);
             userStateService.setLanguage(userId, newLang);
-            log.info("settings.language.updated: userId={}, lang={}", userId, newLang);
 
             commandsService.updateCommandsForUser(userId, newLang);
 
@@ -321,16 +322,14 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         }
 
-        int saved = 0, skipped = 0, failed = 0;
+        int saved = 0;
         for (com.festiva.friend.entity.Friend f : pending) {
             try {
                 if (friendService.friendExists(userId, f.getName())) {
-                    skipped++;
                     continue;
                 }
 
                 if (f.getName() == null || f.getName().isBlank()) {
-                    failed++;
                     continue;
                 }
 
@@ -341,17 +340,13 @@ public class CallbackQueryHandler {
 
                 friendService.addFriend(userId, f);
                 saved++;
-            } catch (org.springframework.dao.DuplicateKeyException e) {
-                log.debug("ics.import.duplicate: userId={}", userId);
-                skipped++;
+            } catch (IllegalArgumentException _) {
             } catch (Exception e) {
                 log.warn("ics.import.save.failed: userId={}", userId, e);
-                failed++;
             }
         }
 
         userStateService.clearState(userId);
-        log.info("ics.import.completed: userId={}, saved={}, skipped={}, failed={}", userId, saved, skipped, failed);
 
         String message = saved > 0
                 ? Messages.get(lang, Messages.ICS_DONE, saved)
@@ -367,8 +362,9 @@ public class CallbackQueryHandler {
         if (CURRENT_MONTH.equalsIgnoreCase(value)) {
             month = userDateService.todayFor(userId).getMonthValue();
         } else {
-            try { month = Integer.parseInt(value); }
-            catch (NumberFormatException e) {
+            try {
+                month = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
                 log.warn("callback.month.parse.failed: data={}", data, e);
                 return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
             }

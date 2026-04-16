@@ -79,22 +79,19 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         if (!update.getMessage().hasDocument()) {
-            log.warn("ics.import.rejected.not.a.file: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NOT_A_FILE));
         }
 
         var doc = update.getMessage().getDocument();
         String mime = doc.getMimeType();
         if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
-            log.warn("ics.import.rejected.mime: userId={}, mime={}", userId, mime);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE));
         }
         if (doc.getFileSize() != null && doc.getFileSize() > 15_000_000) {
-            log.warn("ics.import.rejected.size: userId={}, size={}", userId, doc.getFileSize());
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE));
         }
 
-        List<String> lines = downloadLines(doc.getFileId(), userId);
+        List<String> lines = downloadLines(doc.getFileId());
         if (lines == null) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR));
         }
@@ -102,7 +99,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         List<IcsEntry> entries = extractYearlyEntries(lines);
         if (entries.isEmpty()) {
             userStateService.clearState(userId);
-            log.info("ics.import.no.events: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS));
         }
 
@@ -135,17 +131,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         int currentCount = existing.size();
         if (currentCount + toSave.size() > FriendService.FRIEND_CAP) {
             int allowed = Math.max(0, FriendService.FRIEND_CAP - currentCount);
-            if (allowed < toSave.size()) {
-                log.warn("ics.import.cap.reached: userId={}, currentCount={}, requested={}, allowed={}, cap={}",
-                        userId, currentCount, toSave.size(), allowed, FriendService.FRIEND_CAP);
-            }
             toSave = toSave.subList(0, allowed);
         }
 
         if (toSave.isEmpty()) {
             userStateService.clearState(userId);
-            log.info("ics.import.no.valid.entries: userId={}, entries={}, errors={}",
-                    userId, entries.size(), errors.size());
             String preview = buildPreviewLines(List.of(), errors);
             return MessageBuilder.html(chatId,
                     Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview));
@@ -153,9 +143,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
         userStateService.setPendingIcsImport(userId, toSave);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_CONFIRM);
-
-        log.info("ics.import.preview.ready: userId={}, entries={}, valid={}, errors={}",
-                userId, entries.size(), toSave.size(), errors.size());
 
         String preview = buildPreviewLines(toSave, errors);
         String text = Messages.get(lang, Messages.ICS_PREVIEW, entries.size(), preview, toSave.size());
@@ -279,7 +266,6 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         try {
             return LocalDate.parse(datePart, ICS_DATE_FMT);
         } catch (Exception e) {
-            log.debug("ics.date.parse.failed", e);
             return null;
         }
     }
@@ -299,7 +285,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         return sb.toString().stripTrailing();
     }
 
-    private List<String> downloadLines(String fileId, long userId) {
+    private List<String> downloadLines(String fileId) {
         try {
             org.telegram.telegrambots.meta.api.objects.File tgFile =
                     telegramClient.execute(GetFile.builder().fileId(fileId).build());
@@ -309,7 +295,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {
-            log.warn("ics.import.file.download.failed: userId={}", userId, e);
+            log.warn("ics.import.file.download.failed", e);
             return null;
         }
     }

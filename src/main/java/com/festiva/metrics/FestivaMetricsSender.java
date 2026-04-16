@@ -35,7 +35,6 @@ public class FestivaMetricsSender implements MetricsSender {
 
         this.producer = new KafkaProducer<>(buildProperties(bootstrapServers, apiKey, apiSecret));
         this.topic = topic;
-        log.info("metrics.kafka.initialized: topic={}", topic);
     }
 
     private static Properties buildProperties(String bootstrapServers, String apiKey, String apiSecret) {
@@ -59,7 +58,7 @@ public class FestivaMetricsSender implements MetricsSender {
     public void sendMetrics(Update update, String status, long processingTimeMillis) {
         try {
             String json = buildJson(update, status, processingTimeMillis);
-            producer.send(new ProducerRecord<>(topic, json), (metadata, ex) -> {
+            producer.send(new ProducerRecord<>(topic, json), (_, ex) -> {
                 if (ex != null) log.error("metrics.kafka.send.failed: message={}", ex.getMessage(), ex);
             });
         } catch (RuntimeException e) {
@@ -108,17 +107,16 @@ public class FestivaMetricsSender implements MetricsSender {
         String username = user.getUserName();
         if (username != null && !username.isBlank()) return username;
         String full = (user.getFirstName() +
-                       (user.getLastName() != null ? " " + user.getLastName() : "")).trim();
+                (user.getLastName() != null ? " " + user.getLastName() : "")).trim();
         return full.isBlank() ? "unknown" : full;
     }
 
     private String sanitize(String value) {
-        return value != null ? value.replaceAll("[\"\\\\r\n]", "") : "unknown";
+        return value != null ? value.replaceAll("[\"\\\\\r\n]", "") : "unknown";
     }
 
     @PreDestroy
     public void close() {
         producer.close(Duration.ofSeconds(10));
-        log.info("metrics.kafka.closed");
     }
 }

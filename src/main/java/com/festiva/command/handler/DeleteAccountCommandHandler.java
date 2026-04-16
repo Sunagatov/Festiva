@@ -50,6 +50,5 @@ public class DeleteAccountCommandHandler implements CommandHandler {
         friendService.deleteAllFriends(userId);
         userPreferenceRepository.deleteById(userId);
         userStateService.removeSession(userId);
-        log.info("account.deleted: userId={}", userId);
     }
 }

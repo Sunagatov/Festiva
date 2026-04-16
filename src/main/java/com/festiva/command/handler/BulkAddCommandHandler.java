@@ -87,7 +87,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                     .document(file)
                     .caption(Messages.get(lang, Messages.BULK_ADD_CSV_CAPTION))
                     .build());
-            log.info("bulk.add.template.sent: chatId={}", chatId);
         } catch (TelegramApiException e) {
             log.warn("bulk.add.template.send.failed: chatId={}", chatId, e);
         }
@@ -105,19 +104,15 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         List<String> lines;
-        String source;
 
         if (update.getMessage().hasDocument()) {
-            source = "file";
-            lines = downloadDocument(update, userId);
+            lines = downloadDocument(update);
             if (lines == null) {
                 return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_FILE_INVALID));
             }
         } else if (update.getMessage().hasText()) {
-            source = "text";
             lines = Arrays.asList(update.getMessage().getText().split("\n"));
         } else {
-            log.warn("bulk.add.rejected.unsupported.payload: userId={}", userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_FILE_INVALID));
         }
 
@@ -128,8 +123,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang);
 
         if (result.noData()) {
-            log.warn("bulk.add.rejected.no.valid.rows: userId={}, source={}, errors={}",
-                    userId, source, result.errors().size());
             return MessageBuilder.html(chatId, result.errors().getFirst());
         }
 
@@ -140,8 +133,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         if (currentCount + toAdd.size() > FriendService.FRIEND_CAP) {
             int allowed = Math.max(0, FriendService.FRIEND_CAP - currentCount);
             if (allowed < toAdd.size()) {
-                log.warn("bulk.add.cap.reached: userId={}, currentCount={}, requested={}, allowed={}, cap={}",
-                        userId, currentCount, toAdd.size(), allowed, FriendService.FRIEND_CAP);
                 errors.add(Messages.get(lang, Messages.BULK_CAP_EXCEEDED, allowed, FriendService.FRIEND_CAP));
                 toAdd = toAdd.subList(0, allowed);
             }
@@ -149,9 +140,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
         toAdd.forEach(f -> friendService.addFriend(userId, f));
         userStateService.clearState(userId);
-
-        log.info("bulk.add.completed: userId={}, source={}, added={}, errors={}",
-                userId, source, toAdd.size(), errors.size());
 
         return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(toAdd, errors, false)));
     }
@@ -174,16 +162,14 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         return sb.toString();
     }
 
-    private List<String> downloadDocument(Update update, long userId) {
+    private List<String> downloadDocument(Update update) {
         try {
             var doc = update.getMessage().getDocument();
             String mime = doc.getMimeType();
             if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
-                log.warn("bulk.add.file.rejected.mime: userId={}, mime={}", userId, mime);
                 return null;
             }
             if (doc.getFileSize() != null && doc.getFileSize() > 512_000) {
-                log.warn("bulk.add.file.rejected.size: userId={}, size={}", userId, doc.getFileSize());
                 return null;
             }
             org.telegram.telegrambots.meta.api.objects.File tgFile =
@@ -194,7 +180,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {
-            log.warn("bulk.add.file.download.failed: userId={}", userId, e);
+            log.warn("bulk.add.file.download.failed", e);
             return null;
         }
     }

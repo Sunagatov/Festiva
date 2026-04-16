@@ -21,7 +21,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -77,31 +76,33 @@ public class BirthdayReminder {
     }
 
     void checkBirthdaysForHour(ZonedDateTime utcNow) {
-        log.info("reminder.check.start: utcHour={}", utcNow.getHour());
         List<Long> userIds = friendService.getAllUserIds();
 
         Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
         Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
 
-        AtomicInteger notifiedCount = new AtomicInteger();
         userIds.forEach(userId -> {
             MDC.put("userId", String.valueOf(userId));
             try {
-                notifiedCount.addAndGet(processUser(userId, prefByUser.get(userId),
-                        friendsByUser.getOrDefault(userId, List.of()), utcNow));
+                processUser(userId, prefByUser.get(userId), friendsByUser.getOrDefault(userId, List.of()), utcNow);
             } finally {
                 MDC.remove("userId");
             }
         });
-        log.info("reminder.check.done: userCount={}, notifiedCount={}", userIds.size(), notifiedCount.get());
     }
 
-    private int processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow) {
+    private void processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow) {
         ZoneId zone = resolveZone(pref);
-        if (zone == null) return 0;
+        if (zone == null) {
+            return;
+        }
+
         ZonedDateTime userNow = utcNow.withZoneSameInstant(zone);
-        if (!shouldNotify(pref, userNow)) return 0;
+        if (!shouldNotify(pref, userNow)) {
+            return;
+        }
+
         LocalDate today = userNow.toLocalDate();
         Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : UserPreference.DEFAULT_LANG;
 
@@ -112,7 +113,6 @@ public class BirthdayReminder {
             p.setLastNotifiedDate(today);
             userPreferenceRepository.save(p);
         }
-        return count;
     }
 
     private ZoneId resolveZone(UserPreference pref) {
@@ -127,18 +127,25 @@ public class BirthdayReminder {
 
     private boolean shouldNotify(UserPreference pref, ZonedDateTime userNow) {
         int notifyHour = pref != null && pref.getNotifyHour() >= 0 && pref.getNotifyHour() <= 23 ? pref.getNotifyHour() : 9;
-        if (notifyHour != userNow.getHour()) return false;
+        if (notifyHour != userNow.getHour()) {
+            return false;
+        }
         LocalDate today = userNow.toLocalDate();
         return !today.equals(pref != null ? pref.getLastNotifiedDate() : null);
     }
 
     private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang) {
-        if (!friend.isNotifyEnabled()) return false;
+        if (!friend.isNotifyEnabled()) {
+            return false;
+        }
+
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
 
         Map<Long, String> templates = friend.hasYear() ? TEMPLATE_KEYS : TEMPLATE_KEYS_NO_YEAR;
         String key = templates.get(daysUntil);
-        if (key == null) return false;
+        if (key == null) {
+            return false;
+        }
 
         try {
             String message;
@@ -158,12 +165,10 @@ public class BirthdayReminder {
             }
 
             notificationSender.send(userId, message);
-            log.debug("reminder.notify.sent: userId={}, friend={}, daysUntil={}, hasYear={}",
-                    userId, friend.getName(), daysUntil, friend.hasYear());
             return true;
         } catch (RuntimeException e) {
-            log.error("reminder.notify.failed: userId={}, friend={}, message={}",
-                    userId, friend.getName(), e.getMessage(), e);
+            log.error("reminder.notify.failed: userId={}, friendId={}, daysUntil={}",
+                    userId, friend.getId(), daysUntil, e);
             return false;
         }
     }

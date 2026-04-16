@@ -59,6 +59,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             botsApplication.registerBot(botToken, this);
             log.info("bot.started");
         } catch (TelegramApiException e) {
+            log.error("bot.start.failed", e);
             throw new RuntimeException("bot.start.failed", e);
         }
         commandsService.registerGlobalCommands();
@@ -70,21 +71,19 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             log.warn("bot.update.null");
             return;
         }
-        
-        // Fast path: answer callback queries immediately
+
         if (update.hasCallbackQuery()) {
             String callbackId = update.getCallbackQuery().getId();
             try {
                 telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackId).build());
             } catch (TelegramApiException e) {
-                log.debug("bot.callback.answer.failed: callbackId={}", callbackId, e);
+                log.warn("bot.callback.answer.failed: callbackId={}", callbackId, e);
             }
         }
-        
-        // Offload heavy processing to virtual threads
+
         heavyWorkExecutor.submit(() -> processUpdate(update));
     }
-    
+
     private void processUpdate(Update update) {
         long startTime = System.currentTimeMillis();
         String updateType = update.hasCallbackQuery() ? "callback" : update.hasMessage() ? "message" : "other";
@@ -95,37 +94,35 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                     try {
                         telegramClient.execute(edit);
                     } catch (TelegramApiException e) {
-                        // Ignore "message is not modified" errors - they're harmless
-                        if (e.getMessage() != null && e.getMessage().contains("message is not modified")) {
-                            log.debug("callback.message.not.modified: userId={}", update.getCallbackQuery().getFrom().getId());
-                        } else {
+                        if (e.getMessage() == null || !e.getMessage().contains("message is not modified")) {
                             throw e;
                         }
                     }
                 }
             } else if (update.hasMessage()) {
                 SendMessage response = commandRouter.route(update);
-                if (response != null) telegramClient.execute(response);
+                if (response != null) {
+                    telegramClient.execute(response);
+                }
             }
             metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
         } catch (TelegramApiException | RuntimeException e) {
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
             log.error("bot.update.failed: updateId={}, type={}, message={}", update.getUpdateId(), updateType, e.getMessage(), e);
-            
-            // Send user-visible error message
+
             try {
-                long chatId = update.hasCallbackQuery() 
-                    ? update.getCallbackQuery().getMessage().getChatId()
-                    : update.hasMessage() ? update.getMessage().getChatId() : 0;
+                long chatId = update.hasCallbackQuery()
+                        ? update.getCallbackQuery().getMessage().getChatId()
+                        : update.hasMessage() ? update.getMessage().getChatId() : 0;
                 long userId = update.hasCallbackQuery()
-                    ? update.getCallbackQuery().getFrom().getId()
-                    : update.hasMessage() ? update.getMessage().getFrom().getId() : 0;
-                
+                        ? update.getCallbackQuery().getFrom().getId()
+                        : update.hasMessage() ? update.getMessage().getFrom().getId() : 0;
+
                 if (chatId > 0 && userId > 0) {
                     Lang lang = userStateService.getLanguage(userId);
-                    String errorMsg = lang == Lang.RU 
-                        ? "⚠️ Произошла ошибка. Попробуйте снова или используйте /cancel"
-                        : "⚠️ An error occurred. Please try again or use /cancel";
+                    String errorMsg = lang == Lang.RU
+                            ? "⚠️ Произошла ошибка. Попробуйте снова или используйте /cancel"
+                            : "⚠️ An error occurred. Please try again or use /cancel";
                     telegramClient.execute(SendMessage.builder().chatId(chatId).text(errorMsg).build());
                 }
             } catch (Exception fallbackError) {
@@ -136,7 +133,9 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
     @PreDestroy
     public void stop() throws Exception {
-        if (botsApplication != null) botsApplication.close();
+        if (botsApplication != null) {
+            botsApplication.close();
+        }
         heavyWorkExecutor.shutdown();
     }
 

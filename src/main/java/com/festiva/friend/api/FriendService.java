@@ -25,9 +25,7 @@ public class FriendService {
         friend.setTelegramUserId(telegramUserId);
         friend.setName(friend.getName()); // Ensures normalizedName is set
         try {
-            Friend saved = friendRepository.save(friend);
-            log.info("friend.created: userId={}, friendId={}, hasYear={}, relationship={}",
-                    telegramUserId, saved.getId(), saved.hasYear(), saved.getRelationship());
+            friendRepository.save(friend);
         } catch (org.springframework.dao.DuplicateKeyException e) {
             log.warn("friend.create.rejected.duplicate: userId={}", telegramUserId);
             throw new IllegalArgumentException("Friend with this name already exists", e);
@@ -40,18 +38,10 @@ public class FriendService {
 
     public void deleteFriend(long telegramUserId, String name) {
         friendRepository.deleteByTelegramUserIdAndNameIgnoreCase(telegramUserId, name);
-        log.info("friend.deleted.by.name: userId={}", telegramUserId);
     }
 
     public void deleteFriendById(String id, long telegramUserId) {
-        var existing = findOwnedFriend(id, telegramUserId);
-        if (existing.isEmpty()) {
-            log.warn("friend.delete.missed: userId={}, friendId={}", telegramUserId, id);
-            return;
-        }
-
         friendRepository.deleteByIdAndTelegramUserId(id, telegramUserId);
-        log.info("friend.deleted: userId={}, friendId={}", telegramUserId, id);
     }
 
     public java.util.Optional<Friend> findOwnedFriend(String id, long telegramUserId) {
@@ -59,23 +49,19 @@ public class FriendService {
     }
 
     public void deleteAllFriends(long telegramUserId) {
-        int count = friendRepository.findByTelegramUserId(telegramUserId).size();
         friendRepository.deleteByTelegramUserId(telegramUserId);
-        log.info("friend.deleted.all: userId={}, count={}", telegramUserId, count);
     }
 
     public void updateFriendNameById(String id, long telegramUserId, String newName) {
-        findOwnedFriend(id, telegramUserId).ifPresentOrElse(f -> {
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
             f.setName(newName);
             friendRepository.save(f);
-            log.info("friend.name.updated: userId={}, friendId={}", telegramUserId, id);
-        }, () -> log.warn("friend.name.update.missed: userId={}, friendId={}", telegramUserId, id));
+        });
     }
 
     public void updateFriendDateById(String id, long telegramUserId, Integer year, int month, int day) {
         var existing = findOwnedFriend(id, telegramUserId);
         if (existing.isEmpty()) {
-            log.warn("friend.date.update.missed: userId={}, friendId={}", telegramUserId, id);
             return;
         }
 
@@ -99,35 +85,22 @@ public class FriendService {
         friend.setBirthMonth(month);
         friend.setBirthDay(day);
         friendRepository.save(friend);
-        log.info("friend.date.updated: userId={}, friendId={}, hasYear={}", telegramUserId, id, year != null);
     }
 
     public void updateFriendRelationshipById(String id, long telegramUserId, com.festiva.friend.entity.Relationship relationship) {
-        findOwnedFriend(id, telegramUserId).ifPresentOrElse(f -> {
+        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
             f.setRelationship(relationship);
             friendRepository.save(f);
-            log.info("friend.relationship.updated: userId={}, friendId={}, relationship={}",
-                    telegramUserId, id, relationship);
-        }, () -> log.warn("friend.relationship.update.missed: userId={}, friendId={}", telegramUserId, id));
+        });
     }
 
     public boolean toggleFriendNotifyById(String id, long telegramUserId) {
         var ref = new Object() { boolean newValue = true; };
-        var updated = new Object() { boolean value = false; };
-
         findOwnedFriend(id, telegramUserId).ifPresent(f -> {
             f.setNotifyEnabled(!f.isNotifyEnabled());
             friendRepository.save(f);
             ref.newValue = f.isNotifyEnabled();
-            updated.value = true;
-            log.info("friend.notify.updated: userId={}, friendId={}, enabled={}",
-                    telegramUserId, id, ref.newValue);
         });
-
-        if (!updated.value) {
-            log.warn("friend.notify.update.missed: userId={}, friendId={}", telegramUserId, id);
-        }
-
         return ref.newValue;
     }
 
