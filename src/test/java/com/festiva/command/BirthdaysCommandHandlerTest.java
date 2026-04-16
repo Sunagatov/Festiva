@@ -7,6 +7,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,11 +35,13 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserDateService userDateService;
     @InjectMocks BirthdaysCommandHandler handler;
 
     @BeforeEach
     void defaults() {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
     @Test

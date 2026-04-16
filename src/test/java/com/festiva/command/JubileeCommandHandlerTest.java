@@ -6,6 +6,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,15 +30,20 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserDateService userDateService;
     @InjectMocks JubileeCommandHandler handler;
+
+    @BeforeEach
+    void defaults() {
+        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
+    }
 
     @Test
     @DisplayName("friend turning a multiple of 5 → appears in jubilee list")
     void jubileeFriend_appearsInList() {
         LocalDate today = LocalDate.now();
-        // getAge()=29, getNextAge()=30 (multiple of 5)
         Friend friend = new Friend("Alice", today.plusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
         assertThat(handler.handle(update()).getText()).contains("Alice");
@@ -46,9 +53,7 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @DisplayName("friend turning a non-multiple of 5 → excluded from jubilee list")
     void nonJubileeFriend_excludedFromList() {
         LocalDate today = LocalDate.now();
-        // turns 31 on next birthday (not a multiple of 5)
         Friend friend = new Friend("Bob", today.minusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
         String text = handler.handle(update()).getText();
@@ -60,7 +65,6 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("no friends → returns friends-empty message")
     void noFriends_returnsFriendsEmpty() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         assertThat(handler.handle(update()).getText())
@@ -72,7 +76,6 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     void noJubilees_containsUpcomingHint() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Bob", today.minusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
         assertThat(handler.handle(update()).getText()).contains("/upcomingbirthdays");
     }

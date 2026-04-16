@@ -11,6 +11,7 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,11 +50,13 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Mock RemoveCommandHandler removeCommandHandler;
     @Mock EditFriendCommandHandler editFriendCommandHandler;
     @Mock BotCommandsService commandsService;
+    @Mock UserDateService userDateService;
     @InjectMocks CallbackQueryHandler handler;
 
     @BeforeEach
     void defaultLang() {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
     @Test
@@ -226,8 +229,6 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     void nullCallback_returnsNull() {
         assertThat(handler.handle(null)).isNull();
     }
-
-    // --- helper ---
 
     private CallbackQuery callback(String data) {
         User user = mock(User.class);

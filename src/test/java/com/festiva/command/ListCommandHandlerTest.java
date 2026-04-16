@@ -5,7 +5,10 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,20 +26,24 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import com.festiva.i18n.MessagesTestSupport;
-
 @DisplayName("ListCommandHandler")
 @ExtendWith(MockitoExtension.class)
 class ListCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserDateService userDateService;
     @InjectMocks ListCommandHandler handler;
+
+    @BeforeEach
+    void defaults() {
+        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
+    }
 
     @Test
     @DisplayName("empty friend list → returns friends-empty message")
     void emptyList_returnsFriendsEmptyMessage() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
         SendMessage result = handler.handle(update());
@@ -49,7 +56,6 @@ class ListCommandHandlerTest extends MessagesTestSupport {
     void birthdayPassed_showsTurnedLabel() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Alice", today.minusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
 
         String text = handler.handle(update()).getText();
@@ -63,7 +69,6 @@ class ListCommandHandlerTest extends MessagesTestSupport {
     void birthdayAhead_showsWillTurnLabel() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Bob", today.plusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
 
         String text = handler.handle(update()).getText();
@@ -84,7 +89,6 @@ class ListCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("with friends → keyboard has sort buttons")
     void withFriends_keyboardHasSortButtons() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(
                 new Friend("Alice", LocalDate.now().plusDays(1).minusYears(30))));
         var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
