@@ -31,7 +31,7 @@ cp .env.example .env
 
 > ⚠️ **Never commit `.env` with real credentials.** It is listed in `.gitignore` — keep it that way.
 >
-> Use `.env.example` for local development and `.env.prod.example` as a production template.
+> Use `.env.example` as the template for local development
 
 ---
 
