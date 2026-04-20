@@ -1,3 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_DIR="${1:-.}"
+cd "$REPO_DIR"
+
+for f in src/test/java/com/festiva/IntegrationTestBase.java; do
+  if [[ ! -f "$f" ]]; then
+    echo "Required file not found: $f" >&2
+    exit 1
+  fi
+done
+
+STAMP="$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="festiva_test_singleton_mongo_fix_backup_${STAMP}"
+mkdir -p "$BACKUP_DIR"
+
+cp src/test/java/com/festiva/IntegrationTestBase.java "$BACKUP_DIR/IntegrationTestBase.java.bak"
+
+cat > src/test/java/com/festiva/IntegrationTestBase.java <<'EOF'
 package com.festiva;
 
 import com.festiva.bot.BirthdayBot;
@@ -20,7 +40,7 @@ public abstract class IntegrationTestBase {
 
     static {
         MongoDBContainer mongo = null;
-        boolean dockerAvailable;
+        boolean dockerAvailable = false;
 
         try {
             dockerAvailable = DockerClientFactory.instance().isDockerAvailable();
@@ -54,3 +74,11 @@ public abstract class IntegrationTestBase {
         }
     }
 }
+EOF
+
+echo "Singleton Mongo Testcontainers fix applied successfully."
+echo "Backup saved under: ${BACKUP_DIR}"
+echo
+echo "Next steps:"
+echo "  1) Review diff: git diff --stat && git diff"
+echo "  2) Run verification: bash festiva_test_singleton_mongo_verify.sh"
