@@ -45,3 +45,5 @@ replay_pid*
 
 *.ics
 *.ical.zip
+
+.ai/
