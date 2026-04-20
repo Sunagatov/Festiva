@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Component
@@ -64,10 +65,15 @@ public class CallbackQueryHandler {
     private final UserDateService userDateService;
 
     public EditMessageText handle(CallbackQuery callbackQuery) {
-        if (callbackQuery == null) return null;
+        if (callbackQuery == null) {
+            return null;
+        }
+
         String data = callbackQuery.getData();
         MaybeInaccessibleMessage message = callbackQuery.getMessage();
-        if (data == null || message == null) return null;
+        if (data == null || message == null) {
+            return null;
+        }
 
         long chatId = message.getChatId();
         int messageId = message.getMessageId();
@@ -75,64 +81,135 @@ public class CallbackQueryHandler {
         Lang lang = userStateService.getLanguage(userId);
 
         CallbackResult result = dispatch(data, chatId, userId, lang);
-        if (result == null) return null;
-        if (result.sendMessage != null) return toEdit(result.sendMessage, messageId);
+        if (result == null) {
+            return null;
+        }
+        if (result.sendMessage != null) {
+            return toEdit(result.sendMessage, messageId);
+        }
 
         EditMessageText.EditMessageTextBuilder<?, ?> builder = EditMessageText.builder()
-                .chatId(chatId).messageId(messageId).parseMode("HTML").text(result.text != null ? result.text : "");
-        if (result.markup != null) builder.replyMarkup(result.markup);
+                .chatId(chatId)
+                .messageId(messageId)
+                .parseMode("HTML")
+                .text(result.text != null ? result.text : "");
+        if (result.markup != null) {
+            builder.replyMarkup(result.markup);
+        }
         return builder.build();
     }
 
     private CallbackResult dispatch(String data, long chatId, long userId, Lang lang) {
         CallbackResult r;
-        if ((r = dispatchDatePicker(data, userId, lang)) != null) return r;
-        if ((r = dispatchEdit(data, userId, lang)) != null)       return r;
-        if ((r = dispatchRemove(data, userId, lang)) != null)     return r;
-        if ((r = dispatchMisc(data, chatId, userId, lang)) != null) return r;
+        if ((r = dispatchDatePicker(data, userId, lang)) != null) {
+            return r;
+        }
+        if ((r = dispatchEdit(data, userId, lang)) != null) {
+            return r;
+        }
+        if ((r = dispatchRemove(data, userId, lang)) != null) {
+            return r;
+        }
+        if ((r = dispatchMisc(data, chatId, userId, lang)) != null) {
+            return r;
+        }
+
         log.warn("callback.unknown: userId={}, data={}", userId, data);
         return null;
     }
 
     private CallbackResult dispatchDatePicker(String data, long userId, Lang lang) {
-        if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX))      return datePickerHandler.handleYearPage(data, userId, lang);
-        if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PREFIX))           return datePickerHandler.handleYearPick(data, userId, lang);
-        if (DatePickerKeyboard.DATE_SKIP_YEAR.equals(data))                 return datePickerHandler.handleSkipYear(userId, lang);
-        if (data.startsWith(DatePickerKeyboard.DATE_MONTH_PREFIX))          return datePickerHandler.handleMonthPick(data, userId, lang);
-        if (data.startsWith(DatePickerKeyboard.DATE_DAY_PREFIX))            return datePickerHandler.handleDayPick(data, userId, lang);
-        if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR))          return datePickerHandler.handleBackToYear(data, userId, lang);
-        if (DatePickerKeyboard.DATE_BACK_TO_MONTH.equals(data))             return datePickerHandler.handleBackToMonth(userId, lang);
-        if (data.startsWith(DatePickerCallbackHandler.RELATIONSHIP_PREFIX)) return datePickerHandler.handleRelationship(data, userId, lang);
-        if (data.startsWith(DatePickerCallbackHandler.EDIT_REL_PREFIX))     return datePickerHandler.handleEditRelationship(data, userId, lang);
+        if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX)) {
+            return datePickerHandler.handleYearPage(data, userId, lang);
+        }
+        if (data.startsWith(DatePickerKeyboard.DATE_YEAR_PREFIX)) {
+            return datePickerHandler.handleYearPick(data, userId, lang);
+        }
+        if (DatePickerKeyboard.DATE_SKIP_YEAR.equals(data)) {
+            return datePickerHandler.handleSkipYear(userId, lang);
+        }
+        if (data.startsWith(DatePickerKeyboard.DATE_MONTH_PREFIX)) {
+            return datePickerHandler.handleMonthPick(data, userId, lang);
+        }
+        if (data.startsWith(DatePickerKeyboard.DATE_DAY_PREFIX)) {
+            return datePickerHandler.handleDayPick(data, userId, lang);
+        }
+        if (data.startsWith(DatePickerKeyboard.DATE_BACK_TO_YEAR)) {
+            return datePickerHandler.handleBackToYear(data, userId, lang);
+        }
+        if (DatePickerKeyboard.DATE_BACK_TO_MONTH.equals(data)) {
+            return datePickerHandler.handleBackToMonth(userId, lang);
+        }
+        if (data.startsWith(DatePickerCallbackHandler.RELATIONSHIP_PREFIX)) {
+            return datePickerHandler.handleRelationship(data, userId, lang);
+        }
+        if (data.startsWith(DatePickerCallbackHandler.EDIT_REL_PREFIX)) {
+            return datePickerHandler.handleEditRelationship(data, userId, lang);
+        }
         return null;
     }
 
     private CallbackResult dispatchEdit(String data, long userId, Lang lang) {
-        if (data.startsWith(EditFriendCommandHandler.EDIT_PAGE_PREFIX)) return handleEditPage(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NOTIFY))    return editHandler.handleEditNotify(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NAME))      return editHandler.handleEditFieldName(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_DATE))      return editHandler.handleEditFieldDate(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_REL))       return datePickerHandler.handleEditFieldRel(data, userId, lang);
-        if (data.startsWith(EditCallbackHandler.EDIT_PREFIX))          return editHandler.handleEditSelect(data, userId, lang);
+        if (data.startsWith(EditFriendCommandHandler.EDIT_PAGE_PREFIX)) {
+            return handleEditPage(data, userId, lang);
+        }
+        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NOTIFY)) {
+            return editHandler.handleEditNotify(data, userId, lang);
+        }
+        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_NAME)) {
+            return editHandler.handleEditFieldName(data, userId, lang);
+        }
+        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_DATE)) {
+            return editHandler.handleEditFieldDate(data, userId, lang);
+        }
+        if (data.startsWith(EditCallbackHandler.EDIT_FIELD_REL)) {
+            return datePickerHandler.handleEditFieldRel(data, userId, lang);
+        }
+        if (data.startsWith(EditCallbackHandler.EDIT_PREFIX)) {
+            return editHandler.handleEditSelect(data, userId, lang);
+        }
         return null;
     }
 
     private CallbackResult dispatchRemove(String data, long userId, Lang lang) {
-        if (data.startsWith(RemoveCommandHandler.REMOVE_PAGE_PREFIX)) return handleRemovePage(data, userId, lang);
-        if (data.startsWith(CONFIRM_PREFIX))                          return handleConfirmRemove(userId, data.substring(CONFIRM_PREFIX.length()), lang);
-        if (data.startsWith(REMOVE_PREFIX))                           return handleRemove(data, userId, lang);
-        if (CANCEL_REMOVE.equals(data))                               return handleCancelRemove(userId, lang);
+        if (data.startsWith(RemoveCommandHandler.REMOVE_PAGE_PREFIX)) {
+            return handleRemovePage(data, userId, lang);
+        }
+        if (data.startsWith(CONFIRM_PREFIX)) {
+            return handleConfirmRemove(userId, data.substring(CONFIRM_PREFIX.length()), lang);
+        }
+        if (data.startsWith(REMOVE_PREFIX)) {
+            return handleRemove(data, userId, lang);
+        }
+        if (CANCEL_REMOVE.equals(data)) {
+            return handleCancelRemove(userId, lang);
+        }
         return null;
     }
 
     private CallbackResult dispatchMisc(String data, long chatId, long userId, Lang lang) {
-        if (data.startsWith(SettingsCommandHandler.SETTINGS_HOUR_PREFIX))           return handleSettingsHour(data, userId, lang);
-        if (data.startsWith(SettingsCommandHandler.SETTINGS_TZ_PREFIX))             return handleSettingsTz(data, userId, lang);
-        if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX))  return handleUpcoming(data, userId, lang);
-        if (data.startsWith(ListCommandHandler.LIST_PAGE_PREFIX))                   return handleListPage(data, userId, lang);
-        if (data.startsWith(LIST_SORT_DATE) || data.startsWith(LIST_SORT_NAME))     return handleListSort(data, userId, lang);
-        if (data.startsWith(LANG_PREFIX))                                           return handleLanguage(userId, data.substring(LANG_PREFIX.length()));
-        if (data.startsWith(MONTH_PREFIX))                                          return handleMonth(userId, data, lang);
+        if (data.startsWith(SettingsCommandHandler.SETTINGS_HOUR_PREFIX)) {
+            return handleSettingsHour(data, userId, lang);
+        }
+        if (data.startsWith(SettingsCommandHandler.SETTINGS_TZ_PREFIX)) {
+            return handleSettingsTz(data, userId, lang);
+        }
+        if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX)) {
+            return handleUpcoming(data, userId, lang);
+        }
+        if (data.startsWith(ListCommandHandler.LIST_PAGE_PREFIX)) {
+            return handleListPage(data, userId, lang);
+        }
+        if (data.startsWith(LIST_SORT_DATE) || data.startsWith(LIST_SORT_NAME)) {
+            return handleListSort(data, userId, lang);
+        }
+        if (data.startsWith(LANG_PREFIX)) {
+            return handleLanguage(userId, data.substring(LANG_PREFIX.length()));
+        }
+        if (data.startsWith(MONTH_PREFIX)) {
+            return handleMonth(userId, data, lang);
+        }
+
         switch (data) {
             case ACTION_ADD -> {
                 return handleActionAdd(userId, lang);
@@ -164,8 +241,10 @@ public class CallbackQueryHandler {
                 userStateService.clearState(userId);
                 return new CallbackResult(Messages.get(lang, Messages.ICS_CANCELLED), null);
             }
+            default -> {
+                return null;
+            }
         }
-        return null;
     }
 
     // ── Settings ─────────────────────────────────────────────────────────────
@@ -175,14 +254,14 @@ public class CallbackQueryHandler {
             int hour = Integer.parseInt(data.substring(SettingsCommandHandler.SETTINGS_HOUR_PREFIX.length()));
             if (hour < 0 || hour > 23) {
                 log.warn("callback.settings.hour.invalid: userId={}, hour={}", userId, hour);
-                return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+                return sessionExpired(lang);
             }
             userStateService.setNotifyHour(userId, hour);
             return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
                     SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
         } catch (NumberFormatException e) {
             log.warn("callback.settings.hour.parse.failed: data={}", data, e);
-            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            return sessionExpired(lang);
         }
     }
 
@@ -193,7 +272,7 @@ public class CallbackQueryHandler {
             java.time.ZoneId validatedZone = java.time.ZoneId.of(tz);
         } catch (java.time.zone.ZoneRulesException e) {
             log.warn("callback.settings.tz.invalid: userId={}, tz={}", userId, tz, e);
-            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            return sessionExpired(lang);
         }
         userStateService.setTimezone(userId, tz);
         return new CallbackResult(Messages.get(lang, Messages.SETTINGS_TZ_SET, tz),
@@ -204,7 +283,11 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleListSort(String data, long userId, Lang lang) {
         boolean byDate = data.startsWith(LIST_SORT_DATE);
-        int page = parsePageSuffix(data);
+        Integer page = parsePageSuffix(data);
+        if (page == null) {
+            return sessionExpired(lang);
+        }
+
         var friends = friendService.getFriendsSortedByDayMonth(userId);
         return new CallbackResult(listHandler.buildText(friends, lang, byDate, page, userId),
                 listHandler.keyboard(lang, byDate, page, friends.size()));
@@ -212,30 +295,63 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleListPage(String data, long userId, Lang lang) {
         String suffix = data.substring(ListCommandHandler.LIST_PAGE_PREFIX.length());
-        boolean byDate = suffix.startsWith("DATE");
-        int page = Integer.parseInt(suffix.substring(suffix.lastIndexOf('_') + 1));
+        boolean byDate;
+        if (suffix.startsWith("DATE_")) {
+            byDate = true;
+        } else if (suffix.startsWith("NAME_")) {
+            byDate = false;
+        } else {
+            log.warn("callback.list.page.invalid.mode: data={}", data);
+            return sessionExpired(lang);
+        }
+
+        Integer page = parsePageSuffix(data);
+        if (page == null) {
+            return sessionExpired(lang);
+        }
+
         var friends = friendService.getFriendsSortedByDayMonth(userId);
         return new CallbackResult(listHandler.buildText(friends, lang, byDate, page, userId),
                 listHandler.keyboard(lang, byDate, page, friends.size()));
     }
 
-    private int parsePageSuffix(String data) {
+    private Integer parsePageSuffix(String data) {
         int idx = data.lastIndexOf('_');
-        if (idx < 0) return 0;
+        if (idx < 0) {
+            log.warn("callback.page.parse.failed: missing suffix, data={}", data);
+            return null;
+        }
+
         try {
-            return Integer.parseInt(data.substring(idx + 1));
+            int page = Integer.parseInt(data.substring(idx + 1));
+            if (page < 0) {
+                log.warn("callback.page.parse.failed: negative page, data={}", data);
+                return null;
+            }
+            return page;
         } catch (NumberFormatException e) {
             log.warn("callback.page.parse.failed: data={}", data, e);
-            return 0;
+            return null;
         }
     }
 
     // ── Upcoming ─────────────────────────────────────────────────────────────
 
     private CallbackResult handleUpcoming(String data, long userId, Lang lang) {
-        int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
-        var friends = friendService.getFriends(userId);
-        return new CallbackResult(upcomingHandler.buildText(friends, lang, days, userId), upcomingHandler.filterKeyboard(lang, days));
+        try {
+            int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
+            if (!Set.of(7, 14, 30).contains(days)) {
+                log.warn("callback.upcoming.days.invalid: userId={}, days={}", userId, days);
+                return sessionExpired(lang);
+            }
+
+            var friends = friendService.getFriends(userId);
+            return new CallbackResult(upcomingHandler.buildText(friends, lang, days, userId),
+                    upcomingHandler.filterKeyboard(lang, days));
+        } catch (NumberFormatException e) {
+            log.warn("callback.upcoming.days.parse.failed: data={}", data, e);
+            return sessionExpired(lang);
+        }
     }
 
     // ── Add / Language ────────────────────────────────────────────────────────
@@ -261,33 +377,57 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard);
         } catch (IllegalArgumentException e) {
             log.warn("callback.language.unknown: code={}", code, e);
-            return new CallbackResult(Messages.get(userStateService.getLanguage(userId), Messages.SESSION_EXPIRED), null);
+            return sessionExpired(userStateService.getLanguage(userId));
         }
     }
 
-    // ── Remove ────────────────────────────────────────────────────────────────
-
     private CallbackResult handleRemovePage(String data, long userId, Lang lang) {
-        int page = Integer.parseInt(data.substring(RemoveCommandHandler.REMOVE_PAGE_PREFIX.length()));
-        var friends = friendService.getFriendsSortedByDayMonth(userId);
-        if (friends.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
-        return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
-                removeCommandHandler.keyboard(friends, page));
+        String rawPage = data.substring(RemoveCommandHandler.REMOVE_PAGE_PREFIX.length());
+        try {
+            int page = Integer.parseInt(rawPage);
+            if (page < 0) {
+                return sessionExpired(lang);
+            }
+
+            var friends = friendService.getFriendsSortedByDayMonth(userId);
+            if (friends.isEmpty()) {
+                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
+            }
+            return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
+                    removeCommandHandler.keyboard(friends, page));
+        } catch (NumberFormatException e) {
+            log.warn("callback.remove.page.parse.failed: data={}", data, e);
+            return sessionExpired(lang);
+        }
     }
 
     private CallbackResult handleEditPage(String data, long userId, Lang lang) {
-        int page = Integer.parseInt(data.substring(EditFriendCommandHandler.EDIT_PAGE_PREFIX.length()));
-        var friends = friendService.getFriendsSortedByDayMonth(userId);
-        if (friends.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
-                editFriendCommandHandler.keyboard(friends, page));
+        String rawPage = data.substring(EditFriendCommandHandler.EDIT_PAGE_PREFIX.length());
+        try {
+            int page = Integer.parseInt(rawPage);
+            if (page < 0) {
+                return sessionExpired(lang);
+            }
+
+            var friends = friendService.getFriendsSortedByDayMonth(userId);
+            if (friends.isEmpty()) {
+                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
+            }
+            return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
+                    editFriendCommandHandler.keyboard(friends, page));
+        } catch (NumberFormatException e) {
+            log.warn("callback.edit.page.parse.failed: data={}", data, e);
+            return sessionExpired(lang);
+        }
     }
 
     private CallbackResult handleRemove(String data, long userId, Lang lang) {
         String id = data.substring(REMOVE_PREFIX.length());
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
-        if (friend == null)
-            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        if (friend == null) {
+            return sessionExpired(lang);
+        }
+
         String name = friend.getName();
         userStateService.setPendingName(userId, name);
         userStateService.setPendingId(userId, id);
@@ -297,8 +437,10 @@ public class CallbackQueryHandler {
 
     private CallbackResult handleConfirmRemove(long userId, String id, Lang lang) {
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
-        if (friend == null)
-            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+        if (friend == null) {
+            return sessionExpired(lang);
+        }
+
         String name = friend.getName();
         friendService.deleteFriendById(id, userId);
         userStateService.clearState(userId);
@@ -316,31 +458,37 @@ public class CallbackQueryHandler {
     }
 
     private CallbackResult handleIcsConfirm(long userId, Lang lang) {
-        java.util.List<com.festiva.friend.entity.Friend> pending = userStateService.getPendingIcsImport(userId);
+        List<com.festiva.friend.entity.Friend> pending = userStateService.getPendingIcsImport(userId);
         if (pending == null || pending.isEmpty()) {
             userStateService.clearState(userId);
-            return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+            return sessionExpired(lang);
         }
 
+        List<Friend> currentFriends = friendService.getFriends(userId);
+        Set<String> existingNames = currentFriends.stream()
+                .map(friend -> Friend.normalizeName(friend.getName()))
+                .collect(java.util.stream.Collectors.toSet());
+
+        int currentCount = currentFriends.size();
         int saved = 0;
-        for (com.festiva.friend.entity.Friend f : pending) {
+
+        for (com.festiva.friend.entity.Friend friend : pending) {
+            String normalizedName = Friend.normalizeName(friend.getName());
+            if (normalizedName.isBlank() || existingNames.contains(normalizedName)) {
+                continue;
+            }
+
+            if (currentCount + saved >= FriendService.FRIEND_CAP) {
+                log.warn("ics.import.cap.reached: userId={}, cap={}", userId, FriendService.FRIEND_CAP);
+                break;
+            }
+
             try {
-                if (friendService.friendExists(userId, f.getName())) {
-                    continue;
-                }
-
-                if (f.getName() == null || f.getName().isBlank()) {
-                    continue;
-                }
-
-                if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
-                    log.warn("ics.import.cap.reached: userId={}, cap={}", userId, FriendService.FRIEND_CAP);
-                    break;
-                }
-
-                friendService.addFriend(userId, f);
+                friendService.addFriend(userId, friend);
+                existingNames.add(normalizedName);
                 saved++;
-            } catch (IllegalArgumentException _) {
+            } catch (IllegalArgumentException e) {
+                log.warn("ics.import.save.rejected: userId={}, name={}", userId, friend.getName(), e);
             } catch (Exception e) {
                 log.warn("ics.import.save.failed: userId={}", userId, e);
             }
@@ -353,8 +501,6 @@ public class CallbackQueryHandler {
                 : Messages.get(lang, Messages.ICS_NONE_SAVED);
         return new CallbackResult(message, null);
     }
-
-    // ── Month ─────────────────────────────────────────────────────────────────
 
     private CallbackResult handleMonth(long userId, String data, Lang lang) {
         String value = data.substring(MONTH_PREFIX.length());
@@ -369,11 +515,21 @@ public class CallbackQueryHandler {
                 return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
             }
         }
+
+        if (month < 1 || month > 12) {
+            log.warn("callback.month.invalid: data={}, month={}", data, month);
+            return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
+        }
+
         var filtered = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .filter(f -> f.getBirthMonthDay().getMonthValue() == month).toList();
+                .filter(f -> f.getBirthMonthDay().getMonthValue() == month)
+                .toList();
+
         String raw = Month.of(month).getDisplayName(TextStyle.FULL_STANDALONE, lang.locale());
         String monthName = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
-        if (filtered.isEmpty()) return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), null);
+        if (filtered.isEmpty()) {
+            return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), null);
+        }
 
         LocalDate today = userDateService.todayFor(userId);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
@@ -410,7 +566,20 @@ public class CallbackQueryHandler {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private EditMessageText toEdit(SendMessage msg, int messageId) {
-        return EditMessageText.builder()
-                .chatId(msg.getChatId()).messageId(messageId).parseMode("HTML").text(msg.getText()).build();
+        EditMessageText.EditMessageTextBuilder<?, ?> builder = EditMessageText.builder()
+                .chatId(msg.getChatId())
+                .messageId(messageId)
+                .parseMode("HTML")
+                .text(msg.getText());
+
+        if (msg.getReplyMarkup() instanceof InlineKeyboardMarkup inlineKeyboardMarkup) {
+            builder.replyMarkup(inlineKeyboardMarkup);
+        }
+
+        return builder.build();
+    }
+
+    private CallbackResult sessionExpired(Lang lang) {
+        return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
     }
 }

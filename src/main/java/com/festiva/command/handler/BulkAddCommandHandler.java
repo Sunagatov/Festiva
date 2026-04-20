@@ -3,6 +3,7 @@ package com.festiva.command.handler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
+import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
@@ -27,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +45,9 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     public static final String CALLBACK_CSV   = "BULK_CSV";
     public static final String CALLBACK_ICS   = "BULK_ICS";
 
+    private static final int FILE_CONNECT_TIMEOUT_MILLIS = 10_000;
+    private static final int FILE_READ_TIMEOUT_MILLIS = 10_000;
+
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
@@ -51,10 +56,14 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private String botToken;
 
     @Override
-    public String command() { return "/addmany"; }
+    public String command() {
+        return "/addmany";
+    }
 
     @Override
-    public Set<BotState> handledStates() { return Set.of(BotState.WAITING_FOR_BULK_ADD); }
+    public Set<BotState> handledStates() {
+        return Set.of(BotState.WAITING_FOR_BULK_ADD);
+    }
 
     @Override
     public SendMessage handle(Update update) {
@@ -117,7 +126,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         }
 
         Set<String> existing = friendService.getFriends(userId).stream()
-                .map(f -> f.getName().toLowerCase(java.util.Locale.ROOT))
+                .map(friend -> Friend.normalizeName(friend.getName()))
                 .collect(Collectors.toSet());
 
         BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang);
@@ -127,7 +136,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         }
 
         int currentCount = existing.size();
-        List<com.festiva.friend.entity.Friend> toAdd = result.valid();
+        List<Friend> toAdd = result.valid();
         List<String> errors = new ArrayList<>(result.errors());
 
         if (currentCount + toAdd.size() > FriendService.FRIEND_CAP) {
@@ -138,10 +147,20 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             }
         }
 
-        toAdd.forEach(f -> friendService.addFriend(userId, f));
+        List<Friend> added = new ArrayList<>();
+        for (Friend friend : toAdd) {
+            try {
+                friendService.addFriend(userId, friend);
+                added.add(friend);
+            } catch (IllegalArgumentException e) {
+                log.warn("bulk.add.row.rejected: userId={}, name={}", userId, friend.getName(), e);
+                errors.add(Messages.get(lang, Messages.NAME_EXISTS, friend.getName()));
+            }
+        }
+
         userStateService.clearState(userId);
 
-        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(toAdd, errors, false)));
+        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(added, errors, false)));
     }
 
     private String buildResponse(Lang lang, BulkAddParser.ParseResult result) {
@@ -153,7 +172,9 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             String errorList = result.errors().stream()
                     .map(e -> "• " + e)
                     .collect(Collectors.joining("\n"));
-            if (!sb.isEmpty()) sb.append("\n\n");
+            if (!sb.isEmpty()) {
+                sb.append("\n\n");
+            }
             sb.append(Messages.get(lang, Messages.BULK_ADD_ERRORS, result.errors().size(), errorList));
         }
         if (sb.isEmpty()) {
@@ -172,11 +193,18 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             if (doc.getFileSize() != null && doc.getFileSize() > 512_000) {
                 return null;
             }
+
             org.telegram.telegrambots.meta.api.objects.File tgFile =
                     telegramClient.execute(GetFile.builder().fileId(doc.getFileId()).build());
+
             String url = "https://api.telegram.org/file/bot" + botToken + "/" + tgFile.getFilePath();
+            URLConnection connection = URI.create(url).toURL().openConnection();
+            connection.setConnectTimeout(FILE_CONNECT_TIMEOUT_MILLIS);
+            connection.setReadTimeout(FILE_READ_TIMEOUT_MILLIS);
+            connection.setUseCaches(false);
+
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(URI.create(url).toURL().openStream(), StandardCharsets.UTF_8))) {
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {

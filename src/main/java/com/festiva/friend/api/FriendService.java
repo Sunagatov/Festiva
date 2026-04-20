@@ -4,6 +4,7 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.friend.repository.FriendMongoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -17,16 +18,22 @@ public class FriendService {
 
     public static final int FRIEND_CAP = 100;
     public static final int JUBILEE_INTERVAL = 5;
-    private static final int LEAP_YEAR = 2000; // leap year so Feb 29 sorts correctly
+    private static final int LEAP_YEAR = 2000;
 
     private final FriendMongoRepository friendRepository;
 
     public void addFriend(long telegramUserId, Friend friend) {
+        if (friend == null) {
+            throw new IllegalArgumentException("Friend cannot be null");
+        }
+
+        String sanitizedName = sanitizeName(friend.getName());
         friend.setTelegramUserId(telegramUserId);
-        friend.setName(friend.getName()); // Ensures normalizedName is set
+        friend.setName(sanitizedName);
+
         try {
             friendRepository.save(friend);
-        } catch (org.springframework.dao.DuplicateKeyException e) {
+        } catch (DuplicateKeyException e) {
             log.warn("friend.create.rejected.duplicate: userId={}", telegramUserId);
             throw new IllegalArgumentException("Friend with this name already exists", e);
         }
@@ -53,9 +60,23 @@ public class FriendService {
     }
 
     public void updateFriendNameById(String id, long telegramUserId, String newName) {
-        findOwnedFriend(id, telegramUserId).ifPresent(f -> {
-            f.setName(newName);
-            friendRepository.save(f);
+        String sanitizedName = sanitizeName(newName);
+        findOwnedFriend(id, telegramUserId).ifPresent(friend -> {
+            String newNormalized = Friend.normalizeName(sanitizedName);
+            String currentNormalized = Friend.normalizeName(friend.getName());
+
+            if (!newNormalized.equals(currentNormalized)
+                    && friendRepository.existsByTelegramUserIdAndNormalizedName(telegramUserId, newNormalized)) {
+                throw new IllegalArgumentException("Friend with this name already exists");
+            }
+
+            friend.setName(sanitizedName);
+            try {
+                friendRepository.save(friend);
+            } catch (DuplicateKeyException e) {
+                log.warn("friend.update.rejected.duplicate: userId={}, friendId={}", telegramUserId, id);
+                throw new IllegalArgumentException("Friend with this name already exists", e);
+            }
         });
     }
 
@@ -121,5 +142,16 @@ public class FriendService {
     public Map<Long, List<Friend>> getFriendsByUserIds(List<Long> userIds) {
         return friendRepository.findByTelegramUserIdIn(userIds).stream()
                 .collect(java.util.stream.Collectors.groupingBy(Friend::getTelegramUserId));
+    }
+
+    private String sanitizeName(String name) {
+        String sanitized = name == null ? null : name.trim();
+        if (sanitized == null || sanitized.isBlank()) {
+            throw new IllegalArgumentException("Friend name cannot be blank");
+        }
+        if (sanitized.length() > 100) {
+            throw new IllegalArgumentException("Friend name cannot be longer than 100 characters");
+        }
+        return sanitized;
     }
 }

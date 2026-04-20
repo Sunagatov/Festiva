@@ -11,6 +11,7 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.MonthDay;
 import java.time.Period;
+import java.util.Locale;
 
 @Data
 @Document(collection = "friends")
@@ -23,17 +24,15 @@ public class Friend {
     @Indexed
     private long telegramUserId;
     private String name;
-    private String normalizedName;  // lowercase trimmed for uniqueness
-    
-    // New fields replacing birthDate
-    private Integer birthYear;    // Nullable (null = year unknown)
-    private int birthMonth;       // 1-12 (always set)
-    private int birthDay;         // 1-31 (always set)
-    
+    private String normalizedName;
+
+    private Integer birthYear;
+    private int birthMonth;
+    private int birthDay;
+
     private boolean notifyEnabled = true;
     private Relationship relationship;
 
-    // Constructor for full date (with year)
     public Friend(String name, LocalDate birthDate) {
         this(name, birthDate.getYear(), birthDate.getMonthValue(), birthDate.getDayOfMonth());
     }
@@ -42,18 +41,19 @@ public class Friend {
         this(name, birthDate.getYear(), birthDate.getMonthValue(), birthDate.getDayOfMonth());
         this.relationship = relationship;
     }
-    
-    // Constructor with validation (supports optional year)
+
     public Friend(String name, Integer year, int month, int day) {
-        // Validate name is not blank
-        if (name == null || name.isBlank()) {
+        String sanitizedName = name == null ? null : name.trim();
+        if (sanitizedName == null || sanitizedName.isBlank()) {
             throw new IllegalArgumentException("Friend name cannot be blank");
         }
-        
-        this.name = name;
-        this.normalizedName = normalizeName(name);
-        
-        // VALIDATE using Java's built-in types (throws DateTimeException if invalid)
+        if (sanitizedName.length() > 100) {
+            throw new IllegalArgumentException("Friend name cannot be longer than 100 characters");
+        }
+
+        this.name = sanitizedName;
+        this.normalizedName = normalizeName(sanitizedName);
+
         try {
             if (year != null) {
                 @SuppressWarnings("unused")
@@ -63,41 +63,37 @@ public class Friend {
                 MonthDay validMonthDay = MonthDay.of(month, day);
             }
         } catch (DateTimeException e) {
-            throw new IllegalArgumentException("Invalid date: " + 
-                (year != null ? year + "-" : "") + month + "-" + day, e);
+            throw new IllegalArgumentException("Invalid date: " +
+                    (year != null ? year + "-" : "") + month + "-" + day, e);
         }
-        
-        // Only store if validation passed
+
         this.birthYear = year;
         this.birthMonth = month;
         this.birthDay = day;
     }
-    
+
     public Friend(String name, Integer year, int month, int day, Relationship relationship) {
         this(name, year, month, day);
         this.relationship = relationship;
     }
-    
-    // Normalize name for uniqueness checks
+
     public static String normalizeName(String name) {
-        return name == null ? "" : name.trim().toLowerCase();
+        return name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
     }
-    
-    // Update normalized name when name changes
+
     public void setName(String name) {
-        this.name = name;
-        this.normalizedName = normalizeName(name);
+        this.name = name == null ? null : name.trim();
+        this.normalizedName = normalizeName(this.name);
     }
-    
-    // Helper methods
+
     public boolean hasYear() {
         return birthYear != null;
     }
-    
+
     public MonthDay getBirthMonthDay() {
         return MonthDay.of(birthMonth, birthDay);
     }
-    
+
     public LocalDate getBirthDate() {
         if (!hasYear()) {
             throw new IllegalStateException("Birth year is unknown for " + name);
@@ -114,48 +110,41 @@ public class Friend {
 
     public LocalDate nextBirthday(LocalDate from) {
         boolean isLeapDayBirthday = (birthMonth == 2 && birthDay == 29);
-        
-        // Try to create the birthday in the current year
+
         LocalDate next;
         try {
             next = LocalDate.of(from.getYear(), birthMonth, birthDay);
         } catch (DateTimeException e) {
-            // Feb 29 in non-leap year → use Feb 28 if year is known, otherwise skip to next leap year
             if (hasYear()) {
-                // With year: skip to next leap year
                 int year = from.getYear();
                 while (!LocalDate.of(year, 1, 1).isLeapYear()) {
                     year++;
                 }
                 next = LocalDate.of(year, 2, 29);
             } else {
-                // Without year: use Feb 28 in non-leap years
                 next = LocalDate.of(from.getYear(), 2, 28);
             }
         }
-        
-        // If already passed this year, move to next occurrence
+
         if (next.isBefore(from)) {
             if (isLeapDayBirthday) {
                 if (hasYear()) {
-                    // With year: find next leap year
                     int year = from.getYear() + 1;
                     while (!LocalDate.of(year, 1, 1).isLeapYear()) {
                         year++;
                     }
                     next = LocalDate.of(year, 2, 29);
                 } else {
-                    // Without year: try next year, use Feb 28 if not leap
                     int year = from.getYear() + 1;
-                    next = LocalDate.of(year, 1, 1).isLeapYear() 
-                        ? LocalDate.of(year, 2, 29) 
-                        : LocalDate.of(year, 2, 28);
+                    next = LocalDate.of(year, 1, 1).isLeapYear()
+                            ? LocalDate.of(year, 2, 29)
+                            : LocalDate.of(year, 2, 28);
                 }
             } else {
                 next = LocalDate.of(from.getYear() + 1, birthMonth, birthDay);
             }
         }
-        
+
         return next;
     }
 
