@@ -83,7 +83,7 @@ class ImportIcsCommandHandlerTest {
     void noDtstart_skipped() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:Alice",
+                "SUMMARY:Alice birthday",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
@@ -91,11 +91,11 @@ class ImportIcsCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("mixed yearly and non-yearly events → only yearly returned")
-    void mixed_onlyYearlyReturned() {
+    @DisplayName("mixed birthday and non-birthday yearly events → only birthday-like returned")
+    void mixed_onlyBirthdayYearlyReturned() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:Alice",
+                "SUMMARY:Alice birthday",
                 "DTSTART;VALUE=DATE:19900315",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT",
@@ -104,12 +104,12 @@ class ImportIcsCommandHandlerTest {
                 "DTSTART;VALUE=DATE:20240601",
                 "END:VEVENT",
                 "BEGIN:VEVENT",
-                "SUMMARY:Bob",
+                "SUMMARY:Bob birthday",
                 "DTSTART;VALUE=DATE:19850722",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Alice,15.03.1990", "Bob,22.07.1985");
+        assertThat(result).containsExactly("Alice birthday,15.03.1990", "Bob birthday,22.07.1985");
     }
 
     @Test
