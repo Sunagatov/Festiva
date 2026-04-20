@@ -23,11 +23,15 @@
 # 1. 📥 Clone
 git clone https://github.com/Sunagatov/Festiva.git && cd Festiva
 
-# 2. 🔧 Fill in your credentials
-# edit TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME in .env
+# 2. Create local config from the example
+cp .env.example .env
+
+# 3. Edit .env and fill in TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME
 ```
 
 > ⚠️ **Never commit `.env` with real credentials.** It is listed in `.gitignore` — keep it that way.
+>
+> Use `.env.example` for local development and `.env.prod.example` as a production template.
 
 ---
 
@@ -53,12 +57,6 @@ set -a && source .env && set +a && mvn spring-boot:run
 # Start MongoDB + the bot together
 docker compose up -d mongo
 docker compose --profile bot up -d --build
-```
-
-**Production (MongoDB Atlas):**
-```bash
-# Fill in .env.prod, then:
-docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ---

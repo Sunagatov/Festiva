@@ -6,7 +6,7 @@ FROM maven:3.9-eclipse-temurin-25-alpine AS build
 # Build arguments
 # BUILD_PROFILE: optional Maven profile for build-time optimizations.
 # Leave empty by default unless Festiva gets a dedicated Maven profile later.
-ARG BUILD_PROFILE=dev
+ARG BUILD_PROFILE=
 
 WORKDIR /app
 
@@ -50,9 +50,11 @@ COPY --from=extract /app/spring-boot-loader/ ./
 COPY --from=extract /app/snapshot-dependencies/ ./
 COPY --from=extract /app/application/ ./
 
-RUN java -XX:ArchiveClassesAtExit=app-cds.jsa \
+RUN mkdir -p /opt/cds && \
+    (java -XX:ArchiveClassesAtExit=app-cds.jsa \
         -Dspring.context.exit=onRefresh \
-        org.springframework.boot.loader.launch.JarLauncher 2>/dev/null || true
+        org.springframework.boot.loader.launch.JarLauncher 2>/dev/null || true) && \
+    if [ -f app-cds.jsa ]; then cp app-cds.jsa /opt/cds/app-cds.jsa; fi
 
 # =============================================================================
 # RUNTIME STAGE
@@ -78,7 +80,7 @@ COPY --from=extract --chown=appuser:appgroup /app/dependencies/ ./
 COPY --from=extract --chown=appuser:appgroup /app/spring-boot-loader/ ./
 COPY --from=extract --chown=appuser:appgroup /app/snapshot-dependencies/ ./
 COPY --from=extract --chown=appuser:appgroup /app/application/ ./
-COPY --from=cds-train --chown=appuser:appgroup /app/app-cds.jsa ./app-cds.jsa
+COPY --from=cds-train --chown=appuser:appgroup /opt/cds/ /opt/cds/
 
 # --- Switch to non-root user ---
 USER appuser
@@ -87,14 +89,28 @@ USER appuser
 EXPOSE 8080
 
 # --- Application startup ---
-ENTRYPOINT ["java", \
-    "-XX:+UseContainerSupport", \
-    "-XX:MaxRAMPercentage=60.0", \
-    "-XX:MaxMetaspaceSize=128m", \
-    "-XX:+ExitOnOutOfMemoryError", \
-    "-XX:+UseG1GC", \
-    "-XX:G1HeapRegionSize=4m", \
-    "-XX:+UseStringDeduplication", \
-    "-XX:SharedArchiveFile=app-cds.jsa", \
-    "-Djava.security.egd=file:/dev/./urandom", \
-    "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["sh", "-c", "\
+if [ -s /opt/cds/app-cds.jsa ]; then \
+  exec java \
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=60.0 \
+    -XX:MaxMetaspaceSize=128m \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+UseG1GC \
+    -XX:G1HeapRegionSize=4m \
+    -XX:+UseStringDeduplication \
+    -XX:SharedArchiveFile=/opt/cds/app-cds.jsa \
+    -Djava.security.egd=file:/dev/./urandom \
+    org.springframework.boot.loader.launch.JarLauncher; \
+else \
+  exec java \
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=60.0 \
+    -XX:MaxMetaspaceSize=128m \
+    -XX:+ExitOnOutOfMemoryError \
+    -XX:+UseG1GC \
+    -XX:G1HeapRegionSize=4m \
+    -XX:+UseStringDeduplication \
+    -Djava.security.egd=file:/dev/./urandom \
+    org.springframework.boot.loader.launch.JarLauncher; \
+fi"]
