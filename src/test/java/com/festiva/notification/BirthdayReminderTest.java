@@ -155,6 +155,21 @@ class BirthdayReminderTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("partial send success → lastNotifiedDate is persisted for the user")
+    void partialSendSuccess_lastNotifiedDatePersistedForUser() {
+        savePrefs(31L);
+        friendService.addFriend(31L, new Friend("SentFriend", LocalDate.now().minusYears(30)));
+        friendService.addFriend(31L, new Friend("FailedFriend", LocalDate.now().minusYears(28)));
+        when(birthdayBot.send(eq(31L), contains("SentFriend"))).thenReturn(true);
+        when(birthdayBot.send(eq(31L), contains("FailedFriend"))).thenReturn(false);
+
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+
+        UserPreference pref = userPreferenceRepository.findById(31L).orElseThrow();
+        assertThat(pref.getLastNotifiedDate()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
     @DisplayName("birthday today → notification contains age")
     void todayBirthday_notificationContainsAge() {
         savePrefs(20L);
