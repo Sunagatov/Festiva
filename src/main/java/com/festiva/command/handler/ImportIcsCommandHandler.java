@@ -175,6 +175,25 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     public record IcsEntry(String summary, LocalDate date, boolean yearTrusted) {}
 
+    private static boolean isSummaryLine(String line) {
+        return line.regionMatches(true, 0, "SUMMARY", 0, "SUMMARY".length())
+                && line.length() > "SUMMARY".length()
+                && (line.charAt("SUMMARY".length()) == ':' || line.charAt("SUMMARY".length()) == ';');
+    }
+
+    private static String valueAfterColon(String line) {
+        int colon = line.indexOf(':');
+        return colon >= 0 ? line.substring(colon + 1) : null;
+    }
+
+    private static boolean looksLikeBirthdaySummary(String summary) {
+        if (summary == null) {
+            return false;
+        }
+        String s = summary.toLowerCase(Locale.ROOT);
+        return s.matches(".*\\b(birthday|bday|born|день рождения|др)\\b.*");
+    }
+
     public static List<IcsEntry> extractYearlyEntries(List<String> raw) {
         List<String> unfolded = unfold(raw);
         List<IcsEntry> result = new ArrayList<>();
@@ -192,11 +211,10 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 yearly = false;
                 isBirthday = false;
             } else if (line.equals("END:VEVENT")) {
-                if (inEvent && dtstart != null) {
-                    boolean accept = yearly || isBirthday ||
-                            (summary != null && summary.toLowerCase(Locale.ROOT).matches(".*(birthday|bday|born).*"));
+                if (inEvent && dtstart != null && summary != null) {
+                    boolean accept = isBirthday || (yearly && looksLikeBirthdaySummary(summary));
 
-                    if (accept && summary != null) {
+                    if (accept) {
                         LocalDate date = parseIcsDate(dtstart);
                         if (date != null) {
                             boolean yearTrusted = date.isBefore(LocalDate.now()) &&
@@ -208,8 +226,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 }
                 inEvent = false;
             } else if (inEvent) {
-                if (line.startsWith("SUMMARY:")) {
-                    summary = line.substring(8);
+                if (isSummaryLine(line)) {
+                    String value = valueAfterColon(line);
+                    if (value != null) {
+                        summary = value;
+                    }
                 } else if (line.startsWith("DTSTART")) {
                     int colon = line.indexOf(':');
                     if (colon >= 0) {

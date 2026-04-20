@@ -164,8 +164,12 @@ public class BirthdayReminder {
                         botUsername);
             }
 
-            notificationSender.send(userId, message);
-            return true;
+            boolean sent = notificationSender.send(userId, message);
+            if (!sent) {
+                log.error("reminder.notify.failed: userId={}, friendId={}, daysUntil={}",
+                        userId, friend.getId(), daysUntil);
+            }
+            return sent;
         } catch (RuntimeException e) {
             log.error("reminder.notify.failed: userId={}, friendId={}, daysUntil={}",
                     userId, friend.getId(), daysUntil, e);

@@ -17,14 +17,15 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @DisplayName("BirthdayReminder (integration)")
 class BirthdayReminderTest extends IntegrationTestBase {
@@ -41,6 +42,7 @@ class BirthdayReminderTest extends IntegrationTestBase {
     void clean() {
         friendMongoRepository.deleteAll();
         userPreferenceRepository.deleteAll();
+        org.mockito.Mockito.lenient().when(birthdayBot.send(anyLong(), anyString())).thenReturn(true);
     }
 
     private void savePrefs(long userId) {
@@ -88,7 +90,7 @@ class BirthdayReminderTest extends IntegrationTestBase {
     void notificationFailure_doesNotPropagateException() {
         savePrefs(14L);
         friendService.addFriend(14L, new Friend("FailFriend", LocalDate.now().minusYears(25)));
-        doThrow(new RuntimeException("send failed")).when(birthdayBot).send(eq(14L), anyString());
+        when(birthdayBot.send(eq(14L), anyString())).thenThrow(new RuntimeException("send failed"));
         assertThatCode(() -> birthdayReminder.checkBirthdaysForHour(UTC_9)).doesNotThrowAnyException();
     }
 
@@ -136,17 +138,18 @@ class BirthdayReminderTest extends IntegrationTestBase {
     void allSendsFail_lastNotifiedDateNotPersisted_retryAllowed() {
         savePrefs(21L);
         friendService.addFriend(21L, new Friend("RetryFriend", LocalDate.now().minusYears(30)));
-        doThrow(new RuntimeException("transient failure")).when(birthdayBot).send(eq(21L), anyString());
+        when(birthdayBot.send(eq(21L), anyString())).thenReturn(false);
 
         birthdayReminder.checkBirthdaysForHour(UTC_9);
 
         UserPreference pref = userPreferenceRepository.findById(21L).orElseThrow();
-        org.assertj.core.api.Assertions.assertThat(pref.getLastNotifiedDate())
+        assertThat(pref.getLastNotifiedDate())
                 .as("lastNotifiedDate must NOT be set when all sends failed")
                 .isNull();
 
         // Reset the mock to allow send, simulate a retry in the same hour
         org.mockito.Mockito.reset(birthdayBot);
+        when(birthdayBot.send(eq(21L), anyString())).thenReturn(true);
         birthdayReminder.checkBirthdaysForHour(UTC_9);
         verify(birthdayBot).send(eq(21L), contains("RetryFriend"));
     }
@@ -158,6 +161,19 @@ class BirthdayReminderTest extends IntegrationTestBase {
         friendService.addFriend(20L, new Friend("Judy", LocalDate.now().minusYears(30)));
         birthdayReminder.checkBirthdaysForHour(UTC_9);
         verify(birthdayBot).send(eq(20L), contains("30"));
+    }
+
+    @Test
+    @DisplayName("send returns false → lastNotifiedDate is not persisted")
+    void sendReturnsFalse_lastNotifiedDateNotPersisted() {
+        savePrefs(30L);
+        friendService.addFriend(30L, new Friend("FalseReturn", LocalDate.now().minusYears(20)));
+        when(birthdayBot.send(eq(30L), anyString())).thenReturn(false);
+
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+
+        UserPreference pref = userPreferenceRepository.findById(30L).orElseThrow();
+        assertThat(pref.getLastNotifiedDate()).isNull();
     }
 
     @Test

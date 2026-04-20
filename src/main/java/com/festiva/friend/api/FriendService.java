@@ -28,6 +28,14 @@ public class FriendService {
         }
 
         String sanitizedName = sanitizeName(friend.getName());
+        String normalizedName = Friend.normalizeName(sanitizedName);
+
+        if (friendRepository.existsByTelegramUserIdAndNormalizedName(telegramUserId, normalizedName)) {
+            throw new IllegalArgumentException("Friend with this name already exists");
+        }
+
+        ensureCapNotExceeded(telegramUserId);
+
         friend.setTelegramUserId(telegramUserId);
         friend.setName(sanitizedName);
 
@@ -36,6 +44,12 @@ public class FriendService {
         } catch (DuplicateKeyException e) {
             log.warn("friend.create.rejected.duplicate: userId={}", telegramUserId);
             throw new IllegalArgumentException("Friend with this name already exists", e);
+        }
+    }
+
+    private void ensureCapNotExceeded(long telegramUserId) {
+        if (friendRepository.countByTelegramUserId(telegramUserId) >= FRIEND_CAP) {
+            throw new IllegalArgumentException("Friend cap reached");
         }
     }
 

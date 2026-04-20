@@ -19,8 +19,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
@@ -34,8 +32,6 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final MetricsSender metricsSender;
     private final BotCommandsService commandsService;
     private final UserStateService userStateService;
-    private final ExecutorService heavyWorkExecutor = Executors.newVirtualThreadPerTaskExecutor();
-
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
                        TelegramClient telegramClient,
@@ -81,7 +77,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             }
         }
 
-        heavyWorkExecutor.submit(() -> processUpdate(update));
+        processUpdate(update);
     }
 
     private void processUpdate(Update update) {
@@ -136,15 +132,16 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         if (botsApplication != null) {
             botsApplication.close();
         }
-        heavyWorkExecutor.shutdown();
     }
 
     @Override
-    public void send(long telegramUserId, String text) {
+    public boolean send(long telegramUserId, String text) {
         try {
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
-        } catch (TelegramApiException e) {
+            return true;
+        } catch (TelegramApiException | RuntimeException e) {
             log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
+            return false;
         }
     }
 }

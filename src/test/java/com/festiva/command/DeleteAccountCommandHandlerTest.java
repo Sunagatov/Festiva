@@ -5,6 +5,7 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
+import com.festiva.state.PendingImportRepository;
 import com.festiva.state.UserStateService;
 import com.festiva.user.UserPreferenceRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserPreferenceRepository userPreferenceRepository;
+    @Mock PendingImportRepository pendingImportRepository;
     @Mock UserStateService userStateService;
     @InjectMocks DeleteAccountCommandHandler handler;
 
@@ -53,6 +55,7 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
 
         verify(friendService).deleteAllFriends(1L);
         verify(userPreferenceRepository).deleteById(1L);
+        verify(pendingImportRepository).deleteByUserId(1L);
         verify(userStateService).removeSession(1L);
     }
 

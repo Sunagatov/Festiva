@@ -5,6 +5,7 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.state.PendingImportRepository;
 import com.festiva.state.UserStateService;
 import com.festiva.user.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class DeleteAccountCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserPreferenceRepository userPreferenceRepository;
+    private final PendingImportRepository pendingImportRepository;
     private final UserStateService userStateService;
 
     @Override
@@ -47,6 +49,7 @@ public class DeleteAccountCommandHandler implements CommandHandler {
     public void deleteAccount(long userId) {
         friendService.deleteAllFriends(userId);
         userPreferenceRepository.deleteById(userId);
+        pendingImportRepository.deleteByUserId(userId);
         userStateService.removeSession(userId);
     }
 }
