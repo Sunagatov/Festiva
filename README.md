@@ -1,4 +1,4 @@
-<div align="center">
+<div>
   <br>
   <h1>🎂 Festiva</h1>
   <p><strong>A Telegram birthday reminder bot — never forget a friend's birthday again.</strong></p>

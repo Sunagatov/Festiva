@@ -6,7 +6,7 @@ FROM maven:3.9-eclipse-temurin-25-alpine AS build
 # Build arguments
 # BUILD_PROFILE: optional Maven profile for build-time optimizations.
 # Leave empty by default unless Festiva gets a dedicated Maven profile later.
-ARG BUILD_PROFILE=
+ARG BUILD_PROFILE=""
 
 WORKDIR /app
 
