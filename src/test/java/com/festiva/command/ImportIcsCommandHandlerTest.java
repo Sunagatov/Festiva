@@ -20,12 +20,12 @@ class ImportIcsCommandHandlerTest {
     void dtstart_valueDate_parsed() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:Alice",
+                "SUMMARY:Alice birthday",
                 "DTSTART;VALUE=DATE:19900315",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Alice,15.03.1990");
+        assertThat(result).containsExactly("Alice birthday,15.03.1990");
     }
 
     @Test
@@ -33,12 +33,12 @@ class ImportIcsCommandHandlerTest {
     void dtstart_datetime_parsed() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:Bob",
+                "SUMMARY:Bob birthday",
                 "DTSTART:19850722T000000Z",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Bob,22.07.1985");
+        assertThat(result).containsExactly("Bob birthday,22.07.1985");
     }
 
     @Test
@@ -118,12 +118,12 @@ class ImportIcsCommandHandlerTest {
         List<String> result = extract(
                 "BEGIN:VEVENT",
                 "SUMM",
-                " ARY:Alice",
+                " ARY:Alice birthday",
                 "DTSTART;VALUE=DATE:19900315",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Alice,15.03.1990");
+        assertThat(result).containsExactly("Alice birthday,15.03.1990");
     }
 
     @Test
@@ -131,12 +131,12 @@ class ImportIcsCommandHandlerTest {
     void rruleWithExtraParams_accepted() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:Alice",
+                "SUMMARY:Alice birthday",
                 "DTSTART;VALUE=DATE:19900315",
                 "RRULE:FREQ=YEARLY;BYMONTH=3",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Alice,15.03.1990");
+        assertThat(result).containsExactly("Alice birthday,15.03.1990");
     }
 
     @Test
@@ -150,11 +150,50 @@ class ImportIcsCommandHandlerTest {
     void summary_trimmed() {
         List<String> result = extract(
                 "BEGIN:VEVENT",
-                "SUMMARY:  Alice  ",
+                "SUMMARY:  Alice birthday  ",
                 "DTSTART;VALUE=DATE:19900315",
                 "RRULE:FREQ=YEARLY",
                 "END:VEVENT"
         );
-        assertThat(result).containsExactly("Alice,15.03.1990");
+        assertThat(result).containsExactly("Alice birthday,15.03.1990");
+    }
+
+    @Test
+    @DisplayName("generic yearly recurring event is not imported as a birthday")
+    void genericYearlyRecurringEvent_skipped() {
+        List<String> result = extract(
+                "BEGIN:VEVENT",
+                "SUMMARY:Tax Deadline",
+                "DTSTART;VALUE=DATE:20240401",
+                "RRULE:FREQ=YEARLY",
+                "END:VEVENT"
+        );
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("SUMMARY with parameters is parsed")
+    void summaryWithParameters_parsed() {
+        List<String> result = extract(
+                "BEGIN:VEVENT",
+                "SUMMARY;LANGUAGE=en:Alice birthday",
+                "DTSTART;VALUE=DATE:19900315",
+                "RRULE:FREQ=YEARLY",
+                "END:VEVENT"
+        );
+        assertThat(result).containsExactly("Alice birthday,15.03.1990");
+    }
+
+    @Test
+    @DisplayName("birthday-like yearly event is still accepted")
+    void birthdayLikeYearlyEvent_accepted() {
+        List<String> result = extract(
+                "BEGIN:VEVENT",
+                "SUMMARY:Birthday of Bob",
+                "DTSTART;VALUE=DATE:19850722",
+                "RRULE:FREQ=YEARLY",
+                "END:VEVENT"
+        );
+        assertThat(result).containsExactly("Birthday of Bob,22.07.1985");
     }
 }
