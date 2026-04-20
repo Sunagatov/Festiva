@@ -132,6 +132,26 @@ class BirthdayReminderTest extends IntegrationTestBase {
     }
 
     @Test
+    @DisplayName("all sends fail → lastNotifiedDate not persisted, retry allowed")
+    void allSendsFail_lastNotifiedDateNotPersisted_retryAllowed() {
+        savePrefs(21L);
+        friendService.addFriend(21L, new Friend("RetryFriend", LocalDate.now().minusYears(30)));
+        doThrow(new RuntimeException("transient failure")).when(birthdayBot).send(eq(21L), anyString());
+
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+
+        UserPreference pref = userPreferenceRepository.findById(21L).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(pref.getLastNotifiedDate())
+                .as("lastNotifiedDate must NOT be set when all sends failed")
+                .isNull();
+
+        // Reset the mock to allow send, simulate a retry in the same hour
+        org.mockito.Mockito.reset(birthdayBot);
+        birthdayReminder.checkBirthdaysForHour(UTC_9);
+        verify(birthdayBot).send(eq(21L), contains("RetryFriend"));
+    }
+
+    @Test
     @DisplayName("birthday today → notification contains age")
     void todayBirthday_notificationContainsAge() {
         savePrefs(20L);

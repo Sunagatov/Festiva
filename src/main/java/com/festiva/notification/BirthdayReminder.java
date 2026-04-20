@@ -107,7 +107,7 @@ public class BirthdayReminder {
         Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : UserPreference.DEFAULT_LANG;
 
         int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang)).count();
-        if (count > 0 || !friends.isEmpty()) {
+        if (count > 0) {
             UserPreference p = pref != null ? pref : new UserPreference();
             p.setTelegramUserId(userId);
             p.setLastNotifiedDate(today);

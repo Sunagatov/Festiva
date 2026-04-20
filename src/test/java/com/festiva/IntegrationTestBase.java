@@ -28,7 +28,9 @@ public abstract class IntegrationTestBase {
                 mongo = new MongoDBContainer("mongo:7.0");
                 mongo.start();
             }
-        } catch (Throwable ignored) {
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(IntegrationTestBase.class)
+                    .warn("IntegrationTestBase: Docker check or container start failed — skipping integration tests", e);
             dockerAvailable = false;
             mongo = null;
         }
