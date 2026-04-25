@@ -49,6 +49,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     private static final DateTimeFormatter CSV_DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
     private static final int FILE_CONNECT_TIMEOUT_MILLIS = 10_000;
     private static final int FILE_READ_TIMEOUT_MILLIS = 10_000;
+    private static final int MAX_ICS_FILE_SIZE_BYTES = 512 * 1024;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -94,7 +95,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE));
         }
-        if (doc.getFileSize() != null && doc.getFileSize() > 15_000_000) {
+        if (doc.getFileSize() != null && doc.getFileSize() > MAX_ICS_FILE_SIZE_BYTES) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE));
         }
 
