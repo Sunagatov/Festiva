@@ -365,6 +365,7 @@ public class CallbackQueryHandler {
         try {
             Lang newLang = Lang.valueOf(code);
             userStateService.setLanguage(userId, newLang);
+            userStateService.clearState(userId);
 
             commandsService.updateCommandsForUser(userId, newLang);
 

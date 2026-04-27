@@ -37,21 +37,22 @@ import static org.mockito.Mockito.*;
 @DisplayName("CallbackQueryHandler")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("unused")
 class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
-    @Mock FriendService friendService;
-    @Mock UserStateService userStateService;
-    @Mock DeleteAccountCommandHandler deleteAccountHandler;
-    @Mock UpcomingBirthdaysCommandHandler upcomingHandler;
-    @Mock ListCommandHandler listHandler;
-    @Mock BulkAddCommandHandler bulkAddHandler;
-    @Mock DatePickerCallbackHandler datePickerHandler;
-    @Mock EditCallbackHandler editHandler;
-    @Mock RemoveCommandHandler removeCommandHandler;
-    @Mock EditFriendCommandHandler editFriendCommandHandler;
-    @Mock BotCommandsService commandsService;
-    @Mock UserDateService userDateService;
-    @InjectMocks CallbackQueryHandler handler;
+    @Mock private FriendService friendService;
+    @Mock private UserStateService userStateService;
+    @Mock private DeleteAccountCommandHandler deleteAccountHandler;
+    @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
+    @Mock private ListCommandHandler listHandler;
+    @Mock private BulkAddCommandHandler bulkAddHandler;
+    @Mock private DatePickerCallbackHandler datePickerHandler;
+    @Mock private EditCallbackHandler editHandler;
+    @Mock private RemoveCommandHandler removeCommandHandler;
+    @Mock private EditFriendCommandHandler editFriendCommandHandler;
+    @Mock private BotCommandsService commandsService;
+    @Mock private UserDateService userDateService;
+    @InjectMocks private CallbackQueryHandler handler;
 
     @BeforeEach
     void defaultLang() {
@@ -93,6 +94,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     void langCallback_setsLanguageAndReturnsConfirmation() {
         EditMessageText result = handler.handle(callback("LANG_EN"));
         verify(userStateService).setLanguage(1L, Lang.EN);
+        verify(userStateService).clearState(1L);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.LANGUAGE_SET));
     }
 

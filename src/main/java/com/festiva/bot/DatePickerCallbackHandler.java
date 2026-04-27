@@ -8,6 +8,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ class DatePickerCallbackHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserDateService userDateService;
 
     CallbackResult handleYearPage(String data, long userId, Lang lang) {
         Integer offset = parseInteger(data.substring(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX.length()),
@@ -111,7 +113,7 @@ class DatePickerCallbackHandler {
         if (year != null) {
             try {
                 LocalDate birthDate = LocalDate.of(year, month, day);
-                if (birthDate.isAfter(LocalDate.now())) {
+                if (birthDate.isAfter(userDateService.todayFor(userId))) {
                     return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
                             DatePickerKeyboard.dayKeyboard(year, month, lang));
                 }

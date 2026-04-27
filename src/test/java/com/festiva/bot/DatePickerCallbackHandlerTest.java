@@ -9,6 +9,7 @@ import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserDateService userDateService;
     @InjectMocks DatePickerCallbackHandler handler;
 
     @BeforeEach
@@ -38,6 +40,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
         lenient().when(userStateService.getPendingYear(anyLong())).thenReturn(1990);
         lenient().when(userStateService.getPendingMonth(anyLong())).thenReturn(3);
         lenient().when(userStateService.getYearPageOffset(anyLong())).thenReturn(DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
     @Test
@@ -82,6 +85,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
 
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.DATE_FUTURE_ERROR));
         assertThat(result.markup).isNotNull();
+        verify(userDateService).todayFor(1L);
     }
 
     @Test
@@ -188,6 +192,19 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
                 DatePickerKeyboard.DATE_DAY_PREFIX + future.getDayOfMonth(), 1L, Lang.EN);
 
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.DATE_FUTURE_ERROR));
+    }
+
+    @Test
+    @DisplayName("handleDayPick future date uses user-local today")
+    void handleDayPick_futureDate_usesUserLocalToday() {
+        when(userDateService.todayFor(1L)).thenReturn(LocalDate.of(2024, 3, 15));
+        when(userStateService.getPendingYear(1L)).thenReturn(2024);
+        when(userStateService.getPendingMonth(1L)).thenReturn(3);
+
+        CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "16", 1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.DATE_FUTURE_ERROR));
+        verify(userDateService).todayFor(1L);
     }
 
     @Test

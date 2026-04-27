@@ -5,9 +5,10 @@ spring:
   servlet:
     multipart:
       enabled: false
-  mongodb:
-    uri: ${MONGO_URI:mongodb://localhost:27017}
-    database: ${MONGO_DATABASE_NAME:FestivaDatabase}
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017}
+      database: ${MONGO_DATABASE_NAME:FestivaDatabase}
 
 management:
   endpoints:

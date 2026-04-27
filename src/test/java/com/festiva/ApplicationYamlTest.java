@@ -18,15 +18,29 @@ class ApplicationYamlTest {
     @Test
     @DisplayName("multipart is disabled because Festiva does not serve HTTP file uploads")
     void multipartDisabled() throws IOException {
+        assertThat(property("spring.servlet.multipart.enabled")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("MongoDB uses Spring Data MongoDB property namespace")
+    void mongoUsesSpringDataMongoNamespace() throws IOException {
+        assertThat(property("spring.data.mongodb.uri"))
+                .isEqualTo("${MONGO_URI:mongodb://localhost:27017}");
+        assertThat(property("spring.data.mongodb.database"))
+                .isEqualTo("${MONGO_DATABASE_NAME:FestivaDatabase}");
+
+        assertThat(property("spring.mongodb.uri")).isNull();
+        assertThat(property("spring.mongodb.database")).isNull();
+    }
+
+    private Object property(String key) throws IOException {
         YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
         List<PropertySource<?>> sources = loader.load("applicationConfig", new ClassPathResource("application.yml"));
 
-        Object value = sources.stream()
-                .map(source -> source.getProperty("spring.servlet.multipart.enabled"))
+        return sources.stream()
+                .map(source -> source.getProperty(key))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-
-        assertThat(value).isEqualTo(false);
     }
 }

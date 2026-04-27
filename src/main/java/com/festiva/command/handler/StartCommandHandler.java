@@ -23,6 +23,9 @@ public class StartCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
+
+        userStateService.clearState(userId);
+
         Lang lang = userStateService.getLanguage(userId);
         String text = Messages.get(lang, Messages.WELCOME) + "\n\n" + Messages.get(lang, Messages.MENU);
         return MessageBuilder.html(chatId, text, MessageBuilder.mainMenu(lang));

@@ -30,6 +30,9 @@ public class LanguageCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
+
+        userStateService.clearState(userId);
+
         Lang lang = userStateService.getLanguage(userId);
 
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
