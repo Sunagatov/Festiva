@@ -7,8 +7,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.festiva.i18n.MessagesTestSupport;
-
 @DisplayName("Messages")
 class MessagesTest extends MessagesTestSupport {
 
@@ -22,13 +20,25 @@ class MessagesTest extends MessagesTestSupport {
                 Messages.DATE_FUTURE_ERROR, Messages.FRIEND_ADDED, Messages.FRIEND_NOT_FOUND,
                 Messages.FRIEND_REMOVED, Messages.FRIENDS_EMPTY, Messages.CANCEL_ACTIVE,
                 Messages.CANCEL_IDLE, Messages.UNKNOWN_COMMAND, Messages.NOTIFY_TODAY,
-                Messages.NOTIFY_TOMORROW, Messages.NOTIFY_WEEK
+                Messages.NOTIFY_TOMORROW, Messages.NOTIFY_WEEK,
+                Messages.NOTIFY_TODAY_NO_YEAR, Messages.NOTIFY_TOMORROW_NO_YEAR, Messages.NOTIFY_WEEK_NO_YEAR,
+                Messages.ICS_CANCELLED, Messages.ICS_NONE_SAVED
         }) {
             assertThat(Messages.get(lang, key))
                     .as("key=%s lang=%s", key, lang)
                     .isNotBlank()
                     .isNotEqualTo(key); // key itself means missing entry
         }
+    }
+
+    @Test
+    @DisplayName("ics_cancelled RU — must not contain format specifiers (merged-line regression)")
+    void icsCancelled_ru_hasNoFormatSpecifiers() {
+        String value = Messages.get(Lang.RU, Messages.ICS_CANCELLED);
+        assertThat(value)
+                .doesNotContain("%s")
+                .doesNotContain("%d")
+                .doesNotContain("notify_today_no_year");
     }
 
     @Test

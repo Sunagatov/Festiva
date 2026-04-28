@@ -533,7 +533,7 @@ public class CallbackQueryHandler {
         }
 
         LocalDate today = userDateService.todayFor(userId);
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName) + "\n\n");
         filtered.forEach(f -> {
             String dateStr = f.hasYear()
                     ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
@@ -543,7 +543,8 @@ public class CallbackQueryHandler {
                     .append("</b> ").append(com.festiva.util.HtmlEscaper.escape(f.getName()));
 
             if (f.hasYear()) {
-                boolean alreadyCelebrated = f.nextBirthday(today).getYear() > today.getYear();
+                LocalDate next = f.nextBirthday(today);
+                boolean alreadyCelebrated = next.equals(today) || next.getYear() > today.getYear();
                 String ageLabel = alreadyCelebrated
                         ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
                         : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));

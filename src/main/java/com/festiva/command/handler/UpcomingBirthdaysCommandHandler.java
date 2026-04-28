@@ -62,7 +62,7 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
             return Messages.get(lang, Messages.UPCOMING_NONE, daysLimit);
         }
 
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER) + "\n\n");
         upcoming.forEach(e -> {
             sb.append("– <b>")
                     .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))

@@ -57,7 +57,7 @@ public class JubileeCommandHandler implements CommandHandler {
             return Messages.get(lang, Messages.JUBILEE_NONE);
         }
 
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER) + "\n\n");
         jubilee.forEach(f -> {
             LocalDate next = f.nextBirthday(today);
             long days = ChronoUnit.DAYS.between(today, next);

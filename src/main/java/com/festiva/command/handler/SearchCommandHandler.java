@@ -69,7 +69,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         }
 
         LocalDate today = userDateService.todayFor(userId);
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, rawQuery));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, rawQuery) + "\n\n");
         matches.forEach(f -> {
             long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
             String daysLabel = days == 0

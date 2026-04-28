@@ -78,6 +78,20 @@ class ListCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("friend whose birthday is today → shows 'turned' label, not 'will turn'")
+    void birthdayToday_showsTurnedLabel() {
+        LocalDate today = LocalDate.now();
+        Friend friend = new Friend("Carol", today.minusYears(30));
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
+
+        String text = handler.handle(update()).getText();
+
+        assertThat(text).contains("Carol");
+        assertThat(text).containsPattern("turned.*30|30.*turned");
+        assertThat(text).doesNotContainPattern("currently.*30.*turns.*30|turns.*30.*currently.*30");
+    }
+
+    @Test
     @DisplayName("empty list RU → returns RU friends-empty")
     void emptyList_ru_returnsFriendsEmpty() {
         when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);

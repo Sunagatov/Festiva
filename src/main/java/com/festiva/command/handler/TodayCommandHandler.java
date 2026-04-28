@@ -43,7 +43,7 @@ public class TodayCommandHandler implements CommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.TODAY_NONE));
         }
 
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER) + "\n\n");
         todayFriends.forEach(f -> {
             sb.append("🎂 <b>").append(HtmlEscaper.escape(f.getName())).append("</b>");
             if (f.hasYear()) {

@@ -59,7 +59,7 @@ public class ListCommandHandler implements CommandHandler {
                 : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase(java.util.Locale.ROOT))).toList();
 
         List<Friend> pageFriends = paginate(sorted, page);
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER) + "\n\n");
 
         if (byDate) {
             List<Friend> upcoming = pageFriends.stream()
@@ -67,11 +67,11 @@ public class ListCommandHandler implements CommandHandler {
             List<Friend> celebrated = pageFriends.stream()
                     .filter(f -> f.nextBirthday(today).getYear() > today.getYear()).toList();
             if (!upcoming.isEmpty()) {
-                sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER));
+                sb.append(Messages.get(lang, Messages.LIST_UPCOMING_HEADER)).append("\n");
                 upcoming.forEach(f -> appendFriend(sb, f, today, lang));
             }
             if (!celebrated.isEmpty()) {
-                sb.append(Messages.get(lang, Messages.LIST_CELEBRATED_HEADER));
+                sb.append(Messages.get(lang, Messages.LIST_CELEBRATED_HEADER)).append("\n");
                 celebrated.forEach(f -> appendFriend(sb, f, today, lang));
             }
         } else {
@@ -126,18 +126,17 @@ public class ListCommandHandler implements CommandHandler {
                 : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
         String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
         
-        // Format date based on whether year is known
-        String dateStr = f.hasYear() 
+        String dateStr = f.hasYear()
                 ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
                 : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
-        
+
         sb.append("– <b>").append(dateStr)
                 .append("</b> ").append(f.getZodiac()).append(" <i>").append(HtmlEscaper.escape(f.getName())).append("</i>")
                 .append(relLabel).append(" ");
-        
-        // Show age only if year is known
+
         if (f.hasYear()) {
-            boolean alreadyHadBirthday = f.nextBirthday(today).getYear() > today.getYear();
+            LocalDate next = f.nextBirthday(today);
+            boolean alreadyHadBirthday = next.equals(today) || next.getYear() > today.getYear();
             if (alreadyHadBirthday) {
                 sb.append(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
             } else {
