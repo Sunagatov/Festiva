@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import java.util.List;
 
 @Component
+@SuppressWarnings("unused")
 public class BotCommandsProvider {
 
     public List<BotCommand> getCommandsForLanguage(Lang lang) {

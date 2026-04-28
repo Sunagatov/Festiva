@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class UserStateService {
 
     private final Cache<Long, UserSession> cache = Caffeine.newBuilder()

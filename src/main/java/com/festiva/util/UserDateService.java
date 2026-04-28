@@ -10,6 +10,7 @@ import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class UserDateService {
 
     private final UserStateService userStateService;

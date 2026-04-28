@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("SettingsCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class SettingsCommandHandlerTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;

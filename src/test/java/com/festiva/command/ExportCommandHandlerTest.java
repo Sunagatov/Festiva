@@ -32,6 +32,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("ExportCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class ExportCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

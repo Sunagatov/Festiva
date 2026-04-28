@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("RemoveCommandHandler")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("unused")
 class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;

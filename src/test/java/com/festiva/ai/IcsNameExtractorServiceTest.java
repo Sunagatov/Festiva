@@ -9,10 +9,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Run with:
- *   AI_ENABLED=true OPENAI_API_KEY=... AI_BASE_URL=https://models.inference.ai.azure.com \
+ *   AI_ENABLED=true OPENAI_API_KEY=... AI_BASE_URL=<a href="https://models.inference.ai.azure.com">https://models.inference.ai.azure.com</a> \
  *   mvn test -Dtest=IcsNameExtractorServiceTest
  */
 @EnabledIfEnvironmentVariable(named = "AI_ENABLED", matches = "true")
+@SuppressWarnings("unused")
 class IcsNameExtractorServiceTest {
 
     private IcsNameExtractorService buildService() {

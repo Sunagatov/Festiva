@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class BirthdaysCommandHandler implements CommandHandler {
 
     private static final int COLUMNS_PER_ROW = 4;

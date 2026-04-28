@@ -24,6 +24,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
     public static final String UPCOMING_DAYS_PREFIX = "UPCOMING_DAYS_";

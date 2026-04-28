@@ -18,6 +18,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("BulkAddParser")
+@SuppressWarnings("unused")
 class BulkAddParserTest extends MessagesTestSupport {
 
     private static ParseResult parse(List<String> lines, Set<String> existing) {

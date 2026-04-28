@@ -19,6 +19,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class TodayCommandHandler implements CommandHandler {
 
     private final FriendService friendService;

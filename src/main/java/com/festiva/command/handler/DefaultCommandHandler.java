@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class DefaultCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;

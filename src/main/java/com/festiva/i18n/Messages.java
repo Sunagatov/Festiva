@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 @Component
+@SuppressWarnings("unused")
 public final class Messages {
 
     public static final String RELATIONSHIP_PICK      = "relationship_pick";

@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Messages")
+@SuppressWarnings("unused")
 class MessagesTest extends MessagesTestSupport {
 
     @ParameterizedTest(name = "{0}")

@@ -20,6 +20,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class DeleteAccountCommandHandler implements CommandHandler {
 
     public static final String CONFIRM_DELETE = "CONFIRM_DELETE_ACCOUNT";

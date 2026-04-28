@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("ListCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class ListCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

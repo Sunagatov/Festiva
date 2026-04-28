@@ -14,6 +14,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class FriendService {
 
     public static final int FRIEND_CAP = 100;

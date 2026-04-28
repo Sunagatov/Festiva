@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class BulkAddCommandHandler implements StatefulCommandHandler {
 
     public static final String CALLBACK_PASTE = "BULK_PASTE";

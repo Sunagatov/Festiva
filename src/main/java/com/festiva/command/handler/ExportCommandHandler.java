@@ -23,6 +23,7 @@ import java.util.Locale;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class ExportCommandHandler implements CommandHandler {
 
     private final FriendService friendService;

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @DisplayName("UserStateService")
+@SuppressWarnings("unused")
 class UserStateServiceTest {
 
     UserPreferenceRepository repo;

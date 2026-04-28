@@ -37,6 +37,7 @@ import java.util.Set;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class CallbackQueryHandler {
 
     public static final String ACTION_ADD   = "ACTION_ADD";

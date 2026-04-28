@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class BirthdayReminder {
 
     @Value("${telegram.bot.username}")

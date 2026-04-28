@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
+@SuppressWarnings("unused")
 class AiIcsNameExtractorConfig {
 
     @Bean

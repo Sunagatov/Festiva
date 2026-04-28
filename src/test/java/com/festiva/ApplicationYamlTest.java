@@ -13,6 +13,7 @@ import java.util.Objects;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("application.yml")
+@SuppressWarnings("unused")
 class ApplicationYamlTest {
 
     @Test

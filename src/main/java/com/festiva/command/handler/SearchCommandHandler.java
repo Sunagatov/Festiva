@@ -23,6 +23,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class SearchCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;

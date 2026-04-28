@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class CancelCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;

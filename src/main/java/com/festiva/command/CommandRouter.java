@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
+@SuppressWarnings("unused")
 public class CommandRouter {
 
     private final UserStateService userStateService;

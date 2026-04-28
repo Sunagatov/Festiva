@@ -24,6 +24,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("EditCallbackHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class EditCallbackHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

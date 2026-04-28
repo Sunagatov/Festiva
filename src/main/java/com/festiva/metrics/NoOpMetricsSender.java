@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 @ConditionalOnProperty(prefix = "kafka", name = "enabled", havingValue = "false", matchIfMissing = true)
+@SuppressWarnings("unused")
 public class NoOpMetricsSender implements MetricsSender {
 
     @Override

@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class HelpAliasCommandHandler implements CommandHandler {
 
     private final HelpCommandHandler delegate;

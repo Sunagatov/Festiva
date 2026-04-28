@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("StatsCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class StatsCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

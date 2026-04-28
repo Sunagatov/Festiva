@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("BulkAddCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class BulkAddCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

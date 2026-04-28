@@ -20,6 +20,7 @@ import java.util.Properties;
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "kafka", name = "enabled", havingValue = "true")
+@SuppressWarnings("unused")
 public class FestivaMetricsSender implements MetricsSender {
 
     private final KafkaProducer<String, String> producer;

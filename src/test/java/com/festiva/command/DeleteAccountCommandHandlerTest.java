@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("DeleteAccountCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

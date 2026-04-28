@@ -27,6 +27,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("DatePickerCallbackHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class DatePickerCallbackHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

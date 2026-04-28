@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("JubileeCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;

@@ -17,6 +17,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class LanguageCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;

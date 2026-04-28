@@ -18,6 +18,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 class EditCallbackHandler {
 
     static final String EDIT_PREFIX       = "EDIT_";

@@ -17,6 +17,7 @@ import java.util.Locale;
 @Document(collection = "friends")
 @NoArgsConstructor
 @CompoundIndex(name = "user_normalized_name", def = "{'telegramUserId': 1, 'normalizedName': 1}", unique = true)
+@SuppressWarnings("unused")
 public class Friend {
 
     @Id

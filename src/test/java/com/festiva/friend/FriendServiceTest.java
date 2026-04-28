@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("FriendService — sort logic")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class FriendServiceTest {
 
     @Mock FriendMongoRepository repo;

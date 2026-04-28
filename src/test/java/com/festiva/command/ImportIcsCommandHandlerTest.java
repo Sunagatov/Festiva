@@ -9,6 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ImportIcsCommandHandler — ICS parsing")
+@SuppressWarnings("unused")
 class ImportIcsCommandHandlerTest {
 
     private static List<String> extract(String... lines) {

@@ -26,6 +26,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class ListCommandHandler implements CommandHandler {
 
     public static final String LIST_PAGE_PREFIX = "LIST_PAGE_";

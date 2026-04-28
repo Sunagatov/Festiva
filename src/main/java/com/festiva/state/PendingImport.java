@@ -15,6 +15,7 @@ import java.util.List;
 @Document(collection = "pending_imports")
 @NoArgsConstructor
 @AllArgsConstructor
+@SuppressWarnings("unused")
 public class PendingImport {
     
     @Id

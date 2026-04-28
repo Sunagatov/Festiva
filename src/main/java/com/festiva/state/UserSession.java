@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Document(collection = "user_sessions")
 @NoArgsConstructor
 @AllArgsConstructor
+@SuppressWarnings("unused")
 public class UserSession {
     
     @Id

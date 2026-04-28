@@ -21,6 +21,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class StatsCommandHandler implements CommandHandler {
 
     private final FriendService friendService;

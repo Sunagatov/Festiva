@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class BotCommandsService {
 
     private final TelegramClient telegramClient;

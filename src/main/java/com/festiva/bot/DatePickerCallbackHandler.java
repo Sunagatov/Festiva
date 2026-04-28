@@ -23,6 +23,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 class DatePickerCallbackHandler {
 
     static final String RELATIONSHIP_PREFIX = "RELATIONSHIP_";

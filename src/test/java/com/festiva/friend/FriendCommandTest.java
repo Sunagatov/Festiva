@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @DisplayName("Friend commands (integration)")
+@SuppressWarnings("unused")
 class FriendCommandTest extends IntegrationTestBase {
 
     private static final Lang L = Lang.RU;

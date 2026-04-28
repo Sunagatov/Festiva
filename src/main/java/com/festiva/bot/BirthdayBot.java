@@ -22,6 +22,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("unused")
 public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, NotificationSender {
 
     private final String botToken;

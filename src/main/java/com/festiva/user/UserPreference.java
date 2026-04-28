@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "user_preferences")
 @NoArgsConstructor
 @AllArgsConstructor
+@SuppressWarnings("unused")
 public class UserPreference {
 
     public static final String DEFAULT_TIMEZONE = "UTC";

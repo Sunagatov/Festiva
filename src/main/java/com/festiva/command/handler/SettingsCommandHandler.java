@@ -18,6 +18,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class SettingsCommandHandler implements CommandHandler {
 
     public static final String SETTINGS_HOUR_PREFIX = "SETTINGS_HOUR_";

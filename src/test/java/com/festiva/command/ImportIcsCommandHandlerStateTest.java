@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("ImportIcsCommandHandler — state handling")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class ImportIcsCommandHandlerStateTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;

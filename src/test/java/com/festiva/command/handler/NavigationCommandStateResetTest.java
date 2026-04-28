@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("Navigation command state reset")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class NavigationCommandStateResetTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;

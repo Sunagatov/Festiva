@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("BirthdaysCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class BirthdaysCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;

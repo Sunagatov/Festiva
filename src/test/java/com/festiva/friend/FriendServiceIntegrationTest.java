@@ -15,6 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("FriendService (integration)")
+@SuppressWarnings("unused")
 class FriendServiceIntegrationTest extends IntegrationTestBase {
 
     @Autowired FriendService friendService;

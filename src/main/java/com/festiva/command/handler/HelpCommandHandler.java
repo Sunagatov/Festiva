@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class HelpCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;

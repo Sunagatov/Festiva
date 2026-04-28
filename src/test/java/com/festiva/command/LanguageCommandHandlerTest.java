@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("LanguageCommandHandler")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class LanguageCommandHandlerTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("FriendService")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unused")
 class FriendServiceTest {
 
     @Mock

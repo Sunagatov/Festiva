@@ -23,6 +23,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class RemoveCommandHandler implements CommandHandler {
 
     public static final String REMOVE_PAGE_PREFIX = "REMOVE_PAGE_";

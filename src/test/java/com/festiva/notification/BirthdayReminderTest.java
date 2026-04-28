@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @DisplayName("BirthdayReminder (integration)")
+@SuppressWarnings("unused")
 class BirthdayReminderTest extends IntegrationTestBase {
 
     private static final ZonedDateTime UTC_9 = ZonedDateTime.now(ZoneId.of("UTC")).withHour(9).withMinute(0).withSecond(0).withNano(0);

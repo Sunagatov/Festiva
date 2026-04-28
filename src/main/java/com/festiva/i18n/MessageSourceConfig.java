@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 @Configuration
+@SuppressWarnings("unused")
 public class MessageSourceConfig {
 
     @Bean

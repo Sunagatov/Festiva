@@ -17,6 +17,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class AddFriendCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;

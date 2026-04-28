@@ -22,6 +22,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class EditFriendCommandHandler implements StatefulCommandHandler {
 
     public static final String EDIT_PAGE_PREFIX = "EDIT_PAGE_";
