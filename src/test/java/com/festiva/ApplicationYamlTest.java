@@ -22,15 +22,15 @@ class ApplicationYamlTest {
     }
 
     @Test
-    @DisplayName("MongoDB uses Spring Data MongoDB property namespace")
-    void mongoUsesSpringDataMongoNamespace() throws IOException {
-        assertThat(property("spring.data.mongodb.uri"))
+    @DisplayName("MongoDB uses Spring Boot 4 MongoDB property namespace")
+    void mongoUsesSpringBootMongoNamespace() throws IOException {
+        assertThat(property("spring.mongodb.uri"))
                 .isEqualTo("${MONGO_URI:mongodb://localhost:27017}");
-        assertThat(property("spring.data.mongodb.database"))
+        assertThat(property("spring.mongodb.database"))
                 .isEqualTo("${MONGO_DATABASE_NAME:FestivaDatabase}");
 
-        assertThat(property("spring.mongodb.uri")).isNull();
-        assertThat(property("spring.mongodb.database")).isNull();
+        assertThat(property("spring.data.mongodb.uri")).isNull();
+        assertThat(property("spring.data.mongodb.database")).isNull();
     }
 
     private Object property(String key) throws IOException {
