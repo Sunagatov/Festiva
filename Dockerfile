@@ -1,116 +1,112 @@
+# syntax=docker/dockerfile:1.7
+
 # =============================================================================
-# BUILD STAGE — Modern 2026 approach with BuildKit cache mounts
+# Festiva Dockerfile
+# =============================================================================
+# Goals:
+# - fast enough for normal local development
+# - easy to read in one pass
+# - stable, boring defaults
+# - no fragile "platform engineering" tricks
+#
+# Notes:
+# - This file assumes BuildKit, which is the practical default in modern Docker.
+# - We keep Spring Boot layer extraction because it gives real rebuild wins.
+# - We intentionally do NOT generate CDS archives here.
+#   That optimization adds build-time complexity and a more fragile image build
+#   for a small local-dev payoff.
+
+
+# =============================================================================
+# Build Stage
 # =============================================================================
 FROM maven:3.9-eclipse-temurin-25-alpine AS build
 
-# Build arguments
-# BUILD_PROFILE: optional Maven profile for build-time optimizations.
-# Leave empty by default unless Festiva gets a dedicated Maven profile later.
+# Optional Maven profile.
+# Keep this empty by default so local builds stay predictable.
 ARG BUILD_PROFILE=""
 
-WORKDIR /app
+WORKDIR /workspace
 
-# --- Copy POM first for dependency caching ---
+# Copy the build descriptor first so dependency download can be cached
+# separately from application source changes.
 COPY pom.xml ./
 
-# --- Warm Maven cache ---
-# Best-effort only: some plugins can make go-offline fail even though
-# the actual package build succeeds. Do not fail the image build here.
+# Warm the Maven cache.
+# The cache mount avoids redownloading dependencies on every local rebuild.
+# This step is best-effort because `go-offline` can be noisy with some plugins.
 RUN --mount=type=cache,target=/root/.m2 \
-    (mvn -U dependency:go-offline -B --no-transfer-progress || \
-     echo "⚠️ Maven go-offline failed; continuing with package step.")
+    (mvn -U -B --no-transfer-progress dependency:go-offline || \
+     echo "Maven go-offline was incomplete; continuing to the real build.")
 
-# --- Copy source code ---
+# Copy only what the application image actually needs.
 COPY src ./src
 
-# --- Build application with cached dependencies ---
+# Build the Spring Boot jar.
+# Tests stay out of the image build because they belong in the normal dev/test
+# loop, not in every Docker build.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -U package ${BUILD_PROFILE:+-P${BUILD_PROFILE}} -DskipTests -B --no-transfer-progress
+    mvn -U -B --no-transfer-progress \
+    package ${BUILD_PROFILE:+-P${BUILD_PROFILE}} -DskipTests
+
 
 # =============================================================================
-# EXTRACT STAGE — split fat JAR into layers for Docker cache efficiency
+# Layer Extraction Stage
 # =============================================================================
+# Spring Boot's tools jarmode splits the fat jar into practical cacheable
+# layers. This is a good middle ground:
+# - dependencies stay reusable
+# - application classes can change frequently
+# - the file remains easy to understand
 FROM eclipse-temurin:25-jre-alpine AS extract
-WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
-RUN java -Djarmode=layertools -jar app.jar extract
+WORKDIR /work
 
-# =============================================================================
-# CDS TRAINING STAGE — generate class-data sharing archive
-# =============================================================================
-# Best-effort for Festiva:
-# if CDS generation fails because app startup needs external config/services,
-# continue without failing the whole Docker build.
-FROM eclipse-temurin:25-jre-alpine AS cds-train
-WORKDIR /app
+COPY --from=build /workspace/target/*.jar app.jar
 
-COPY --from=extract /app/dependencies/ ./
-COPY --from=extract /app/spring-boot-loader/ ./
-COPY --from=extract /app/snapshot-dependencies/ ./
-COPY --from=extract /app/application/ ./
+# Use an explicit destination so the extracted layer layout is unambiguous.
+RUN java -Djarmode=tools -jar app.jar extract \
+    --layers \
+    --launcher \
+    --destination /opt/layers
 
-RUN mkdir -p /opt/cds && \
-    (java -XX:ArchiveClassesAtExit=app-cds.jsa \
-        -Dspring.context.exit=onRefresh \
-        org.springframework.boot.loader.launch.JarLauncher 2>/dev/null || true) && \
-    if [ -f app-cds.jsa ]; then cp app-cds.jsa /opt/cds/app-cds.jsa; fi
 
 # =============================================================================
-# RUNTIME STAGE
+# Runtime Stage
 # =============================================================================
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
-# Build arguments for runtime metadata
 ARG IMAGE_VERSION=1.0.0
 
-# OCI-compliant metadata labels
 LABEL org.opencontainers.image.title="Festiva" \
-      org.opencontainers.image.version="${IMAGE_VERSION}" \
       org.opencontainers.image.description="Telegram birthday reminder bot" \
+      org.opencontainers.image.version="${IMAGE_VERSION}" \
       org.opencontainers.image.vendor="Zufar Sunagatov"
-
-# --- Create non-root user for security hardening ---
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-# --- Layered copy: dependencies change rarely, application changes often ---
-COPY --from=extract --chown=appuser:appgroup /app/dependencies/ ./
-COPY --from=extract --chown=appuser:appgroup /app/spring-boot-loader/ ./
-COPY --from=extract --chown=appuser:appgroup /app/snapshot-dependencies/ ./
-COPY --from=extract --chown=appuser:appgroup /app/application/ ./
-COPY --from=cds-train --chown=appuser:appgroup /opt/cds/ /opt/cds/
+# Create a non-root runtime user.
+# Numeric IDs make ownership more predictable across environments.
+RUN addgroup -S festiva -g 10001 && \
+    adduser -S festiva -u 10001 -G festiva
 
-# --- Switch to non-root user ---
-USER appuser
+# Copy layers from least-frequently changed to most-frequently changed.
+COPY --from=extract --chown=festiva:festiva /opt/layers/dependencies/ ./
+COPY --from=extract --chown=festiva:festiva /opt/layers/spring-boot-loader/ ./
+COPY --from=extract --chown=festiva:festiva /opt/layers/snapshot-dependencies/ ./
+COPY --from=extract --chown=festiva:festiva /opt/layers/application/ ./
 
-# --- Runtime configuration ---
+USER festiva
+
+# Festiva exposes Spring Boot on port 8080.
 EXPOSE 8080
 
-# --- Application startup ---
-ENTRYPOINT ["sh", "-c", "\
-if [ -s /opt/cds/app-cds.jsa ]; then \
-  exec java \
-    -XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=60.0 \
-    -XX:MaxMetaspaceSize=128m \
-    -XX:+ExitOnOutOfMemoryError \
-    -XX:+UseG1GC \
-    -XX:G1HeapRegionSize=4m \
-    -XX:+UseStringDeduplication \
-    -XX:SharedArchiveFile=/opt/cds/app-cds.jsa \
-    -Djava.security.egd=file:/dev/./urandom \
-    org.springframework.boot.loader.launch.JarLauncher; \
-else \
-  exec java \
-    -XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=60.0 \
-    -XX:MaxMetaspaceSize=128m \
-    -XX:+ExitOnOutOfMemoryError \
-    -XX:+UseG1GC \
-    -XX:G1HeapRegionSize=4m \
-    -XX:+UseStringDeduplication \
-    -Djava.security.egd=file:/dev/./urandom \
-    org.springframework.boot.loader.launch.JarLauncher; \
-fi"]
+# Keep runtime defaults simple and overrideable.
+# We avoid over-tuning the JVM here:
+# - container-awareness is already standard
+# - G1 is already the practical default
+# - JAVA_OPTS gives contributors an escape hatch without rebuilding the image
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+
+# Use a small shell wrapper so JAVA_OPTS can be adjusted at runtime.
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

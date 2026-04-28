@@ -1,98 +1,121 @@
-networks:
-  festiva-network:
-    name: festiva-network
+# =============================================================================
+# Festiva local Docker setup
+#
+# Goals:
+# - make Mongo easy to start for local source-based development
+# - keep "run everything in Docker" available without forcing it on everyone
+# - keep optional tooling opt-in via profiles
+#
+# Networking note:
+# Docker Compose creates one private network for this project automatically.
+# Services reach each other by service name on that network, so `bot` talks to
+# MongoDB at `mongodb://mongo:27017` without extra network wiring.
+# =============================================================================
 
 volumes:
+  # Named volume keeps local Mongo data between restarts.
   mongo-data:
 
 services:
-
-  # ── Infrastructure (always available) ──────────────────────────────────────
-
+  # ===========================================================================
+  # Core infrastructure
+  # ===========================================================================
   mongo:
     image: mongo:8
-    container_name: festiva-mongo
     environment:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE_NAME:-FestivaDatabase}
     ports:
-      - '27017:27017'
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
-    networks:
-      - festiva-network
+    # Local healthcheck so dependent services wait for Mongo to answer requests,
+    # not just for the container process to start.
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 }).ok"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
     restart: unless-stopped
 
-  # Optional local MongoDB UI for development/debugging
+  # Small optional UI for inspecting local Mongo data.
+  # Kept behind a profile so it does not start unless a contributor wants it.
   mongo-express:
     image: mongo-express:1
-    container_name: festiva-mongo-express
-    profiles: [tools]
+    profiles: ["tools"]
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
       ME_CONFIG_BASICAUTH: "false"
     ports:
-      - '8081:8081'
+      - "8081:8081"
     depends_on:
       mongo:
         condition: service_healthy
-    networks:
-      - festiva-network
     restart: unless-stopped
 
-  # ── Bot (profile: bot) ──────────────────────────────────────────────────────
-
+  # ===========================================================================
+  # Application container
+  # Start this only when you want the bot itself inside Docker:
+  #   docker compose --profile bot up -d --build
+  # For day-to-day development, running only Mongo and launching Spring Boot
+  # from the local source tree remains the simpler workflow.
+  # ===========================================================================
   bot:
+    profiles: ["bot"]
     build:
       context: .
       dockerfile: Dockerfile
       args:
         BUILD_PROFILE: ${BUILD_PROFILE:-}
         IMAGE_VERSION: ${IMAGE_VERSION:-1.0.0}
-    container_name: festiva-bot
-    profiles: [bot]
-    env_file: .env
     environment:
+      # Compose already reads `.env` for variable substitution. Listing the
+      # variables here keeps the container contract visible in one place.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      APP_KAFKA_ENABLED: ${APP_KAFKA_ENABLED:-false}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-}
+      KAFKA_API_KEY: ${KAFKA_API_KEY:-}
+      KAFKA_API_SECRET: ${KAFKA_API_SECRET:-}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL_NAME: ${AI_MODEL_NAME:-gpt-4o-mini}
       MONGO_URI: mongodb://mongo:27017
       MONGO_DATABASE_NAME: ${MONGO_DATABASE_NAME:-FestivaDatabase}
     ports:
-      - '8080:8080'
+      - "8080:8080"
     depends_on:
       mongo:
         condition: service_healthy
-    networks:
-      - festiva-network
     init: true
+    # Healthcheck uses the readiness probe exposed by Spring Boot Actuator.
+    # This is more useful than checking that the process exists: it confirms the
+    # app started far enough to answer HTTP traffic and talk to its dependencies.
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 6
+      start_period: 30s
     restart: unless-stopped
 
-  # ── Observability (profile: monitoring) ─────────────────────────────────────
-  # Optional local/remote telemetry collector sidecar, similar in spirit to
-  # the Iced-Latte setup. Useful later if Festiva exports OTLP/Datadog data.
+  # ===========================================================================
+  # Optional observability helper
+  # This stays opt-in because Festiva does not need it for normal local work.
+  # It is here only for contributors who want a local OTLP/Datadog endpoint.
+  # ===========================================================================
   datadog-agent:
     image: gcr.io/datadoghq/agent:7
-    container_name: festiva-datadog-agent
-    profiles: [monitoring]
+    profiles: ["monitoring"]
     hostname: festiva-local
     environment:
-      - DD_API_KEY=${DD_API_KEY}
-      - DD_SITE=${DD_SITE:-datadoghq.eu}
-      - DD_HOSTNAME=festiva-local
-      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT=0.0.0.0:4318
-      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT=0.0.0.0:4317
+      DD_API_KEY: ${DD_API_KEY:-}
+      DD_SITE: ${DD_SITE:-datadoghq.eu}
+      DD_HOSTNAME: festiva-local
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: 0.0.0.0:4318
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: 0.0.0.0:4317
     ports:
-      - '4317:4317'
-      - '4318:4318'
-    networks:
-      - festiva-network
+      - "4317:4317"
+      - "4318:4318"
     restart: unless-stopped

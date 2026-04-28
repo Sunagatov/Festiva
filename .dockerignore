@@ -1,47 +1,66 @@
-# Version control
-.git/
+# =============================================================================
+# Docker build context hygiene
+# Keep the build context focused on the files needed to build the application
+# image. Smaller contexts are faster to send to Docker and easier to reason
+# about when cache invalidation happens.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Git and local editor state
+# -----------------------------------------------------------------------------
+.git
 .gitignore
-
-# IDE
-.idea/
-.vscode/
+.idea
+.vscode
 *.iml
+.DS_Store
+Thumbs.db
 
-# Amazon Q rules
-.amazonq/
+# -----------------------------------------------------------------------------
+# Local agent / helper metadata
+# These files help humans and tools in the repo, but the application image
+# does not need them.
+# -----------------------------------------------------------------------------
+.ai
+.amazonq
+.claude
+AGENTS.md
+CLAUDE.md
 
-# CI/CD (not needed in image)
-.github/
+# -----------------------------------------------------------------------------
+# Secrets and local overrides
+# Runtime configuration is injected through environment variables, not copied
+# into the image build context.
+# -----------------------------------------------------------------------------
+.env
+.env.*
+local.env
 
-# Docker override files
+# -----------------------------------------------------------------------------
+# Build outputs, logs, and test sources
+# The image build compiles from source; it should not copy previous outputs.
+# -----------------------------------------------------------------------------
+target
+logs
+*.log
+src/test
+
+# -----------------------------------------------------------------------------
+# Repository content not needed for the runtime image
+# Keep Docker-related files themselves out of the build context too: the daemon
+# already has the active Dockerfile, and Compose files are not used by `mvn`.
+# -----------------------------------------------------------------------------
+docs
+*.md
 docker-compose*.yml
 docker-compose*.yaml
 
-# Environment files (injected at runtime)
-.env.*
-.env
-local.env
-
-# Test sources (not needed in image)
-src/test/
-
-# Maven build output and metadata
-target/
+# -----------------------------------------------------------------------------
+# Maven release/plugin leftovers
+# -----------------------------------------------------------------------------
 **/pom.xml.versionsBackup
 **/pom.xml.tag
 **/pom.xml.releaseBackup
 **/pom.xml.next
 **/pom.xml.backup
 **/.mvn/wrapper/maven-wrapper.jar
-
-# Docs and markdown
-docs/
-*.md
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-logs/
-*.log

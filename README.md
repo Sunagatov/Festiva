@@ -55,8 +55,12 @@ set -a && source .env && set +a && mvn spring-boot:run
 
 ```bash
 # Start MongoDB + the bot together
-docker compose up -d mongo
 docker compose --profile bot up -d --build
+```
+
+```bash
+# Optional helpers
+docker compose --profile tools up -d mongo-express
 ```
 
 ---
