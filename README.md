@@ -75,9 +75,9 @@ mvn test
 
 ## 🤔 What is this?
 
-Festiva is a Telegram bot that helps you manage and receive birthday reminders for your friends. Add friends with their birthdates, get notified on the day, the day before, and a week in advance. Supports Russian and English, milestone (jubilee) birthday highlights, and month-by-month birthday browsing.
+Festiva is a Telegram bot that helps you manage and receive birthday reminders for your friends. Add friends with their birthdates, get notified on the day, the day before, and a week in advance. Supports Russian and English, milestone (jubilee) birthday highlights, optional birth year, and month-by-month birthday browsing.
 
-**🔔 Automatic reminders** fire daily at 09:00 for birthdays today, tomorrow, and in 7 days.
+**🔔 Automatic reminders** are checked hourly in UTC and sent using each user's timezone, configured notify hour, and last notification date.
 
 ---
 
@@ -87,9 +87,10 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 |---|---|
 | 💻 Language | Java 25 |
 | 🏗️ Framework | Spring Boot 4.0, Spring Scheduling, Spring Actuator |
-| 🗄️ Database | MongoDB Atlas, Spring Data MongoDB |
+| 🗄️ Database | MongoDB, Spring Data MongoDB |
 | 📨 Messaging | Apache Kafka (optional metrics) |
 | 🤖 Telegram | telegrambots-longpolling + telegrambots-client 9.0 |
+| 🧠 AI | LangChain4j + OpenAI-compatible API (optional ICS name extraction) |
 | 🧪 Testing | JUnit 5, Mockito, Testcontainers, AssertJ |
 | 🚢 Deployment | Docker |
 
@@ -97,12 +98,13 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 
 ## ✨ Features
 
-- 🔔 **Automatic reminders** — daily at 09:00 for birthdays today, tomorrow, and in 7 days
+- 🔔 **Automatic reminders** — checked hourly in UTC and delivered at each user's local notify hour for birthdays today, tomorrow, and in 7 days
 - 🎉 **Milestone highlights** — jubilee birthdays (multiples of 5) are called out specially
 - 📅 **Month-by-month browsing** — scroll through birthdays by month
 - 🌍 **Bilingual** — full support for 🇬🇧 English and 🇷🇺 Russian
-- 👥 **Friend management** — add, edit, remove friends with birthdates and relationship labels
-- 📦 **Bulk import** — add many friends at once via CSV file or paste
+- 👥 **Friend management** — add, edit, remove friends with relationship labels and birthdays with or without a year
+- 📦 **Bulk import** — add many friends at once via pasted text or a CSV/text file
+- 🗓️ **ICS import** — import birthdays from Google Calendar `.ics` exports, with optional AI-assisted name cleanup
 - 📤 **Export** — download your friends list as a CSV file
 - 🔍 **Search** — find friends by name
 - 📊 **Stats** — see your birthday statistics
@@ -143,6 +145,7 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 
 ```
 src/main/java/com/festiva/
+├── 🧠 ai/             # Optional ICS name extraction
 ├── 🤖 bot/            # BirthdayBot, CallbackQueryHandler, sub-handlers
 ├── 💬 command/
 │   └── handler/       # All command handlers (Start, Add, Edit, …)
@@ -171,6 +174,10 @@ src/main/java/com/festiva/
 | `KAFKA_BOOTSTRAP_SERVERS` | ❌ | Kafka server (metrics only) |
 | `KAFKA_API_KEY` | ❌ | Kafka API key |
 | `KAFKA_API_SECRET` | ❌ | Kafka API secret |
+| `AI_ENABLED` | ❌ | `true` to enable AI-assisted ICS name extraction |
+| `OPENAI_API_KEY` | ❌ | API key for the configured OpenAI-compatible endpoint |
+| `AI_BASE_URL` | ❌ | Base URL for the AI API |
+| `AI_MODEL_NAME` | ❌ | Model name used for ICS name extraction |
 
 See `.env` for local defaults. Production runtime config lives in Vault under `apps/festiva/`.
 
@@ -199,6 +206,7 @@ Each feature has a full spec covering user stories, functional & non-functional 
 | Language | [docs/features/language.md](docs/features/language.md) |
 | Delete Account | [docs/features/delete-account.md](docs/features/delete-account.md) |
 | Import from Google Calendar (.ics) | [docs/features/import-ics.md](docs/features/import-ics.md) |
+| Optional Birth Year | [docs/features/optional-birth-year.md](docs/features/optional-birth-year.md) |
 
 
 ---
