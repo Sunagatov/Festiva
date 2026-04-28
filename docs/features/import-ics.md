@@ -226,7 +226,7 @@ Google Calendar exports birthday event summaries in natural language (e.g. `"Д�
 
 **Implementation plan:**
 1. Add `langchain4j-open-ai` dependency to `pom.xml` (version `1.11.0`, same as Iced-Latte).
-2. Add `OPENAI_API_KEY` env var to `.env` and `.env.prod`.
+2. Add `OPENAI_API_KEY` to local `.env`. For production, update the Festiva runtime env in Vault under `apps/festiva/`.
 3. Create `IcsNameExtractorService` interface with a single method annotated with `@SystemMessage`:
    > *"Extract only the person's name from a birthday event title. Return just the name, nothing else. If no name can be identified, return the original text unchanged."*
 4. Create `AiIcsNameExtractorConfig` annotated with `@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")` — wires `OpenAiChatModel` + `AiServices`.

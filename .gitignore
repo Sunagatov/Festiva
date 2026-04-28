@@ -1,6 +1,5 @@
 .amazonq/
 .env
-.env.prod
 local.env
 
 # IntelliJ
@@ -8,9 +7,6 @@ local.env
 
 # Maven build output
 target/
-
-# Production config
-docker-compose.prod.yml
 
 # Temp scripts
 .amazonq/scripts/

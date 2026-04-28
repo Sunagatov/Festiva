@@ -168,7 +168,7 @@ src/main/java/com/festiva/
 | `KAFKA_API_KEY` | ❌ | Kafka API key |
 | `KAFKA_API_SECRET` | ❌ | Kafka API secret |
 
-See `.env` for local defaults and `.env.prod` for the production template.
+See `.env` for local defaults. Production runtime config lives in Vault under `apps/festiva/`.
 
 ---
 
