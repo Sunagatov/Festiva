@@ -8,6 +8,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
+    private final UserDateService userDateService;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -71,6 +73,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userStateService.getLanguage(userId);
+        userStateService.setState(userId, BotState.WAITING_FOR_BULK_ADD);
 
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                 .keyboard(List.of(
@@ -116,7 +119,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         List<String> lines;
 
         if (update.getMessage().hasDocument()) {
-            lines = downloadDocument(update);
+            lines = downloadDocument(update, userId);
             if (lines == null) {
                 return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_FILE_INVALID));
             }
@@ -130,7 +133,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 .map(friend -> Friend.normalizeName(friend.getName()))
                 .collect(Collectors.toSet());
 
-        BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang);
+        BulkAddParser.ParseResult result = BulkAddParser.parse(lines, existing, lang, userDateService.todayFor(userId));
 
         if (result.noData()) {
             return MessageBuilder.html(chatId, result.errors().getFirst());
@@ -149,17 +152,28 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         }
 
         List<Friend> added = new ArrayList<>();
+        int rejectedCount = 0;
         for (Friend friend : toAdd) {
             try {
                 friendService.addFriend(userId, friend);
                 added.add(friend);
             } catch (IllegalArgumentException e) {
-                log.warn("bulk.add.row.rejected: userId={}, name={}", userId, friend.getName(), e);
+                rejectedCount++;
                 errors.add(Messages.get(lang, Messages.NAME_EXISTS, friend.getName()));
             }
         }
 
         userStateService.clearState(userId);
+
+        log.atInfo()
+                .setMessage("bulk_add_completed")
+                .addKeyValue("userId", userId)
+                .addKeyValue("submittedCount", lines.size())
+                .addKeyValue("parsedCount", result.valid().size())
+                .addKeyValue("addedCount", added.size())
+                .addKeyValue("rejectedCount", rejectedCount)
+                .addKeyValue("errorCount", errors.size())
+                .log();
 
         return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(added, errors, false)));
     }
@@ -184,7 +198,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         return sb.toString();
     }
 
-    private List<String> downloadDocument(Update update) {
+    private List<String> downloadDocument(Update update, long userId) {
         try {
             var doc = update.getMessage().getDocument();
             String mime = doc.getMimeType();
@@ -209,7 +223,11 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {
-            log.warn("bulk.add.file.download.failed", e);
+            log.atWarn()
+                    .setMessage("bulk_add_file_download_failed")
+                    .addKeyValue("userId", userId)
+                    .setCause(e)
+                    .log();
             return null;
         }
     }

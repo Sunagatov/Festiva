@@ -8,6 +8,7 @@ import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,23 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
     @Mock TelegramClient telegramClient;
+    @Mock UserDateService userDateService;
     @InjectMocks BulkAddCommandHandler handler;
 
     @BeforeEach
     void defaults() {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(friendService.getFriends(anyLong())).thenReturn(List.of());
+        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
+    }
+
+    @Test
+    @DisplayName("handle → enters bulk-add state so text or CSV upload can follow immediately")
+    void handle_setsBulkAddState() {
+        var result = handler.handle(update("/addmany"));
+
+        verify(userStateService).setState(1L, BotState.WAITING_FOR_BULK_ADD);
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_ADD_CHOOSE));
     }
 
     @Test
@@ -111,14 +123,24 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
         assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.BULK_ADD_SUCCESS, 1));
     }
 
+    @Test
+    @DisplayName("handleState uses user-local today when validating future birthdays")
+    void handleState_usesUserLocalToday() {
+        when(userDateService.todayFor(1L)).thenReturn(LocalDate.of(2024, 3, 15));
+
+        var result = handler.handleState(update("Alice,16.03.2024"));
+
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_ERROR_DATE_FUTURE, 1, "Alice"));
+    }
+
     private Update update(String text) {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);
         Message message = mock(Message.class);
         when(message.getFrom()).thenReturn(user);
         when(message.getChatId()).thenReturn(1L);
-        when(message.hasText()).thenReturn(true);
-        when(message.hasDocument()).thenReturn(false);
+        lenient().when(message.hasText()).thenReturn(true);
+        lenient().when(message.hasDocument()).thenReturn(false);
         lenient().when(message.getText()).thenReturn(text);
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);

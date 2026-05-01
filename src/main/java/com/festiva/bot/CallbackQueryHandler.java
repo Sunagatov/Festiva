@@ -115,7 +115,11 @@ public class CallbackQueryHandler {
             return r;
         }
 
-        log.warn("callback.unknown: userId={}, data={}", userId, data);
+        log.atWarn()
+                .setMessage("callback_unknown")
+                .addKeyValue("userId", userId)
+                .addKeyValue("data", data)
+                .log();
         return null;
     }
 
@@ -223,7 +227,7 @@ public class CallbackQueryHandler {
             }
             case BulkAddCommandHandler.CALLBACK_CSV -> {
                 bulkAddHandler.sendCsvTemplate(chatId, lang);
-                return null;
+                return new CallbackResult(bulkAddHandler.promptPaste(chatId, userId, lang));
             }
             case BulkAddCommandHandler.CALLBACK_ICS -> {
                 userStateService.setState(userId, BotState.WAITING_FOR_ICS_FILE);
@@ -254,14 +258,21 @@ public class CallbackQueryHandler {
         try {
             int hour = Integer.parseInt(data.substring(SettingsCommandHandler.SETTINGS_HOUR_PREFIX.length()));
             if (hour < 0 || hour > 23) {
-                log.warn("callback.settings.hour.invalid: userId={}, hour={}", userId, hour);
+                log.atDebug()
+                        .setMessage("callback_settings_hour_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("hour", hour)
+                        .log();
                 return sessionExpired(lang);
             }
             userStateService.setNotifyHour(userId, hour);
             return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
                     SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
         } catch (NumberFormatException e) {
-            log.warn("callback.settings.hour.parse.failed: data={}", data, e);
+            log.atDebug()
+                    .setMessage("callback_settings_hour_parse_failed")
+                    .addKeyValue("data", data)
+                    .log();
             return sessionExpired(lang);
         }
     }
@@ -272,7 +283,11 @@ public class CallbackQueryHandler {
             @SuppressWarnings("unused")
             java.time.ZoneId validatedZone = java.time.ZoneId.of(tz);
         } catch (java.time.zone.ZoneRulesException e) {
-            log.warn("callback.settings.tz.invalid: userId={}, tz={}", userId, tz, e);
+            log.atDebug()
+                    .setMessage("callback_settings_timezone_invalid")
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("timezone", tz)
+                    .log();
             return sessionExpired(lang);
         }
         userStateService.setTimezone(userId, tz);
@@ -302,7 +317,10 @@ public class CallbackQueryHandler {
         } else if (suffix.startsWith("NAME_")) {
             byDate = false;
         } else {
-            log.warn("callback.list.page.invalid.mode: data={}", data);
+            log.atDebug()
+                    .setMessage("callback_list_page_mode_invalid")
+                    .addKeyValue("data", data)
+                    .log();
             return sessionExpired(lang);
         }
 
@@ -319,19 +337,31 @@ public class CallbackQueryHandler {
     private Integer parsePageSuffix(String data) {
         int idx = data.lastIndexOf('_');
         if (idx < 0) {
-            log.warn("callback.page.parse.failed: missing suffix, data={}", data);
+            log.atDebug()
+                    .setMessage("callback_page_parse_failed")
+                    .addKeyValue("reason", "missing_suffix")
+                    .addKeyValue("data", data)
+                    .log();
             return null;
         }
 
         try {
             int page = Integer.parseInt(data.substring(idx + 1));
             if (page < 0) {
-                log.warn("callback.page.parse.failed: negative page, data={}", data);
+                log.atDebug()
+                        .setMessage("callback_page_parse_failed")
+                        .addKeyValue("reason", "negative_page")
+                        .addKeyValue("data", data)
+                        .log();
                 return null;
             }
             return page;
         } catch (NumberFormatException e) {
-            log.warn("callback.page.parse.failed: data={}", data, e);
+            log.atDebug()
+                    .setMessage("callback_page_parse_failed")
+                    .addKeyValue("reason", "number_format")
+                    .addKeyValue("data", data)
+                    .log();
             return null;
         }
     }
@@ -342,7 +372,11 @@ public class CallbackQueryHandler {
         try {
             int days = Integer.parseInt(data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX.length()));
             if (!Set.of(7, 14, 30).contains(days)) {
-                log.warn("callback.upcoming.days.invalid: userId={}, days={}", userId, days);
+                log.atDebug()
+                        .setMessage("callback_upcoming_days_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("days", days)
+                        .log();
                 return sessionExpired(lang);
             }
 
@@ -350,7 +384,10 @@ public class CallbackQueryHandler {
             return new CallbackResult(upcomingHandler.buildText(friends, lang, days, userId),
                     upcomingHandler.filterKeyboard(lang, days));
         } catch (NumberFormatException e) {
-            log.warn("callback.upcoming.days.parse.failed: data={}", data, e);
+            log.atDebug()
+                    .setMessage("callback_upcoming_days_parse_failed")
+                    .addKeyValue("data", data)
+                    .log();
             return sessionExpired(lang);
         }
     }
@@ -378,7 +415,10 @@ public class CallbackQueryHandler {
                     .build();
             return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard);
         } catch (IllegalArgumentException e) {
-            log.warn("callback.language.unknown: code={}", code, e);
+            log.atDebug()
+                    .setMessage("callback_language_unknown")
+                    .addKeyValue("code", code)
+                    .log();
             return sessionExpired(userStateService.getLanguage(userId));
         }
     }
@@ -398,7 +438,10 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
                     removeCommandHandler.keyboard(friends, page));
         } catch (NumberFormatException e) {
-            log.warn("callback.remove.page.parse.failed: data={}", data, e);
+            log.atDebug()
+                    .setMessage("callback_remove_page_parse_failed")
+                    .addKeyValue("data", data)
+                    .log();
             return sessionExpired(lang);
         }
     }
@@ -418,7 +461,10 @@ public class CallbackQueryHandler {
             return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
                     editFriendCommandHandler.keyboard(friends, page));
         } catch (NumberFormatException e) {
-            log.warn("callback.edit.page.parse.failed: data={}", data, e);
+            log.atDebug()
+                    .setMessage("callback_edit_page_parse_failed")
+                    .addKeyValue("data", data)
+                    .log();
             return sessionExpired(lang);
         }
     }
@@ -473,15 +519,18 @@ public class CallbackQueryHandler {
 
         int currentCount = currentFriends.size();
         int saved = 0;
+        int duplicateCount = 0;
+        int rejectedCount = 0;
+        int failureCount = 0;
 
         for (com.festiva.friend.entity.Friend friend : pending) {
             String normalizedName = Friend.normalizeName(friend.getName());
             if (normalizedName.isBlank() || existingNames.contains(normalizedName)) {
+                duplicateCount++;
                 continue;
             }
 
             if (currentCount + saved >= FriendService.FRIEND_CAP) {
-                log.warn("ics.import.cap.reached: userId={}, cap={}", userId, FriendService.FRIEND_CAP);
                 break;
             }
 
@@ -490,13 +539,29 @@ public class CallbackQueryHandler {
                 existingNames.add(normalizedName);
                 saved++;
             } catch (IllegalArgumentException e) {
-                log.warn("ics.import.save.rejected: userId={}, name={}", userId, friend.getName(), e);
+                rejectedCount++;
             } catch (Exception e) {
-                log.warn("ics.import.save.failed: userId={}", userId, e);
+                failureCount++;
+                log.atWarn()
+                        .setMessage("ics_import_save_failed")
+                        .addKeyValue("userId", userId)
+                        .setCause(e)
+                        .log();
             }
         }
 
         userStateService.clearState(userId);
+
+        log.atInfo()
+                .setMessage("ics_import_completed")
+                .addKeyValue("userId", userId)
+                .addKeyValue("pendingCount", pending.size())
+                .addKeyValue("savedCount", saved)
+                .addKeyValue("duplicateCount", duplicateCount)
+                .addKeyValue("rejectedCount", rejectedCount)
+                .addKeyValue("failureCount", failureCount)
+                .addKeyValue("capReached", currentCount + saved >= FriendService.FRIEND_CAP)
+                .log();
 
         String message = saved > 0
                 ? Messages.get(lang, Messages.ICS_DONE, saved)
@@ -513,13 +578,20 @@ public class CallbackQueryHandler {
             try {
                 month = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                log.warn("callback.month.parse.failed: data={}", data, e);
+                log.atDebug()
+                        .setMessage("callback_month_parse_failed")
+                        .addKeyValue("data", data)
+                        .log();
                 return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
             }
         }
 
         if (month < 1 || month > 12) {
-            log.warn("callback.month.invalid: data={}, month={}", data, month);
+            log.atDebug()
+                    .setMessage("callback_month_invalid")
+                    .addKeyValue("data", data)
+                    .addKeyValue("month", month)
+                    .log();
             return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
         }
 

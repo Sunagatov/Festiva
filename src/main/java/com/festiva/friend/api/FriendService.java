@@ -3,7 +3,6 @@ package com.festiva.friend.api;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.repository.FriendMongoRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +10,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
@@ -43,7 +41,6 @@ public class FriendService {
         try {
             friendRepository.save(friend);
         } catch (DuplicateKeyException e) {
-            log.warn("friend.create.rejected.duplicate: userId={}", telegramUserId);
             throw new IllegalArgumentException("Friend with this name already exists", e);
         }
     }
@@ -89,7 +86,6 @@ public class FriendService {
             try {
                 friendRepository.save(friend);
             } catch (DuplicateKeyException e) {
-                log.warn("friend.update.rejected.duplicate: userId={}, friendId={}", telegramUserId, id);
                 throw new IllegalArgumentException("Friend with this name already exists", e);
             }
         });
@@ -110,8 +106,6 @@ public class FriendService {
                 java.time.MonthDay validMonthDay = java.time.MonthDay.of(month, day);
             }
         } catch (java.time.DateTimeException e) {
-            log.warn("friend.date.update.rejected.invalid: userId={}, friendId={}, hasYear={}",
-                    telegramUserId, id, year != null, e);
             throw new IllegalArgumentException("Invalid date: " +
                     (year != null ? year + "-" : "") + month + "-" + day, e);
         }

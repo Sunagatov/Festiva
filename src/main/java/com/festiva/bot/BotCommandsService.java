@@ -30,7 +30,10 @@ public class BotCommandsService {
                     .languageCode(Lang.RU.code())
                     .build());
         } catch (TelegramApiException e) {
-            log.error("bot.commands.register.failed: message={}", e.getMessage(), e);
+            log.atWarn()
+                    .setMessage("bot_commands_register_failed")
+                    .setCause(e)
+                    .log();
         }
     }
 
@@ -41,7 +44,12 @@ public class BotCommandsService {
                     .scope(new BotCommandScopeChat(String.valueOf(chatId)))
                     .build());
         } catch (TelegramApiException e) {
-            log.error("bot.commands.update.failed: chatId={}, message={}", chatId, e.getMessage(), e);
+            log.atWarn()
+                    .setMessage("bot_commands_update_failed")
+                    .addKeyValue("chatId", chatId)
+                    .addKeyValue("language", lang.name())
+                    .setCause(e)
+                    .log();
         }
     }
 }

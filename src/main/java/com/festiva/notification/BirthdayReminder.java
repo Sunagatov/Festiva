@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -61,9 +62,12 @@ public class BirthdayReminder {
         }
 
         try {
-            checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
+            checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")), "startup");
         } catch (Exception e) {
-            log.warn("reminder.startup.check.failed", e);
+            log.atWarn()
+                    .setMessage("birthday_reminder_startup_check_failed")
+                    .setCause(e)
+                    .log();
         }
     }
 
@@ -73,11 +77,18 @@ public class BirthdayReminder {
             return;
         }
 
-        checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")));
+        checkBirthdaysForHour(ZonedDateTime.now(ZoneId.of("UTC")), "scheduled");
     }
 
     void checkBirthdaysForHour(ZonedDateTime utcNow) {
+        checkBirthdaysForHour(utcNow, "manual");
+    }
+
+    void checkBirthdaysForHour(ZonedDateTime utcNow, String trigger) {
+        Instant startedAt = Instant.now();
         List<Long> userIds = friendService.getAllUserIds();
+        ReminderRunStats stats = new ReminderRunStats();
+        stats.scannedUsers = userIds.size();
 
         Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
@@ -86,15 +97,27 @@ public class BirthdayReminder {
         userIds.forEach(userId -> {
             MDC.put("userId", String.valueOf(userId));
             try {
-                processUser(userId, prefByUser.get(userId), friendsByUser.getOrDefault(userId, List.of()), utcNow);
+                processUser(userId, prefByUser.get(userId), friendsByUser.getOrDefault(userId, List.of()), utcNow, stats);
             } finally {
                 MDC.remove("userId");
             }
         });
+
+        log.atInfo()
+                .setMessage("birthday_reminder_check_completed")
+                .addKeyValue("trigger", trigger)
+                .addKeyValue("scannedUsers", stats.scannedUsers)
+                .addKeyValue("processedUsers", stats.processedUsers)
+                .addKeyValue("notifiedUsers", stats.notifiedUsers)
+                .addKeyValue("notificationsSent", stats.notificationsSent)
+                .addKeyValue("notificationFailures", stats.notificationFailures)
+                .addKeyValue("invalidTimezones", stats.invalidTimezones)
+                .addKeyValue("durationMs", ChronoUnit.MILLIS.between(startedAt, Instant.now()))
+                .log();
     }
 
-    private void processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow) {
-        ZoneId zone = resolveZone(pref);
+    private void processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow, ReminderRunStats stats) {
+        ZoneId zone = resolveZone(userId, pref, stats);
         if (zone == null) {
             return;
         }
@@ -103,25 +126,33 @@ public class BirthdayReminder {
         if (!shouldNotify(pref, userNow)) {
             return;
         }
+        stats.processedUsers++;
 
         LocalDate today = userNow.toLocalDate();
         Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : UserPreference.DEFAULT_LANG;
 
-        int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang)).count();
+        int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang, stats)).count();
         if (count > 0) {
             UserPreference p = pref != null ? pref : new UserPreference();
             p.setTelegramUserId(userId);
             p.setLastNotifiedDate(today);
             userPreferenceRepository.save(p);
+            stats.notifiedUsers++;
         }
     }
 
-    private ZoneId resolveZone(UserPreference pref) {
+    private ZoneId resolveZone(long userId, UserPreference pref, ReminderRunStats stats) {
         String tz = pref != null && pref.getTimezone() != null ? pref.getTimezone() : UserPreference.DEFAULT_TIMEZONE;
         try {
             return ZoneId.of(tz);
         } catch (java.time.zone.ZoneRulesException e) {
-            log.warn("reminder.timezone.invalid: tz={}", tz, e);
+            stats.invalidTimezones++;
+            log.atWarn()
+                    .setMessage("birthday_reminder_timezone_invalid")
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("timezone", tz)
+                    .setCause(e)
+                    .log();
             return null;
         }
     }
@@ -135,7 +166,7 @@ public class BirthdayReminder {
         return !today.equals(pref != null ? pref.getLastNotifiedDate() : null);
     }
 
-    private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang) {
+    private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang, ReminderRunStats stats) {
         if (!friend.isNotifyEnabled()) {
             return false;
         }
@@ -167,14 +198,36 @@ public class BirthdayReminder {
 
             boolean sent = notificationSender.send(userId, message);
             if (!sent) {
-                log.error("reminder.notify.failed: userId={}, friendId={}, daysUntil={}",
-                        userId, friend.getId(), daysUntil);
+                stats.notificationFailures++;
+                log.atError()
+                        .setMessage("birthday_reminder_notification_failed")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("friendId", friend.getId())
+                        .addKeyValue("daysUntil", daysUntil)
+                        .log();
+            } else {
+                stats.notificationsSent++;
             }
             return sent;
         } catch (RuntimeException e) {
-            log.error("reminder.notify.failed: userId={}, friendId={}, daysUntil={}",
-                    userId, friend.getId(), daysUntil, e);
+            stats.notificationFailures++;
+            log.atError()
+                    .setMessage("birthday_reminder_notification_failed")
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("friendId", friend.getId())
+                    .addKeyValue("daysUntil", daysUntil)
+                    .setCause(e)
+                    .log();
             return false;
         }
+    }
+
+    private static final class ReminderRunStats {
+        private int scannedUsers;
+        private int processedUsers;
+        private int notifiedUsers;
+        private int notificationsSent;
+        private int notificationFailures;
+        private int invalidTimezones;
     }
 }

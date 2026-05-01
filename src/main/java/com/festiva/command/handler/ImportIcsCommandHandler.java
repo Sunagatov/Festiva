@@ -112,11 +112,12 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         }
 
         List<Friend> candidates = new ArrayList<>();
+        int invalidEntryCount = 0;
         for (IcsEntry entry : entries) {
             try {
                 candidates.add(convertToFriend(entry));
             } catch (IllegalArgumentException e) {
-                log.warn("ics.import.entry.skipped.invalid: summary={}", entry.summary(), e);
+                invalidEntryCount++;
             }
         }
 
@@ -274,7 +275,10 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             }
             return extracted.trim();
         } catch (Exception e) {
-            log.warn("ics.ai.name.extraction.failed", e);
+            log.atWarn()
+                    .setMessage("ics_ai_name_extraction_failed")
+                    .setCause(e)
+                    .log();
             return summary == null ? null : summary.trim();
         }
     }
@@ -344,7 +348,11 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                 return reader.lines().toList();
             }
         } catch (TelegramApiException | IOException e) {
-            log.warn("ics.import.file.download.failed", e);
+            log.atWarn()
+                    .setMessage("ics_import_file_download_failed")
+                    .addKeyValue("fileId", fileId)
+                    .setCause(e)
+                    .log();
             return null;
         }
     }

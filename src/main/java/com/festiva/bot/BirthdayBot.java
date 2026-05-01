@@ -33,6 +33,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final MetricsSender metricsSender;
     private final BotCommandsService commandsService;
     private final UserStateService userStateService;
+
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
                        TelegramClient telegramClient,
@@ -54,9 +55,14 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         try {
             botsApplication = new TelegramBotsLongPollingApplication();
             botsApplication.registerBot(botToken, this);
-            log.info("bot.started");
+            log.atInfo()
+                    .setMessage("telegram_bot_started")
+                    .log();
         } catch (TelegramApiException e) {
-            log.error("bot.start.failed", e);
+            log.atError()
+                    .setMessage("telegram_bot_start_failed")
+                    .setCause(e)
+                    .log();
             throw new RuntimeException("bot.start.failed", e);
         }
         commandsService.registerGlobalCommands();
@@ -65,7 +71,9 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     @Override
     public void consume(Update update) {
         if (update == null) {
-            log.warn("bot.update.null");
+            log.atWarn()
+                    .setMessage("telegram_update_missing")
+                    .log();
             return;
         }
 
@@ -74,7 +82,12 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             try {
                 telegramClient.execute(AnswerCallbackQuery.builder().callbackQueryId(callbackId).build());
             } catch (TelegramApiException e) {
-                log.warn("bot.callback.answer.failed: callbackId={}", callbackId, e);
+                log.atWarn()
+                        .setMessage("telegram_callback_ack_failed")
+                        .addKeyValue("callbackId", callbackId)
+                        .addKeyValue("userId", update.getCallbackQuery().getFrom().getId())
+                        .setCause(e)
+                        .log();
             }
         }
 
@@ -84,6 +97,8 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private void processUpdate(Update update) {
         long startTime = System.currentTimeMillis();
         String updateType = update.hasCallbackQuery() ? "callback" : update.hasMessage() ? "message" : "other";
+        long userId = extractUserId(update);
+        long chatId = extractChatId(update);
         try {
             if (update.hasCallbackQuery()) {
                 EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
@@ -105,16 +120,16 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
         } catch (TelegramApiException | RuntimeException e) {
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
-            log.error("bot.update.failed: updateId={}, type={}, message={}", update.getUpdateId(), updateType, e.getMessage(), e);
+            log.atError()
+                    .setMessage("telegram_update_processing_failed")
+                    .addKeyValue("updateId", update.getUpdateId())
+                    .addKeyValue("updateType", updateType)
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("chatId", chatId)
+                    .setCause(e)
+                    .log();
 
             try {
-                long chatId = update.hasCallbackQuery()
-                        ? update.getCallbackQuery().getMessage().getChatId()
-                        : update.hasMessage() ? update.getMessage().getChatId() : 0;
-                long userId = update.hasCallbackQuery()
-                        ? update.getCallbackQuery().getFrom().getId()
-                        : update.hasMessage() ? update.getMessage().getFrom().getId() : 0;
-
                 if (chatId > 0 && userId > 0) {
                     Lang lang = userStateService.getLanguage(userId);
                     String errorMsg = lang == Lang.RU
@@ -123,7 +138,13 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                     telegramClient.execute(SendMessage.builder().chatId(chatId).text(errorMsg).build());
                 }
             } catch (Exception fallbackError) {
-                log.error("bot.error.fallback.failed", fallbackError);
+                log.atError()
+                        .setMessage("telegram_update_fallback_message_failed")
+                        .addKeyValue("updateId", update.getUpdateId())
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("chatId", chatId)
+                        .setCause(fallbackError)
+                        .log();
             }
         }
     }
@@ -141,8 +162,32 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
             telegramClient.execute(SendMessage.builder().chatId(telegramUserId).parseMode("HTML").text(text).build());
             return true;
         } catch (TelegramApiException | RuntimeException e) {
-            log.error("bot.notification.failed: userId={}, message={}", telegramUserId, e.getMessage(), e);
+            log.atError()
+                    .setMessage("telegram_notification_send_failed")
+                    .addKeyValue("userId", telegramUserId)
+                    .setCause(e)
+                    .log();
             return false;
         }
+    }
+
+    private long extractChatId(Update update) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getMessage() != null) {
+            return update.getCallbackQuery().getMessage().getChatId();
+        }
+        if (update.hasMessage()) {
+            return update.getMessage().getChatId();
+        }
+        return 0;
+    }
+
+    private long extractUserId(Update update) {
+        if (update.hasCallbackQuery() && update.getCallbackQuery().getFrom() != null) {
+            return update.getCallbackQuery().getFrom().getId();
+        }
+        if (update.hasMessage() && update.getMessage().getFrom() != null) {
+            return update.getMessage().getFrom().getId();
+        }
+        return 0;
     }
 }

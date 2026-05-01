@@ -32,7 +32,7 @@ public final class BulkAddParser {
     
     private record DateParseResult(Integer year, int month, int day) {}
 
-    public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang) {
+    public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang, LocalDate today) {
         List<Friend> valid = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
@@ -76,10 +76,9 @@ public final class BulkAddParser {
             }
 
             for (int i = 0; i < records.size(); i++) {
-                parseRow(records.get(i), i + 1, existingNames, seenInBatch, lang, valid, errors);
+                parseRow(records.get(i), i + 1, existingNames, seenInBatch, lang, today, valid, errors);
             }
         } catch (IOException e) {
-            log.error("CSV parsing failed", e);
             errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, 0));
         }
         
@@ -87,7 +86,7 @@ public final class BulkAddParser {
     }
 
     private static void parseRow(CSVRecord record, int lineNum, Set<String> existingNames,
-                                  Set<String> seenInBatch, Lang lang,
+                                  Set<String> seenInBatch, Lang lang, LocalDate today,
                                   List<Friend> valid, List<String> errors) {
         if (record.size() < 2) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
@@ -101,7 +100,7 @@ public final class BulkAddParser {
         String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
         if (nameError != null) { errors.add(nameError); return; }
 
-        DateParseResult dateResult = parseDate(dateStr, name, lineNum, lang, errors);
+        DateParseResult dateResult = parseDate(dateStr, name, lineNum, lang, today, errors);
         if (dateResult == null) return;
 
         RelationshipParseResult relResult = parseRelationship(relStr, name, lineNum, lang);
@@ -120,7 +119,7 @@ public final class BulkAddParser {
         return null;
     }
 
-    private static DateParseResult parseDate(String dateStr, String name, int lineNum, Lang lang, List<String> errors) {
+    private static DateParseResult parseDate(String dateStr, String name, int lineNum, Lang lang, LocalDate today, List<String> errors) {
         try {
             // Check if year is missing (format: DD.MM. or DD.MM)
             if (dateStr.endsWith(".") || dateStr.matches("\\d{2}\\.\\d{2}$")) {
@@ -138,7 +137,7 @@ public final class BulkAddParser {
             
             // Parse full date with year
             LocalDate date = LocalDate.parse(dateStr, FMT);
-            if (date.isAfter(LocalDate.now())) {
+            if (date.isAfter(today)) {
                 errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
                 return null;
             }

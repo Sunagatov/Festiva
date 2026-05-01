@@ -21,8 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("unused")
 class BulkAddParserTest extends MessagesTestSupport {
 
+    private static final LocalDate TODAY = LocalDate.of(2024, 3, 15);
+
     private static ParseResult parse(List<String> lines, Set<String> existing) {
-        return BulkAddParser.parse(lines, existing, Lang.EN);
+        return BulkAddParser.parse(lines, existing, Lang.EN, TODAY);
     }
 
     @Test
@@ -93,7 +95,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("birth date in the future → rejected")
     void futureDate_isRejected() {
-        String future = LocalDate.now().plusDays(1)
+        String future = TODAY.plusDays(1)
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT));
         ParseResult r = parse(List.of("Alice," + future), Set.of());
 
@@ -173,7 +175,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("valid row RU → error messages in Russian")
     void invalidRow_ru_returnsRuError() {
-        ParseResult r = BulkAddParser.parse(List.of(",15.03.1990"), Set.of(), Lang.RU);
+        ParseResult r = BulkAddParser.parse(List.of(",15.03.1990"), Set.of(), Lang.RU, TODAY);
 
         assertThat(r.errors()).hasSize(1);
         assertThat(r.errors().getFirst())

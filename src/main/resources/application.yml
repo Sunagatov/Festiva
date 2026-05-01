@@ -29,6 +29,8 @@ telegram:
 logging:
   level:
     org.telegram.telegrambots: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p --- [%15.15t] %-40.40logger{39} : %m %kvp%n%wEx"
   group:
     festiva: com.festiva
     telegram: org.telegram.telegrambots

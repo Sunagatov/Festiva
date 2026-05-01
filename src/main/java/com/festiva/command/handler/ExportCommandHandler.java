@@ -75,7 +75,12 @@ public class ExportCommandHandler implements CommandHandler {
                     .caption(Messages.get(lang, Messages.EXPORT_CAPTION))
                     .build());
         } catch (TelegramApiException e) {
-            log.error("export.failed: userId={}, message={}", userId, e.getMessage(), e);
+            log.atError()
+                    .setMessage("friend_export_failed")
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("friendCount", friends.size())
+                    .setCause(e)
+                    .log();
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED));
         }
         return null;

@@ -45,6 +45,7 @@ Key knobs:
 - Telegram bot token and username
 - Kafka enablement + bootstrap/credentials
 - AI enablement + base URL + model name
+- logging policy and test log-noise controls under `docs/ai/LOGGING.md`
 
 ## Code shape
 

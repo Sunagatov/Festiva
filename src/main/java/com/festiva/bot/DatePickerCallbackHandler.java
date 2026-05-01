@@ -119,7 +119,13 @@ class DatePickerCallbackHandler {
                             DatePickerKeyboard.dayKeyboard(year, month, lang));
                 }
             } catch (java.time.DateTimeException e) {
-                log.warn("callback.date.invalid: userId={}, date={}-{}-{}", userId, year, month, day, e);
+                log.atDebug()
+                        .setMessage("callback_date_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("year", year)
+                        .addKeyValue("month", month)
+                        .addKeyValue("day", day)
+                        .log();
                 return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
                         DatePickerKeyboard.dayKeyboard(year, month, lang));
             }
@@ -127,7 +133,12 @@ class DatePickerCallbackHandler {
             try {
                 java.time.MonthDay.of(month, day);
             } catch (java.time.DateTimeException e) {
-                log.warn("callback.date.invalid.monthday: userId={}, month={}, day={}", userId, month, day, e);
+                log.atDebug()
+                        .setMessage("callback_month_day_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("month", month)
+                        .addKeyValue("day", day)
+                        .log();
                 return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
                         DatePickerKeyboard.dayKeyboard(2000, month, lang));
             }
@@ -141,7 +152,12 @@ class DatePickerCallbackHandler {
             try {
                 friendService.updateFriendDateById(id, userId, year, month, day);
             } catch (IllegalArgumentException e) {
-                log.warn("callback.date.edit.failed: userId={}, friendId={}", userId, id, e);
+                log.atDebug()
+                        .setMessage("callback_date_edit_rejected")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("friendId", id)
+                        .addKeyValue("hasYear", year != null)
+                        .log();
                 return new CallbackResult(Messages.get(lang, Messages.DATE_FUTURE_ERROR),
                         DatePickerKeyboard.dayKeyboard(year != null ? year : 2000, month, lang));
             }
@@ -203,7 +219,11 @@ class DatePickerCallbackHandler {
             try {
                 rel = Relationship.valueOf(value);
             } catch (IllegalArgumentException e) {
-                log.warn("callback.relationship.invalid: userId={}, value={}", userId, value, e);
+                log.atDebug()
+                        .setMessage("callback_relationship_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("value", value)
+                        .log();
                 return sessionExpired(lang);
             }
         }
@@ -216,7 +236,6 @@ class DatePickerCallbackHandler {
         try {
             friendService.addFriend(userId, new Friend(name, year, month, day, rel));
         } catch (IllegalArgumentException e) {
-            log.warn("callback.friend.add.failed: userId={}, name={}", userId, name, e);
             userStateService.clearState(userId);
             String text = friendService.friendExists(userId, name)
                     ? Messages.get(lang, Messages.NAME_EXISTS, name)
@@ -262,7 +281,11 @@ class DatePickerCallbackHandler {
             try {
                 rel = Relationship.valueOf(value);
             } catch (IllegalArgumentException e) {
-                log.warn("callback.edit.relationship.invalid: userId={}, value={}", userId, value, e);
+                log.atDebug()
+                        .setMessage("callback_edit_relationship_invalid")
+                        .addKeyValue("userId", userId)
+                        .addKeyValue("value", value)
+                        .log();
                 return sessionExpired(lang);
             }
         }
@@ -302,7 +325,10 @@ class DatePickerCallbackHandler {
         try {
             return Integer.parseInt(raw);
         } catch (NumberFormatException e) {
-            log.warn("{}: data={}", logKey, data, e);
+            log.atDebug()
+                    .setMessage(logKey)
+                    .addKeyValue("data", data)
+                    .log();
             return null;
         }
     }

@@ -18,3 +18,13 @@ festiva:
       enabled: false
     schedule:
       enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.festiva: INFO
+    org.mongodb.driver: WARN
+    org.springframework.boot.test: WARN
+    org.springframework.test: WARN
+    org.springframework.data.mongodb: WARN
+    org.testcontainers: WARN

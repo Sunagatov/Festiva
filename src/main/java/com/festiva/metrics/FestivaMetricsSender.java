@@ -60,10 +60,22 @@ public class FestivaMetricsSender implements MetricsSender {
         try {
             String json = buildJson(update, status, processingTimeMillis);
             producer.send(new ProducerRecord<>(topic, json), (_, ex) -> {
-                if (ex != null) log.error("metrics.kafka.send.failed: message={}", ex.getMessage(), ex);
+                if (ex != null) {
+                    log.atWarn()
+                            .setMessage("metrics_kafka_send_failed")
+                            .addKeyValue("topic", topic)
+                            .addKeyValue("status", status)
+                            .setCause(ex)
+                            .log();
+                }
             });
         } catch (RuntimeException e) {
-            log.error("metrics.payload.build.failed: message={}", e.getMessage(), e);
+            log.atWarn()
+                    .setMessage("metrics_payload_build_failed")
+                    .addKeyValue("topic", topic)
+                    .addKeyValue("status", status)
+                    .setCause(e)
+                    .log();
         }
     }
 
@@ -99,7 +111,12 @@ public class FestivaMetricsSender implements MetricsSender {
         try {
             return OBJECT_MAPPER.writeValueAsString(metrics);
         } catch (JsonProcessingException e) {
-            log.error("metrics.serialize.failed: message={}", e.getMessage(), e);
+            log.atWarn()
+                    .setMessage("metrics_serialize_failed")
+                    .addKeyValue("topic", topic)
+                    .addKeyValue("status", status)
+                    .setCause(e)
+                    .log();
             return "{}";
         }
     }

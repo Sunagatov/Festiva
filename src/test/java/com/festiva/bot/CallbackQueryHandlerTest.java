@@ -213,6 +213,23 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("BULK_CSV callback → enters bulk-add state and shows upload prompt")
+    void bulkCsvCallback_entersBulkAddState() {
+        when(bulkAddHandler.promptPaste(1L, 1L, Lang.EN))
+                .thenReturn(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
+                        .chatId(1L)
+                        .parseMode("HTML")
+                        .text(Messages.get(Lang.EN, Messages.BULK_ADD_PROMPT))
+                        .build());
+
+        EditMessageText result = handler.handle(callback(BulkAddCommandHandler.CALLBACK_CSV));
+
+        verify(bulkAddHandler).sendCsvTemplate(1L, Lang.EN);
+        verify(bulkAddHandler).promptPaste(1L, 1L, Lang.EN);
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_ADD_PROMPT));
+    }
+
+    @Test
     @DisplayName("CANCEL_DELETE_ACCOUNT callback → returns cancel message with /settings hint")
     void cancelDeleteAccount_returnsCancelWithHint() {
         EditMessageText result = handler.handle(callback("CANCEL_DELETE_ACCOUNT"));
