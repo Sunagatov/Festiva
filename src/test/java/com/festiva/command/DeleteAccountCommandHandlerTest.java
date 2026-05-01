@@ -1,13 +1,12 @@
 package com.festiva.command;
 
 import com.festiva.command.handler.DeleteAccountCommandHandler;
-import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
-import com.festiva.state.PendingImportRepository;
 import com.festiva.state.UserStateService;
-import com.festiva.user.UserPreferenceRepository;
+import com.festiva.user.api.AccountDeletionAction;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,15 +28,13 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unused")
 class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
 
-    @Mock FriendService friendService;
-    @Mock UserPreferenceRepository userPreferenceRepository;
-    @Mock PendingImportRepository pendingImportRepository;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserStateService userStateService;
     @InjectMocks DeleteAccountCommandHandler handler;
 
     @BeforeEach
     void defaultLang() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
     }
 
     @Test
@@ -50,31 +47,20 @@ class DeleteAccountCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("deleteAccount() → deletes all friends and prefs, removes session")
-    void deleteAccount_deletesAllData() {
-        handler.deleteAccount(1L);
-
-        verify(friendService).deleteAllFriends(1L);
-        verify(userPreferenceRepository).deleteById(1L);
-        verify(pendingImportRepository).deleteByUserId(1L);
-        verify(userStateService).removeSession(1L);
-    }
-
-    @Test
     @DisplayName("/deleteaccount → keyboard has Yes and No buttons")
     void handle_keyboardHasYesAndNoButtons() {
         var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();
         var callbacks = markup.getKeyboard().getFirst().stream()
                 .map(InlineKeyboardButton::getCallbackData).toList();
-        assertThat(callbacks).contains(DeleteAccountCommandHandler.CONFIRM_DELETE);
-        assertThat(callbacks).contains(DeleteAccountCommandHandler.CANCEL_DELETE);
+        assertThat(callbacks).contains(AccountDeletionAction.CONFIRM_DELETE);
+        assertThat(callbacks).contains(AccountDeletionAction.CANCEL_DELETE);
     }
 
     @Test
     @DisplayName("/deleteaccount RU → returns RU confirmation prompt")
     void handle_ru_returnsRuPrompt() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.RU, Messages.DELETE_ACCOUNT_ASK));
     }

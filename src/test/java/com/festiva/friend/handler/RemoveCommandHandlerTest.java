@@ -5,6 +5,7 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,11 +34,12 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @InjectMocks RemoveCommandHandler handler;
 
     @BeforeEach
     void defaultLang() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
     }
 
     @Test
@@ -73,7 +75,7 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("/remove RU with no friends → returns RU friends-empty message")
     void handle_noFriends_ru_returnsFriendsEmpty() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
         assertThat(handler.handle(update()).getText())

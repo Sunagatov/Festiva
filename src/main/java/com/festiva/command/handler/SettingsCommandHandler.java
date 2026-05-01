@@ -4,7 +4,7 @@ import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
-import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -125,7 +125,7 @@ public class SettingsCommandHandler implements CommandHandler {
         )));
     }
 
-    private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() { return "/settings"; }
@@ -134,9 +134,9 @@ public class SettingsCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
-        int currentHour = userStateService.getNotifyHour(userId);
-        String currentTz = userStateService.getTimezone(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
+        int currentHour = userPreferenceService.getNotifyHour(userId);
+        String currentTz = userPreferenceService.getTimezone(userId);
         String text = Messages.get(lang, Messages.SETTINGS_HEADER) + "\n\n" +
                       Messages.get(lang, Messages.SETTINGS_TZ_HEADER);
         InlineKeyboardMarkup keyboard = combined(currentHour, currentTz, lang);

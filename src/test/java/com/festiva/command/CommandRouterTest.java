@@ -2,6 +2,7 @@ package com.festiva.command;
 
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.*;
 class CommandRouterTest {
 
     UserStateService stateService;
+    UserPreferenceService userPreferenceService;
     CommandRouter router;
 
     CommandHandler cancelHandler;
@@ -32,9 +34,11 @@ class CommandRouterTest {
     void setUp() {
         stateService = new UserStateService(
             mock(com.festiva.state.UserSessionRepository.class),
-            mock(com.festiva.user.UserPreferenceRepository.class),
-            mock(com.festiva.state.PendingImportRepository.class)
+            mock(com.festiva.friend.workflow.FriendWorkflowSessionService.class),
+            mock(com.festiva.importing.PendingIcsImportService.class)
         );
+        userPreferenceService = mock(UserPreferenceService.class);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(com.festiva.i18n.Lang.EN);
 
         cancelHandler   = handler("/cancel",  "cancelled");
         startHandler    = handler("/start",   "started");
@@ -42,6 +46,7 @@ class CommandRouterTest {
         statefulHandler = statefulHandler(Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME));
 
         router = new CommandRouter(stateService,
+                userPreferenceService,
                 List.of(cancelHandler, startHandler, statefulHandler, defaultHandler));
     }
 

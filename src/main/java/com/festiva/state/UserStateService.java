@@ -1,19 +1,19 @@
 package com.festiva.state;
 
 import com.festiva.friend.entity.Friend;
-import com.festiva.i18n.Lang;
-import com.festiva.user.UserPreference;
-import com.festiva.user.UserPreferenceRepository;
+import com.festiva.friend.workflow.FriendWorkflowSessionRepository;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
+import com.festiva.importing.PendingIcsImportRepository;
+import com.festiva.importing.PendingIcsImportService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
-@RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class UserStateService {
 
@@ -21,8 +21,26 @@ public class UserStateService {
             .expireAfterAccess(Duration.ofHours(1))
             .build();
     private final UserSessionRepository sessionRepository;
-    private final UserPreferenceRepository userPreferenceRepository;
-    private final PendingImportRepository pendingImportRepository;
+    private final FriendWorkflowSessionService friendWorkflowSessionService;
+    private final PendingIcsImportService pendingIcsImportService;
+
+    @Autowired
+    public UserStateService(UserSessionRepository sessionRepository,
+                            FriendWorkflowSessionService friendWorkflowSessionService,
+                            PendingIcsImportService pendingIcsImportService) {
+        this.sessionRepository = sessionRepository;
+        this.friendWorkflowSessionService = friendWorkflowSessionService;
+        this.pendingIcsImportService = pendingIcsImportService;
+    }
+
+    @Deprecated
+    public UserStateService(UserSessionRepository sessionRepository,
+                            FriendWorkflowSessionRepository friendWorkflowSessionRepository,
+                            PendingIcsImportRepository pendingIcsImportRepository) {
+        this(sessionRepository,
+                new FriendWorkflowSessionService(friendWorkflowSessionRepository),
+                new PendingIcsImportService(pendingIcsImportRepository));
+    }
 
     private UserSession session(long userId) {
         return cache.get(userId, id -> {
@@ -59,115 +77,22 @@ public class UserStateService {
     public void clearState(long userId) {
         UserSession s = session(userId);
         s.setState(BotState.IDLE);
-        s.setPendingName(null);
-        s.setPendingId(null);
-        s.setPendingYear(null);
-        s.setPendingMonth(null);
-        s.setPendingDay(null);
-        s.setYearPageOffset(0);
-        pendingImportRepository.deleteByUserId(userId);
+        friendWorkflowSessionService.clear(userId);
+        pendingIcsImportService.delete(userId);
         saveSession(userId);
     }
 
     public void removeSession(long userId) {
         cache.invalidate(userId);
         sessionRepository.deleteById(userId);
+        friendWorkflowSessionService.remove(userId);
     }
-
-    public void setPendingName(long userId, String name) { 
-        session(userId).setPendingName(name);
-        saveSession(userId);
-    }
-    public String getPendingName(long userId) { return session(userId).getPendingName(); }
-
-    public void setPendingId(long userId, String id) { 
-        session(userId).setPendingId(id);
-        saveSession(userId);
-    }
-    public String getPendingId(long userId) { return session(userId).getPendingId(); }
-
-    public void setPendingYear(long userId, Integer year) { 
-        session(userId).setPendingYear(year);
-        saveSession(userId);
-    }
-    public Integer getPendingYear(long userId) { return session(userId).getPendingYear(); }
-
-    public void setPendingMonth(long userId, Integer month) { 
-        session(userId).setPendingMonth(month);
-        saveSession(userId);
-    }
-    public Integer getPendingMonth(long userId) { return session(userId).getPendingMonth(); }
-
-    public void setYearPageOffset(long userId, int offset) { 
-        session(userId).setYearPageOffset(offset);
-        saveSession(userId);
-    }
-    public int getYearPageOffset(long userId) { return session(userId).getYearPageOffset(); }
-
-    public void setPendingDay(long userId, Integer day) { 
-        session(userId).setPendingDay(day);
-        saveSession(userId);
-    }
-    public Integer getPendingDay(long userId) { return session(userId).getPendingDay(); }
 
     public void setPendingIcsImport(long userId, java.util.List<Friend> friends) {
-        pendingImportRepository.deleteByUserId(userId);
-        if (friends != null && !friends.isEmpty()) {
-            pendingImportRepository.save(new PendingImport(userId, friends));
-        }
+        pendingIcsImportService.save(userId, friends);
     }
     
     public java.util.List<Friend> getPendingIcsImport(long userId) {
-        return pendingImportRepository.findByUserId(userId)
-                .map(PendingImport::getFriends)
-                .orElse(null);
-    }
-
-    public Lang getLanguage(long userId) {
-        UserSession s = session(userId);
-        if (s.getLang() == null) {
-            Lang lang = userPreferenceRepository.findById(userId)
-                    .map(UserPreference::getLang)
-                    .orElse(UserPreference.DEFAULT_LANG);
-            s.setLang(lang);
-        }
-        return s.getLang();
-    }
-
-    public void setLanguage(long userId, Lang lang) {
-        session(userId).setLang(lang);
-        saveSession(userId);
-        UserPreference pref = getOrCreatePref(userId);
-        pref.setLang(lang);
-        userPreferenceRepository.save(pref);
-    }
-
-    public int getNotifyHour(long userId) {
-        return userPreferenceRepository.findById(userId)
-                .map(UserPreference::getNotifyHour)
-                .orElse(9);
-    }
-
-    public void setNotifyHour(long userId, int hour) {
-        UserPreference pref = getOrCreatePref(userId);
-        pref.setNotifyHour(hour);
-        userPreferenceRepository.save(pref);
-    }
-
-    public String getTimezone(long userId) {
-        return userPreferenceRepository.findById(userId)
-                .map(UserPreference::getTimezone)
-                .orElse(UserPreference.DEFAULT_TIMEZONE);
-    }
-
-    public void setTimezone(long userId, String timezone) {
-        UserPreference pref = getOrCreatePref(userId);
-        pref.setTimezone(timezone);
-        userPreferenceRepository.save(pref);
-    }
-
-    private UserPreference getOrCreatePref(long userId) {
-        return userPreferenceRepository.findById(userId)
-                .orElse(new UserPreference(userId, UserPreference.DEFAULT_LANG, 9, UserPreference.DEFAULT_TIMEZONE, null));
+        return pendingIcsImportService.get(userId);
     }
 }

@@ -1,10 +1,12 @@
 package com.festiva.friend.handler;
 
 import com.festiva.friend.api.FriendService;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,13 +30,15 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock FriendWorkflowSessionService friendWorkflowSessionService;
+    @Mock UserPreferenceService userPreferenceService;
     @InjectMocks EditFriendCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
-        lenient().when(userStateService.getPendingName(anyLong())).thenReturn("Alice");
-        lenient().when(userStateService.getPendingId(anyLong())).thenReturn("id-alice");
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(friendWorkflowSessionService.getPendingName(anyLong())).thenReturn("Alice");
+        lenient().when(friendWorkflowSessionService.getPendingId(anyLong())).thenReturn("id-alice");
 
         com.festiva.friend.entity.Friend alice = new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
         alice.setId("id-alice");
@@ -54,7 +58,7 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState with null oldName → SESSION_EXPIRED")
     void handleState_nullOldName_returnsSessionExpired() {
-        lenient().when(userStateService.getPendingName(1L)).thenReturn(null);
+        lenient().when(friendWorkflowSessionService.getPendingName(1L)).thenReturn(null);
 
         assertThat(handler.handleState(update("NewName")).getText())
                 .contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
@@ -95,7 +99,7 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState valid new name → updates name, clears state, returns edit_name_done")
     void handleState_validName_updatesAndClearsState() {
-        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        when(friendWorkflowSessionService.getPendingId(1L)).thenReturn("id-alice");
         when(friendService.friendExists(1L, "Bob")).thenReturn(false);
 
         assertThat(handler.handleState(update("Bob")).getText())
@@ -115,7 +119,7 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState RU blank name → returns RU error")
     void handleState_ruBlankName_returnsRuError() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
 
         assertThat(handler.handleState(update("   ")).getText())
                 .contains(Messages.get(Lang.RU, Messages.NAME_EMPTY));

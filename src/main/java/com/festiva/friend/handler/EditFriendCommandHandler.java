@@ -4,10 +4,12 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -30,6 +32,8 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final FriendWorkflowSessionService friendWorkflowSessionService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() { return "/edit"; }
@@ -41,7 +45,7 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
@@ -82,10 +86,10 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
     public SendMessage handleState(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         String newName = update.getMessage().getText().trim();
-        String id = userStateService.getPendingId(userId);
-        String oldName = userStateService.getPendingName(userId);
+        String id = friendWorkflowSessionService.getPendingId(userId);
+        String oldName = friendWorkflowSessionService.getPendingName(userId);
 
         if (id == null || oldName == null || oldName.isBlank()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.SESSION_EXPIRED));

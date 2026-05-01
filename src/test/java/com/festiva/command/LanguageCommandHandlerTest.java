@@ -5,6 +5,8 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserLanguageCallbackService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -26,11 +32,15 @@ import static org.mockito.Mockito.*;
 class LanguageCommandHandlerTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
+    @Mock UserLanguageCallbackService userLanguageCallbackService;
     @InjectMocks LanguageCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userLanguageCallbackService.keyboard(Lang.EN)).thenReturn(keyboardFor(Lang.EN));
+        lenient().when(userLanguageCallbackService.keyboard(Lang.RU)).thenReturn(keyboardFor(Lang.RU));
     }
 
     @Test
@@ -53,7 +63,7 @@ class LanguageCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handle RU → RU button has checkmark, EN button does not")
     void handle_ru_ruButtonHasCheckmark() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         var result = handler.handle(update());
         var buttons = ((InlineKeyboardMarkup) result.getReplyMarkup()).getKeyboard().getFirst();
         assertThat(buttons.get(0).getText()).doesNotStartWith("✅");
@@ -69,5 +79,14 @@ class LanguageCommandHandlerTest extends MessagesTestSupport {
         Update update = mock(Update.class);
         when(update.getMessage()).thenReturn(message);
         return update;
+    }
+
+    private InlineKeyboardMarkup keyboardFor(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder().text((lang == Lang.EN ? "✅ " : "") + Messages.get(lang, Messages.LANG_EN_BTN)).callbackData("LANG_EN").build(),
+                        InlineKeyboardButton.builder().text((lang == Lang.RU ? "✅ " : "") + Messages.get(lang, Messages.LANG_RU_BTN)).callbackData("LANG_RU").build()
+                )))
+                .build();
     }
 }

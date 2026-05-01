@@ -5,7 +5,7 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.user.UserPreference;
-import com.festiva.user.UserPreferenceRepository;
+import com.festiva.user.api.UserPreferenceService;
 import com.festiva.util.HtmlEscaper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -53,7 +52,7 @@ public class BirthdayReminder {
 
     private final FriendService friendService;
     private final NotificationSender notificationSender;
-    private final UserPreferenceRepository userPreferenceRepository;
+    private final UserPreferenceService userPreferenceService;
 
     @PostConstruct
     public void checkBirthdaysOnStartup() {
@@ -90,8 +89,7 @@ public class BirthdayReminder {
         ReminderRunStats stats = new ReminderRunStats();
         stats.scannedUsers = userIds.size();
 
-        Map<Long, UserPreference> prefByUser = userPreferenceRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(UserPreference::getTelegramUserId, p -> p));
+        Map<Long, UserPreference> prefByUser = userPreferenceService.findByUserIds(userIds);
         Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
 
         userIds.forEach(userId -> {
@@ -133,10 +131,7 @@ public class BirthdayReminder {
 
         int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang, stats)).count();
         if (count > 0) {
-            UserPreference p = pref != null ? pref : new UserPreference();
-            p.setTelegramUserId(userId);
-            p.setLastNotifiedDate(today);
-            userPreferenceRepository.save(p);
+            userPreferenceService.markLastNotifiedDate(userId, today);
             stats.notifiedUsers++;
         }
     }

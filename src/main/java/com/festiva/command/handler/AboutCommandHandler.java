@@ -4,6 +4,7 @@ import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class AboutCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() { return "/about"; }
@@ -26,6 +28,6 @@ public class AboutCommandHandler implements CommandHandler {
         userStateService.clearState(userId);
 
         return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userStateService.getLanguage(userId), Messages.ABOUT));
+                Messages.get(userPreferenceService.getLanguage(userId), Messages.ABOUT));
     }
 }

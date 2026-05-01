@@ -4,7 +4,7 @@ import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
-import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,14 +29,14 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unused")
 class SettingsCommandHandlerTest extends MessagesTestSupport {
 
-    @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @InjectMocks SettingsCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
-        lenient().when(userStateService.getNotifyHour(anyLong())).thenReturn(9);
-        lenient().when(userStateService.getTimezone(anyLong())).thenReturn("UTC");
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getNotifyHour(anyLong())).thenReturn(9);
+        lenient().when(userPreferenceService.getTimezone(anyLong())).thenReturn("UTC");
     }
 
     @Test
@@ -114,7 +114,7 @@ class SettingsCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handle RU → response contains RU settings header")
     void handle_ru_containsRuHeader() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.RU, Messages.SETTINGS_HEADER));
     }

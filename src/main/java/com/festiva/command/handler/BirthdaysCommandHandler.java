@@ -6,7 +6,8 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -32,6 +33,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
     private final UserDateService userDateService;
 
     @Override
@@ -43,7 +45,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        var lang = userStateService.getLanguage(userId);
+        var lang = userPreferenceService.getLanguage(userId);
         int currentMonth = userDateService.todayFor(userId).getMonthValue();
 
         Map<Integer, Long> countByMonth = friendService.getFriends(userId).stream()

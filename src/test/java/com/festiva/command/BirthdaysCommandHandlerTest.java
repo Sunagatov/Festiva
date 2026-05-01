@@ -7,7 +7,8 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
+import com.festiva.user.api.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,12 +37,13 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
     @InjectMocks BirthdaysCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
@@ -80,7 +82,7 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handle RU → prompt in Russian")
     void handle_ru_containsRuPrompt() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         when(friendService.getFriends(1L)).thenReturn(List.of());
         assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.RU, Messages.BIRTHDAYS_PICK));

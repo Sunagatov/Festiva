@@ -5,10 +5,12 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.importing.PendingIcsImportService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +57,8 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
+    private final UserPreferenceService userPreferenceService;
+    private final PendingIcsImportService pendingIcsImportService;
 
     @Autowired(required = false)
     private IcsNameExtractorService icsNameExtractorService;
@@ -76,7 +80,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     public SendMessage handle(Update update) {
         long userId = update.getMessage().getFrom().getId();
         long chatId = update.getMessage().getChatId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_FILE);
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PROMPT));
     }
@@ -85,7 +89,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
     public SendMessage handleState(Update update) {
         long userId = update.getMessage().getFrom().getId();
         long chatId = update.getMessage().getChatId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
 
         if (!update.getMessage().hasDocument()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NOT_A_FILE));
@@ -159,7 +163,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                     Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview));
         }
 
-        userStateService.setPendingIcsImport(userId, toSave);
+        pendingIcsImportService.save(userId, toSave);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_CONFIRM);
 
         String preview = buildPreviewLines(toSave, errors);

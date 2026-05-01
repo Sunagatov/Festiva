@@ -6,7 +6,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
+import com.festiva.user.api.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,12 +32,13 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
     @InjectMocks JubileeCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
@@ -86,7 +88,7 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     void jubileeFriend_ru_returnsRuMessage() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Alice", today.plusDays(1).minusYears(30));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.RU);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
         assertThat(handler.handle(update()).getText()).contains("Alice");
     }

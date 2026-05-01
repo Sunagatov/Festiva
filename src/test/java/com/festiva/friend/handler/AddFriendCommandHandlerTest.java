@@ -1,11 +1,13 @@
 package com.festiva.friend.handler;
 
 import com.festiva.friend.api.FriendService;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,11 +31,13 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock FriendWorkflowSessionService friendWorkflowSessionService;
+    @Mock UserPreferenceService userPreferenceService;
     @InjectMocks AddFriendCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userStateService.getState(anyLong())).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_NAME);
     }
 
@@ -87,7 +91,8 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
 
         handler.handleState(update("Alice"));
 
-        verify(userStateService).setPendingName(1L, "Alice");
+        verify(friendWorkflowSessionService).setPendingName(1L, "Alice");
+        verify(friendWorkflowSessionService).setYearPageOffset(1L, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         verify(userStateService).setState(1L, BotState.WAITING_FOR_ADD_FRIEND_DATE);
     }
 
@@ -117,7 +122,7 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState RU blank name → returns RU error")
     void handleState_ruBlankName_returnsRuError() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
 
         assertThat(handler.handleState(update("   ")).getText())
                 .contains(Messages.get(Lang.RU, Messages.NAME_EMPTY));

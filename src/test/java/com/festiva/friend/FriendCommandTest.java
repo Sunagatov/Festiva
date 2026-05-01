@@ -12,6 +12,7 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.UserSessionRepository;
 import com.festiva.state.UserStateService;
 import com.festiva.user.UserPreferenceRepository;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Autowired UserStateService userStateService;
     @Autowired UserSessionRepository userSessionRepository;
     @Autowired UserPreferenceRepository userPreferenceRepository;
+    @Autowired UserPreferenceService userPreferenceService;
 
     @BeforeEach
     void clean() {
@@ -52,7 +54,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/add → name → year/month/day callbacks → persists friend and confirms")
     void addFriend_persistsAndConfirms() {
-        userStateService.setLanguage(1L, L);
+        userPreferenceService.setLanguage(1L, L);
 
         commandRouter.route(update(1L, "/add"));
         commandRouter.route(update(1L, "Alice"));
@@ -69,7 +71,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/add duplicate name → returns name-exists error containing the name")
     void addDuplicateFriend_returnsError() {
-        userStateService.setLanguage(2L, L);
+        userPreferenceService.setLanguage(2L, L);
         friendService.addFriend(2L, new Friend("Bob", LocalDate.of(1985, 3, 20)));
 
         commandRouter.route(update(2L, "/add"));
@@ -81,7 +83,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/remove existing friend → confirms removal, list is empty")
     void removeFriend_confirmsAndListIsEmpty() {
-        userStateService.setLanguage(3L, L);
+        userPreferenceService.setLanguage(3L, L);
         friendService.addFriend(3L, new Friend("Carol", LocalDate.of(2000, 1, 1)));
         String friendId = friendService.getFriends(3L).getFirst().getId();
 
@@ -95,7 +97,7 @@ class FriendCommandTest extends IntegrationTestBase {
     @Test
     @DisplayName("/cancel during /add flow → confirms cancel, no friend saved")
     void cancelDuringAdd_clearsState() {
-        userStateService.setLanguage(6L, L);
+        userPreferenceService.setLanguage(6L, L);
 
         commandRouter.route(update(6L, "/add"));
         var result = commandRouter.route(update(6L, "/cancel"));

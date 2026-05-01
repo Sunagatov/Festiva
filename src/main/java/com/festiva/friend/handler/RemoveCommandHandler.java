@@ -1,13 +1,14 @@
 package com.festiva.friend.handler;
 
-import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
+import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,7 @@ public class RemoveCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() { return "/remove"; }
@@ -39,7 +41,7 @@ public class RemoveCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
@@ -47,7 +49,7 @@ public class RemoveCommandHandler implements CommandHandler {
                     InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
                             InlineKeyboardButton.builder()
                                     .text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
-                                    .callbackData(CallbackQueryHandler.ACTION_ADD).build()))).build());
+                                    .callbackData(FriendAction.ACTION_ADD).build()))).build());
         }
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.SELECT_REMOVE),
                 keyboard(friends, 0));

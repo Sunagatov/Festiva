@@ -6,6 +6,7 @@ import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ public class ExportCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
     private final TelegramClient telegramClient;
 
     @Override
@@ -37,7 +39,7 @@ public class ExportCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
 
         var friends = friendService.getFriendsSortedByDayMonth(userId);
         if (friends.isEmpty()) {

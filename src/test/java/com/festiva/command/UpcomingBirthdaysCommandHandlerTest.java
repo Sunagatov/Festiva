@@ -6,7 +6,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
     @InjectMocks UpcomingBirthdaysCommandHandler handler;
 
@@ -44,7 +46,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
     void friendWithin30Days_appearsInList() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Alice", today.plusDays(5).minusYears(25));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
         assertThat(handler.handle(update()).getText()).contains("Alice");
@@ -55,7 +57,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
     void friendOutside30Days_excludedFromList() {
         LocalDate today = LocalDate.now();
         Friend friend = new Friend("Bob", today.plusDays(31).minusYears(25));
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
         String text = handler.handle(update()).getText();
@@ -67,7 +69,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
     @Test
     @DisplayName("no friends → returns upcoming-none message")
     void noFriends_returnsUpcomingNone() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         assertThat(handler.handle(update()).getText())
@@ -77,7 +79,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
     @Test
     @DisplayName("no friends RU → returns RU upcoming-none")
     void noFriends_ru_returnsRuNone() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.RU);
         when(friendService.getFriends(1L)).thenReturn(List.of());
         assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.RU, Messages.UPCOMING_NONE, 30));
@@ -86,7 +88,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
     @Test
     @DisplayName("handle → filter keyboard has 3 day-range buttons")
     void handle_filterKeyboardHas3Buttons() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of());
         var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();

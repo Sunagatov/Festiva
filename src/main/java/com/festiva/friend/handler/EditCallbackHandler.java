@@ -4,6 +4,7 @@ import com.festiva.bot.CallbackResult;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
@@ -29,6 +30,7 @@ public class EditCallbackHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final FriendWorkflowSessionService friendWorkflowSessionService;
 
     public CallbackResult handleEditNotify(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_NOTIFY.length());
@@ -45,8 +47,8 @@ public class EditCallbackHandler {
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
         if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
-        userStateService.setPendingName(userId, friend.getName());
-        userStateService.setPendingId(userId, id);
+        friendWorkflowSessionService.setPendingName(userId, friend.getName());
+        friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()), null);
     }
@@ -56,9 +58,9 @@ public class EditCallbackHandler {
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
         if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
-        userStateService.setPendingName(userId, friend.getName());
-        userStateService.setPendingId(userId, id);
-        userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
+        friendWorkflowSessionService.setPendingName(userId, friend.getName());
+        friendWorkflowSessionService.setPendingId(userId, id);
+        friendWorkflowSessionService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, friend.getName()),
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
@@ -83,4 +85,5 @@ public class EditCallbackHandler {
         )).build();
         return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate), markup);
     }
+
 }

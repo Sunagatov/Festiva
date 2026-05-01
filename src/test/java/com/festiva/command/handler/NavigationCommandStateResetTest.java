@@ -3,6 +3,8 @@ package com.festiva.command.handler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserLanguageCallbackService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,13 +24,15 @@ import static org.mockito.Mockito.when;
 class NavigationCommandStateResetTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
+    @Mock UserLanguageCallbackService userLanguageCallbackService;
 
     @Test
     @DisplayName("/start clears state before rendering the welcome menu")
     void startClearsState() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
 
-        new StartCommandHandler(userStateService).handle(update());
+        new StartCommandHandler(userStateService, userPreferenceService).handle(update());
 
         verify(userStateService).clearState(1L);
     }
@@ -36,9 +40,9 @@ class NavigationCommandStateResetTest extends MessagesTestSupport {
     @Test
     @DisplayName("/menu clears state before rendering the menu")
     void menuClearsState() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
 
-        new HelpCommandHandler(userStateService).handle(update());
+        new HelpCommandHandler(userStateService, userPreferenceService).handle(update());
 
         verify(userStateService).clearState(1L);
     }
@@ -46,9 +50,9 @@ class NavigationCommandStateResetTest extends MessagesTestSupport {
     @Test
     @DisplayName("/about clears state before rendering about text")
     void aboutClearsState() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
 
-        new AboutCommandHandler(userStateService).handle(update());
+        new AboutCommandHandler(userStateService, userPreferenceService).handle(update());
 
         verify(userStateService).clearState(1L);
     }
@@ -56,9 +60,9 @@ class NavigationCommandStateResetTest extends MessagesTestSupport {
     @Test
     @DisplayName("/language clears state before rendering the picker")
     void languageClearsState() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.EN);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
 
-        new LanguageCommandHandler(userStateService).handle(update());
+        new LanguageCommandHandler(userStateService, userPreferenceService, userLanguageCallbackService).handle(update());
 
         verify(userStateService).clearState(1L);
     }

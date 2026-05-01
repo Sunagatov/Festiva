@@ -9,7 +9,8 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +55,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final TelegramClient telegramClient;
+    private final UserPreferenceService userPreferenceService;
     private final UserDateService userDateService;
 
     @Value("${telegram.bot.token}")
@@ -73,7 +75,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         userStateService.setState(userId, BotState.WAITING_FOR_BULK_ADD);
 
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
@@ -115,7 +117,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     public SendMessage handleState(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
 
         List<String> lines;
 

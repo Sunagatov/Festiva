@@ -1,6 +1,5 @@
 package com.festiva.state;
 
-import com.festiva.i18n.Lang;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,13 +20,6 @@ public class UserSession {
     private long userId;
     
     private BotState state = BotState.IDLE;
-    private String pendingName;
-    private String pendingId;
-    private Integer pendingYear;
-    private Integer pendingMonth;
-    private Integer pendingDay;
-    private int yearPageOffset = 0;
-    private Lang lang;
     
     @Indexed(expireAfter = "1h")
     private LocalDateTime lastActivity;

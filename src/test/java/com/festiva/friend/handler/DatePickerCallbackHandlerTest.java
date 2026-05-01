@@ -4,12 +4,13 @@ import com.festiva.bot.CallbackResult;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,22 +34,23 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock FriendWorkflowSessionService friendWorkflowSessionService;
     @Mock UserDateService userDateService;
     @InjectMocks DatePickerCallbackHandler handler;
 
     @BeforeEach
     void setup() {
-        lenient().when(userStateService.getPendingName(anyLong())).thenReturn("Alice");
-        lenient().when(userStateService.getPendingYear(anyLong())).thenReturn(1990);
-        lenient().when(userStateService.getPendingMonth(anyLong())).thenReturn(3);
-        lenient().when(userStateService.getYearPageOffset(anyLong())).thenReturn(DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
+        lenient().when(friendWorkflowSessionService.getPendingName(anyLong())).thenReturn("Alice");
+        lenient().when(friendWorkflowSessionService.getPendingYear(anyLong())).thenReturn(1990);
+        lenient().when(friendWorkflowSessionService.getPendingMonth(anyLong())).thenReturn(3);
+        lenient().when(friendWorkflowSessionService.getYearPageOffset(anyLong())).thenReturn(DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
     @Test
     @DisplayName("handleYearPage with null pendingName → SESSION_EXPIRED")
     void handleYearPage_nullName_returnsSessionExpired() {
-        when(userStateService.getPendingName(1L)).thenReturn(null);
+        when(friendWorkflowSessionService.getPendingName(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleYearPage(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX + "0", 1L, Lang.EN);
 
@@ -58,7 +60,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleYearPick with null pendingName → SESSION_EXPIRED")
     void handleYearPick_nullName_returnsSessionExpired() {
-        when(userStateService.getPendingName(1L)).thenReturn(null);
+        when(friendWorkflowSessionService.getPendingName(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleYearPick(DatePickerKeyboard.DATE_YEAR_PREFIX + "1990", 1L, Lang.EN);
 
@@ -68,7 +70,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleMonthPick with null pendingName → SESSION_EXPIRED")
     void handleMonthPick_nullName_returnsSessionExpired() {
-        when(userStateService.getPendingName(1L)).thenReturn(null);
+        when(friendWorkflowSessionService.getPendingName(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleMonthPick(DatePickerKeyboard.DATE_MONTH_PREFIX + "3", 1L, Lang.EN);
 
@@ -79,8 +81,8 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick future date → error text AND keyboard returned")
     void handleDayPick_futureDate_returnsErrorWithKeyboard() {
         LocalDate future = LocalDate.now().plusYears(1);
-        when(userStateService.getPendingYear(1L)).thenReturn(future.getYear());
-        when(userStateService.getPendingMonth(1L)).thenReturn(future.getMonthValue());
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(future.getYear());
+        when(friendWorkflowSessionService.getPendingMonth(1L)).thenReturn(future.getMonthValue());
 
         CallbackResult result = handler.handleDayPick(
                 DatePickerKeyboard.DATE_DAY_PREFIX + future.getDayOfMonth(), 1L, Lang.EN);
@@ -93,7 +95,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleRelationship at cap → clears state and returns cap message")
     void handleRelationship_atCap_clearsStateAndReturnsCap() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(
                 java.util.Collections.nCopies(FriendService.FRIEND_CAP, null));
 
@@ -115,7 +117,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleRelationship prompt contains /cancel hint")
     void handleRelationship_prompt_containsCancelHint() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
@@ -127,7 +129,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleRelationship RU → returns RU success message")
     void handleRelationship_ru_returnsRuMessage() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
@@ -149,7 +151,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleDayPick add flow success → friend_added message contains next-step hint")
     void handleRelationship_success_containsNextStepHint() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
@@ -174,7 +176,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick in edit flow → updates date and clears state")
     void handleDayPick_editFlow_updatesDate() {
         when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_EDIT_DATE);
-        when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        when(friendWorkflowSessionService.getPendingId(1L)).thenReturn("id-alice");
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 
@@ -187,8 +189,8 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick with future date → returns date-future error")
     void handleDayPick_futureDate_returnsError() {
         LocalDate future = LocalDate.now().plusYears(1);
-        when(userStateService.getPendingYear(1L)).thenReturn(future.getYear());
-        when(userStateService.getPendingMonth(1L)).thenReturn(future.getMonthValue());
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(future.getYear());
+        when(friendWorkflowSessionService.getPendingMonth(1L)).thenReturn(future.getMonthValue());
 
         CallbackResult result = handler.handleDayPick(
                 DatePickerKeyboard.DATE_DAY_PREFIX + future.getDayOfMonth(), 1L, Lang.EN);
@@ -200,8 +202,8 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @DisplayName("handleDayPick future date uses user-local today")
     void handleDayPick_futureDate_usesUserLocalToday() {
         when(userDateService.todayFor(1L)).thenReturn(LocalDate.of(2024, 3, 15));
-        when(userStateService.getPendingYear(1L)).thenReturn(2024);
-        when(userStateService.getPendingMonth(1L)).thenReturn(3);
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(2024);
+        when(friendWorkflowSessionService.getPendingMonth(1L)).thenReturn(3);
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "16", 1L, Lang.EN);
 
@@ -212,8 +214,8 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleDayPick with null session state → returns SESSION_EXPIRED")
     void handleDayPick_nullSession_returnsSessionExpired() {
-        when(userStateService.getPendingYear(1L)).thenReturn(null);
-        when(userStateService.getPendingMonth(1L)).thenReturn(null);
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(null);
+        when(friendWorkflowSessionService.getPendingMonth(1L)).thenReturn(null);
 
         CallbackResult result = handler.handleDayPick(DatePickerKeyboard.DATE_DAY_PREFIX + "15", 1L, Lang.EN);
 
@@ -223,7 +225,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleRelationship → adds friend with relationship and clears state")
     void handleRelationship_addsFriendWithRelationship() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
@@ -238,7 +240,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleRelationship with SKIP → adds friend with null relationship")
     void handleRelationship_skip_addsWithNullRelationship() {
-        when(userStateService.getPendingDay(1L)).thenReturn(15);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         handler.handleRelationship(DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.EN);
@@ -251,7 +253,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     void handleEditRelationship_withPendingId_updatesByFriend() {
         Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
         alice.setId("id-alice");
-        lenient().when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        lenient().when(friendWorkflowSessionService.getPendingId(1L)).thenReturn("id-alice");
         lenient().when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(Optional.of(alice));
 
         CallbackResult result = handler.handleEditRelationship(
@@ -267,7 +269,7 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
     void handleEditRelationship_skip_setsNull() {
         Friend alice = new Friend("Alice", LocalDate.of(1990, 3, 15));
         alice.setId("id-alice");
-        lenient().when(userStateService.getPendingId(1L)).thenReturn("id-alice");
+        lenient().when(friendWorkflowSessionService.getPendingId(1L)).thenReturn("id-alice");
         lenient().when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(Optional.of(alice));
 
         handler.handleEditRelationship(DatePickerCallbackHandler.EDIT_REL_PREFIX + "SKIP", 1L, Lang.EN);

@@ -5,6 +5,7 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -16,6 +17,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 public class StartCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() { return "/start"; }
@@ -27,7 +29,7 @@ public class StartCommandHandler implements CommandHandler {
 
         userStateService.clearState(userId);
 
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         String text = Messages.get(lang, Messages.WELCOME) + "\n\n" + Messages.get(lang, Messages.MENU);
         return MessageBuilder.html(chatId, text, MessageBuilder.mainMenu(lang));
     }

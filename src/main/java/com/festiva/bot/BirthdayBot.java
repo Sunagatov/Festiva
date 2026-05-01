@@ -5,6 +5,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.metrics.MetricsSender;
 import com.festiva.notification.NotificationSender;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final CallbackQueryHandler callbackQueryHandler;
     private final MetricsSender metricsSender;
     private final BotCommandsService commandsService;
-    private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
@@ -40,14 +41,15 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                        @Value("${telegram.bot.token}") String botToken,
                        MetricsSender metricsSender,
                        BotCommandsService commandsService,
-                       UserStateService userStateService) {
+                       UserStateService userStateService,
+                       UserPreferenceService userPreferenceService) {
         this.botToken = botToken;
         this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
         this.callbackQueryHandler = callbackQueryHandler;
         this.metricsSender = metricsSender;
         this.commandsService = commandsService;
-        this.userStateService = userStateService;
+        this.userPreferenceService = userPreferenceService;
     }
 
     @PostConstruct
@@ -131,7 +133,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
             try {
                 if (chatId > 0 && userId > 0) {
-                    Lang lang = userStateService.getLanguage(userId);
+                    Lang lang = userPreferenceService.getLanguage(userId);
                     String errorMsg = lang == Lang.RU
                             ? "⚠️ Произошла ошибка. Попробуйте снова или используйте /cancel"
                             : "⚠️ An error occurred. Please try again or use /cancel";

@@ -1,20 +1,15 @@
 package com.festiva.bot;
 
 import com.festiva.command.handler.BulkAddCommandHandler;
-import com.festiva.command.handler.DeleteAccountCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
-import com.festiva.friend.api.FriendService;
-import com.festiva.friend.entity.Friend;
-import com.festiva.friend.handler.DatePickerCallbackHandler;
-import com.festiva.friend.handler.EditCallbackHandler;
-import com.festiva.friend.handler.EditFriendCommandHandler;
-import com.festiva.friend.handler.ListCommandHandler;
-import com.festiva.friend.handler.RemoveCommandHandler;
+import com.festiva.friend.api.FriendCallbackService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.AccountDeletionService;
+import com.festiva.user.api.UserLanguageCallbackService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,11 +23,9 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.format.TextStyle;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,29 +37,24 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("unused")
 class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
-    @Mock private FriendService friendService;
     @Mock private UserStateService userStateService;
-    @Mock private DeleteAccountCommandHandler deleteAccountHandler;
     @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
-    @Mock private ListCommandHandler listHandler;
     @Mock private BulkAddCommandHandler bulkAddHandler;
-    @Mock private DatePickerCallbackHandler datePickerHandler;
-    @Mock private EditCallbackHandler editHandler;
-    @Mock private RemoveCommandHandler removeCommandHandler;
-    @Mock private EditFriendCommandHandler editFriendCommandHandler;
-    @Mock private BotCommandsService commandsService;
-    @Mock private UserDateService userDateService;
+    @Mock private FriendCallbackService friendCallbackService;
+    @Mock private AccountDeletionService accountDeletionService;
+    @Mock private UserLanguageCallbackService userLanguageCallbackService;
+    @Mock private UserPreferenceService userPreferenceService;
     @InjectMocks private CallbackQueryHandler handler;
 
     @BeforeEach
     void defaultLang() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
-        lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
     }
 
     @Test
     @DisplayName("LANG_EN callback → confirmation contains next-step hint")
     void langCallback_en_containsNextStepHint() {
+        when(userLanguageCallbackService.handle("LANG_EN", 1L)).thenReturn(new CallbackResult("/language", null));
         EditMessageText result = handler.handle(callback("LANG_EN"));
         assertThat(result.getText()).contains("/language");
     }
@@ -74,10 +62,10 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("SETTINGS_HOUR_ callback → sets hour and returns confirmation with next-step hint")
     void settingsHourCallback_setsHourAndContainsHint() {
-        when(userStateService.getNotifyHour(1L)).thenReturn(9);
-        when(userStateService.getTimezone(1L)).thenReturn("UTC");
+        when(userPreferenceService.getNotifyHour(1L)).thenReturn(9);
+        when(userPreferenceService.getTimezone(1L)).thenReturn("UTC");
         EditMessageText result = handler.handle(callback("SETTINGS_HOUR_9"));
-        verify(userStateService).setNotifyHour(1L, 9);
+        verify(userPreferenceService).setNotifyHour(1L, 9);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_HOUR_SET, 9));
         assertThat(result.getText()).contains("/settings");
     }
@@ -85,10 +73,10 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("SETTINGS_TZ_ callback → sets timezone and returns confirmation with next-step hint")
     void settingsTzCallback_setsTzAndContainsHint() {
-        when(userStateService.getNotifyHour(1L)).thenReturn(9);
-        when(userStateService.getTimezone(1L)).thenReturn("UTC");
+        when(userPreferenceService.getNotifyHour(1L)).thenReturn(9);
+        when(userPreferenceService.getTimezone(1L)).thenReturn("UTC");
         EditMessageText result = handler.handle(callback("SETTINGS_TZ_UTC"));
-        verify(userStateService).setTimezone(1L, "UTC");
+        verify(userPreferenceService).setTimezone(1L, "UTC");
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_TZ_SET, "UTC"));
         assertThat(result.getText()).contains("/settings");
     }
@@ -96,12 +84,12 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("SETTINGS_TZ_REGION_ callback → re-renders settings with filtered timezone choices")
     void settingsTzRegionCallback_rerendersFilteredTimezoneChoices() {
-        when(userStateService.getNotifyHour(1L)).thenReturn(9);
-        when(userStateService.getTimezone(1L)).thenReturn("UTC");
+        when(userPreferenceService.getNotifyHour(1L)).thenReturn(9);
+        when(userPreferenceService.getTimezone(1L)).thenReturn("UTC");
 
         EditMessageText result = handler.handle(callback("SETTINGS_TZ_REGION_" + SettingsCommandHandler.REGION_EUROPE));
 
-        verify(userStateService, never()).setTimezone(anyLong(), anyString());
+        verify(userPreferenceService, never()).setTimezone(anyLong(), anyString());
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_HEADER));
         assertThat(result.getReplyMarkup()).isNotNull();
         assertThat(result.getReplyMarkup().getKeyboard()).flatExtracting(row -> row)
@@ -113,38 +101,44 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("LANG_EN callback — sets language to EN and returns confirmation")
     void langCallback_setsLanguageAndReturnsConfirmation() {
+        when(userLanguageCallbackService.handle("LANG_EN", 1L))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.LANGUAGE_SET), InlineKeyboardMarkup.builder().keyboard(List.of()).build()));
         EditMessageText result = handler.handle(callback("LANG_EN"));
-        verify(userStateService).setLanguage(1L, Lang.EN);
-        verify(userStateService).clearState(1L);
+        verify(userLanguageCallbackService).handle("LANG_EN", 1L);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.LANGUAGE_SET));
     }
 
     @Test
     @DisplayName("LANG_RU callback — sets language to RU and returns RU confirmation")
     void langCallback_ru_setsRuLanguage() {
-        when(userStateService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(userLanguageCallbackService.handle("LANG_RU", 1L))
+                .thenReturn(new CallbackResult(Messages.get(Lang.RU, Messages.LANGUAGE_SET), InlineKeyboardMarkup.builder().keyboard(List.of()).build()));
         EditMessageText result = handler.handle(callback("LANG_RU"));
-        verify(userStateService).setLanguage(1L, Lang.RU);
+        verify(userLanguageCallbackService).handle("LANG_RU", 1L);
         assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.LANGUAGE_SET));
     }
 
     @Test
     @DisplayName("LANG_INVALID callback → returns SESSION_EXPIRED, does not crash")
     void langCallback_invalid_returnsSessionExpired() {
+        when(userLanguageCallbackService.handle("LANG_INVALID", 1L))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.SESSION_EXPIRED), null));
         EditMessageText result = handler.handle(callback("LANG_INVALID"));
-        verify(userStateService, never()).setLanguage(anyLong(), any());
+        verify(userLanguageCallbackService).handle("LANG_INVALID", 1L);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test
     @DisplayName("REMOVE_ callback → shows confirmation prompt with Yes/No buttons")
     void removeCallback_showsConfirmation() {
-        Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
-        alice.setId("id-alice");
-        alice.setTelegramUserId(1L);
-        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
+        InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of()).build();
+        when(friendCallbackService.handle("REMOVE_id-alice", 1L, Lang.EN))
+                .thenReturn(new CallbackResult("Alice", markup));
+
         EditMessageText result = handler.handle(callback("REMOVE_id-alice"));
-        verify(friendService, never()).deleteFriendById(anyString(), anyLong());
+
+        verify(friendCallbackService).handle("REMOVE_id-alice", 1L, Lang.EN);
         assertThat(result.getText()).contains("Alice");
         assertThat(result.getReplyMarkup()).isNotNull();
     }
@@ -152,84 +146,98 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
     @DisplayName("CONFIRM_REMOVE_ callback → deletes friend and returns removed confirmation")
     void confirmRemoveCallback_deletesFriendAndConfirms() {
-        Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
-        alice.setId("id-alice");
-        alice.setTelegramUserId(1L);
-        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
+        when(friendCallbackService.handle("CONFIRM_REMOVE_id-alice", 1L, Lang.EN))
+                .thenReturn(new CallbackResult("Alice", null));
+
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
-        verify(friendService).deleteFriendById("id-alice", 1L);
+
+        verify(friendCallbackService).handle("CONFIRM_REMOVE_id-alice", 1L, Lang.EN);
         assertThat(result.getText()).contains("Alice");
     }
 
     @Test
     @DisplayName("REMOVE_ callback → stale friend returns SESSION_EXPIRED")
     void removeCallback_stale_returnsSessionExpired() {
-        when(friendService.findOwnedFriend("ghost", 1L)).thenReturn(java.util.Optional.empty());
+        when(friendCallbackService.handle("REMOVE_ghost", 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.SESSION_EXPIRED), null));
+
         EditMessageText result = handler.handle(callback("REMOVE_ghost"));
+
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test
     @DisplayName("CONFIRM_REMOVE_ callback → stale friend returns SESSION_EXPIRED")
     void confirmRemoveCallback_stale_returnsSessionExpired() {
-        when(friendService.findOwnedFriend("id-ghost", 1L)).thenReturn(java.util.Optional.empty());
+        when(friendCallbackService.handle("CONFIRM_REMOVE_id-ghost", 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.SESSION_EXPIRED), null));
+
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-ghost"));
+
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
     }
 
     @Test
     @DisplayName("CONFIRM_REMOVE_ callback → success message contains next-step hint")
     void confirmRemoveCallback_success_containsNextStepHint() {
-        Friend alice = new Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
-        alice.setId("id-alice");
-        alice.setTelegramUserId(1L);
-        when(friendService.findOwnedFriend("id-alice", 1L)).thenReturn(java.util.Optional.of(alice));
+        when(friendCallbackService.handle("CONFIRM_REMOVE_id-alice", 1L, Lang.EN))
+                .thenReturn(new CallbackResult("/list", null));
+
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
+
         assertThat(result.getText()).contains("/list");
     }
 
     @Test
     @DisplayName("CANCEL_REMOVE callback — clears state and returns cancelled message")
     void cancelRemoveCallback_clearsState() {
+        when(friendCallbackService.handle("CANCEL_REMOVE", 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL), null));
+
         EditMessageText result = handler.handle(callback("CANCEL_REMOVE"));
-        verify(userStateService).clearState(1L);
+
+        verify(friendCallbackService).handle("CANCEL_REMOVE", 1L, Lang.EN);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL));
     }
 
     @Test
     @DisplayName("MONTH_ callback with no friends in that month → birthdays_none contains next-step hint")
     void monthCallback_noFriends_noneContainsHint() {
-        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
+        when(friendCallbackService.handle("MONTH_6", 1L, Lang.EN))
+                .thenReturn(new CallbackResult("/add", null));
+
         EditMessageText result = handler.handle(callback("MONTH_6"));
+
         assertThat(result.getText()).contains("/add");
     }
 
     @Test
     @DisplayName("MONTH_6 callback — returns friends born in June")
     void monthCallback_returnsFilteredFriends() {
-        Friend june = new Friend("Alice", LocalDate.of(1990, 6, 15));
-        Friend dec  = new Friend("Bob",   LocalDate.of(1990, 12, 1));
-        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(june, dec));
+        when(friendCallbackService.handle("MONTH_6", 1L, Lang.EN))
+                .thenReturn(new CallbackResult("Alice", null));
 
         EditMessageText result = handler.handle(callback("MONTH_6"));
 
-        assertThat(result.getText()).contains("Alice").doesNotContain("Bob");
+        assertThat(result.getText()).contains("Alice");
     }
 
     @Test
     @DisplayName("MONTH_CURRENT callback — resolves to current month, returns no-birthdays message")
     void monthCallback_current_resolvesWithoutError() {
-        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
+        when(friendCallbackService.handle("MONTH_CURRENT", 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.BIRTHDAYS_NONE, "March"), null));
+
         EditMessageText result = handler.handle(callback("MONTH_CURRENT"));
-        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BIRTHDAYS_NONE,
-                Month.of(LocalDate.now().getMonthValue())
-                        .getDisplayName(TextStyle.FULL_STANDALONE, Lang.EN.locale())));
+
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BIRTHDAYS_NONE, "March"));
     }
 
     @Test
     @DisplayName("CONFIRM_DELETE_ACCOUNT callback → deletes all data")
     void confirmDeleteAccount_deletesAllData() {
         EditMessageText result = handler.handle(callback("CONFIRM_DELETE_ACCOUNT"));
+        verify(accountDeletionService).deleteAccount(1L);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.DELETE_ACCOUNT_DONE));
     }
 

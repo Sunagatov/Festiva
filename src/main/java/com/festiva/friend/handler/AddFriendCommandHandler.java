@@ -3,10 +3,12 @@ package com.festiva.friend.handler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -21,6 +23,8 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final FriendWorkflowSessionService friendWorkflowSessionService;
+    private final UserPreferenceService userPreferenceService;
 
     @Override
     public String command() {
@@ -36,7 +40,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
 
         if (friendService.getFriends(userId).size() >= FriendService.FRIEND_CAP) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIEND_CAP, FriendService.FRIEND_CAP));
@@ -50,7 +54,7 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
     public SendMessage handleState(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
 
         BotState state = userStateService.getState(userId);
         if (state != BotState.WAITING_FOR_ADD_FRIEND_NAME) {
@@ -69,8 +73,8 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, name));
         }
 
-        userStateService.setPendingName(userId, name);
-        userStateService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
+        friendWorkflowSessionService.setPendingName(userId, name);
+        friendWorkflowSessionService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_DATE);
         return MessageBuilder.html(chatId,
                 Messages.get(lang, Messages.DATE_PICK_YEAR, name),

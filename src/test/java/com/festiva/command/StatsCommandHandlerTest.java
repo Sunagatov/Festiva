@@ -6,7 +6,8 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
+import com.festiva.user.api.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,12 +32,13 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
     @InjectMocks StatsCommandHandler handler;
 
     @BeforeEach
     void defaultLang() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
 
@@ -77,7 +79,7 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("with friends RU → response contains friend count")
     void withFriends_ru_containsCount() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         when(friendService.getFriends(1L)).thenReturn(List.of(
                 new Friend("Alice", LocalDate.now().plusDays(1).minusYears(30))));
         assertThat(handler.handle(update()).getText()).contains("1");

@@ -1,15 +1,16 @@
 package com.festiva.friend.handler;
 
-import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.bot.CallbackResult;
+import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -33,6 +34,7 @@ public class DatePickerCallbackHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final FriendWorkflowSessionService friendWorkflowSessionService;
     private final UserDateService userDateService;
 
     public CallbackResult handleYearPage(String data, long userId, Lang lang) {
@@ -42,18 +44,18 @@ public class DatePickerCallbackHandler {
             return sessionExpired(lang);
         }
 
-        String name = userStateService.getPendingName(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
 
-        userStateService.setYearPageOffset(userId, offset);
+        friendWorkflowSessionService.setYearPageOffset(userId, offset);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
     public CallbackResult handleYearPick(String data, long userId, Lang lang) {
-        String name = userStateService.getPendingName(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
@@ -64,20 +66,20 @@ public class DatePickerCallbackHandler {
             return sessionExpired(lang);
         }
 
-        userStateService.setPendingYear(userId, year);
+        friendWorkflowSessionService.setPendingYear(userId, year);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
-                DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
+                DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
     }
 
     public CallbackResult handleSkipYear(long userId, Lang lang) {
-        String name = userStateService.getPendingName(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
 
-        userStateService.setPendingYear(userId, null);
+        friendWorkflowSessionService.setPendingYear(userId, null);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
-                DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
+                DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
     }
 
     public CallbackResult handleMonthPick(String data, long userId, Lang lang) {
@@ -87,13 +89,13 @@ public class DatePickerCallbackHandler {
             return sessionExpired(lang);
         }
 
-        Integer year = userStateService.getPendingYear(userId);
-        String name = userStateService.getPendingName(userId);
+        Integer year = friendWorkflowSessionService.getPendingYear(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
 
-        userStateService.setPendingMonth(userId, month);
+        friendWorkflowSessionService.setPendingMonth(userId, month);
 
         int yearForDayPicker = year != null ? year : 2000;
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, name),
@@ -103,10 +105,10 @@ public class DatePickerCallbackHandler {
     public CallbackResult handleDayPick(String data, long userId, Lang lang) {
         Integer day = parseInteger(data.substring(DatePickerKeyboard.DATE_DAY_PREFIX.length()),
                 "callback.date.day.parse.failed", data);
-        Integer year = userStateService.getPendingYear(userId);
-        Integer month = userStateService.getPendingMonth(userId);
-        String name = userStateService.getPendingName(userId);
-        String id = userStateService.getPendingId(userId);
+        Integer year = friendWorkflowSessionService.getPendingYear(userId);
+        Integer month = friendWorkflowSessionService.getPendingMonth(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
+        String id = friendWorkflowSessionService.getPendingId(userId);
 
         if (day == null || month == null || name == null) {
             return sessionExpired(lang);
@@ -167,15 +169,15 @@ public class DatePickerCallbackHandler {
             return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), null);
         }
 
-        userStateService.setPendingYear(userId, year);
-        userStateService.setPendingMonth(userId, month);
-        userStateService.setPendingDay(userId, day);
+        friendWorkflowSessionService.setPendingYear(userId, year);
+        friendWorkflowSessionService.setPendingMonth(userId, month);
+        friendWorkflowSessionService.setPendingDay(userId, day);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_RELATIONSHIP);
         return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, name), relationshipKeyboard(lang));
     }
 
     public CallbackResult handleBackToYear(String data, long userId, Lang lang) {
-        String name = userStateService.getPendingName(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
@@ -186,28 +188,28 @@ public class DatePickerCallbackHandler {
             return sessionExpired(lang);
         }
 
-        userStateService.setYearPageOffset(userId, offset);
-        userStateService.setPendingYear(userId, null);
+        friendWorkflowSessionService.setYearPageOffset(userId, offset);
+        friendWorkflowSessionService.setPendingYear(userId, null);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
     public CallbackResult handleBackToMonth(long userId, Lang lang) {
-        String name = userStateService.getPendingName(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
         }
 
-        userStateService.setPendingMonth(userId, null);
+        friendWorkflowSessionService.setPendingMonth(userId, null);
         return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
-                DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
+                DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
     }
 
     public CallbackResult handleRelationship(String data, long userId, Lang lang) {
-        String name = userStateService.getPendingName(userId);
-        Integer year = userStateService.getPendingYear(userId);
-        Integer month = userStateService.getPendingMonth(userId);
-        Integer day = userStateService.getPendingDay(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
+        Integer year = friendWorkflowSessionService.getPendingYear(userId);
+        Integer month = friendWorkflowSessionService.getPendingMonth(userId);
+        Integer day = friendWorkflowSessionService.getPendingDay(userId);
         if (month == null || day == null || name == null) {
             return sessionExpired(lang);
         }
@@ -250,7 +252,7 @@ public class DatePickerCallbackHandler {
         return new CallbackResult(Messages.get(lang, messageKey, name),
                 InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData(LIST_SORT_DATE + "_0").build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(CallbackQueryHandler.ACTION_ADD).build()
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(FriendAction.ACTION_ADD).build()
                 ))).build());
     }
 
@@ -261,15 +263,15 @@ public class DatePickerCallbackHandler {
             return sessionExpired(lang);
         }
 
-        userStateService.setPendingName(userId, friend.getName());
-        userStateService.setPendingId(userId, id);
+        friendWorkflowSessionService.setPendingName(userId, friend.getName());
+        friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_RELATIONSHIP);
         return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, friend.getName()), editRelKeyboard(lang));
     }
 
     public CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
-        String id = userStateService.getPendingId(userId);
-        String name = userStateService.getPendingName(userId);
+        String id = friendWorkflowSessionService.getPendingId(userId);
+        String name = friendWorkflowSessionService.getPendingName(userId);
         if (id == null || name == null) {
             return sessionExpired(lang);
         }

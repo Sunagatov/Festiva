@@ -1,4 +1,4 @@
-package com.festiva.state;
+package com.festiva.importing;
 
 import com.festiva.friend.entity.Friend;
 import lombok.AllArgsConstructor;
@@ -16,20 +16,20 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuppressWarnings("unused")
-public class PendingImport {
-    
+public class PendingIcsImport {
+
     @Id
     private String id;
-    
+
     @Indexed
     private long userId;
-    
+
     private List<Friend> friends;
-    
+
     @Indexed(expireAfter = "1h")
     private LocalDateTime createdAt;
-    
-    public PendingImport(long userId, List<Friend> friends) {
+
+    public PendingIcsImport(long userId, List<Friend> friends) {
         this.userId = userId;
         this.friends = friends;
         this.createdAt = LocalDateTime.now();

@@ -3,6 +3,7 @@ package com.festiva.friend.handler;
 import com.festiva.bot.CallbackResult;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.workflow.FriendWorkflowSessionService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
@@ -30,6 +31,7 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
 
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
+    @Mock FriendWorkflowSessionService friendWorkflowSessionService;
     @InjectMocks EditCallbackHandler handler;
 
     @BeforeEach
@@ -63,8 +65,8 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     void handleEditFieldName_storesPendingAndSetsState() {
         handler.handleEditFieldName(EditCallbackHandler.EDIT_FIELD_NAME + "id-alice", 1L, Lang.EN);
 
-        verify(userStateService).setPendingName(1L, "Alice");
-        verify(userStateService).setPendingId(1L, "id-alice");
+        verify(friendWorkflowSessionService).setPendingName(1L, "Alice");
+        verify(friendWorkflowSessionService).setPendingId(1L, "id-alice");
         verify(userStateService).setState(1L, BotState.WAITING_FOR_EDIT_NAME);
     }
 
@@ -81,8 +83,9 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     void handleEditFieldDate_storesPendingAndSetsState() {
         handler.handleEditFieldDate(EditCallbackHandler.EDIT_FIELD_DATE + "id-alice", 1L, Lang.EN);
 
-        verify(userStateService).setPendingName(1L, "Alice");
-        verify(userStateService).setPendingId(1L, "id-alice");
+        verify(friendWorkflowSessionService).setPendingName(1L, "Alice");
+        verify(friendWorkflowSessionService).setPendingId(1L, "id-alice");
+        verify(friendWorkflowSessionService).setYearPageOffset(1L, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         verify(userStateService).setState(1L, BotState.WAITING_FOR_EDIT_DATE);
     }
 

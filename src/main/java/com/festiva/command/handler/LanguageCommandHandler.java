@@ -5,15 +5,12 @@ import com.festiva.command.MessageBuilder;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserLanguageCallbackService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +18,8 @@ import java.util.List;
 public class LanguageCommandHandler implements CommandHandler {
 
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
+    private final UserLanguageCallbackService userLanguageCallbackService;
 
     @Override
     public String command() {
@@ -34,15 +33,7 @@ public class LanguageCommandHandler implements CommandHandler {
 
         userStateService.clearState(userId);
 
-        Lang lang = userStateService.getLanguage(userId);
-
-        InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
-                .keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text((lang == Lang.EN ? "✅ " : "") + Messages.get(lang, Messages.LANG_EN_BTN)).callbackData("LANG_" + Lang.EN.name()).build(),
-                        InlineKeyboardButton.builder().text((lang == Lang.RU ? "✅ " : "") + Messages.get(lang, Messages.LANG_RU_BTN)).callbackData("LANG_" + Lang.RU.name()).build()
-                )))
-                .build();
-
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.LANGUAGE_CHOOSE), keyboard);
+        Lang lang = userPreferenceService.getLanguage(userId);
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.LANGUAGE_CHOOSE), userLanguageCallbackService.keyboard(lang));
     }
 }

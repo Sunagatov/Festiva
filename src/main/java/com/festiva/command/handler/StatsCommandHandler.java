@@ -8,7 +8,8 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
 import com.festiva.util.HtmlEscaper;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,6 +27,7 @@ public class StatsCommandHandler implements CommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
     private final UserDateService userDateService;
 
     @Override
@@ -35,7 +37,7 @@ public class StatsCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         List<Friend> friends = friendService.getFriends(userId);
         LocalDate today = userDateService.todayFor(userId);
 

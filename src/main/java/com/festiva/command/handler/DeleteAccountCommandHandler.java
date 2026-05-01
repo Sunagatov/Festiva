@@ -2,12 +2,11 @@ package com.festiva.command.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
-import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
-import com.festiva.state.PendingImportRepository;
 import com.festiva.state.UserStateService;
-import com.festiva.user.UserPreferenceRepository;
+import com.festiva.user.api.AccountDeletionAction;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -22,13 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class DeleteAccountCommandHandler implements CommandHandler {
-
-    public static final String CONFIRM_DELETE = "CONFIRM_DELETE_ACCOUNT";
-    public static final String CANCEL_DELETE  = "CANCEL_DELETE_ACCOUNT";
-
-    private final FriendService friendService;
-    private final UserPreferenceRepository userPreferenceRepository;
-    private final PendingImportRepository pendingImportRepository;
+    private final UserPreferenceService userPreferenceService;
     private final UserStateService userStateService;
 
     @Override
@@ -38,19 +31,12 @@ public class DeleteAccountCommandHandler implements CommandHandler {
     public SendMessage handle(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         InlineKeyboardMarkup keyboard = InlineKeyboardMarkup.builder()
                 .keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_YES)).callbackData(CONFIRM_DELETE).build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_NO)).callbackData(CANCEL_DELETE).build())))
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_YES)).callbackData(AccountDeletionAction.CONFIRM_DELETE).build(),
+                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.CONFIRM_NO)).callbackData(AccountDeletionAction.CANCEL_DELETE).build())))
                 .build();
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.DELETE_ACCOUNT_ASK), keyboard);
-    }
-
-    public void deleteAccount(long userId) {
-        friendService.deleteAllFriends(userId);
-        userPreferenceRepository.deleteById(userId);
-        pendingImportRepository.deleteByUserId(userId);
-        userStateService.removeSession(userId);
     }
 }

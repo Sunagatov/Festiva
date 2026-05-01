@@ -8,7 +8,8 @@ import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
+import com.festiva.user.api.UserDateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,13 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
     @Mock FriendService friendService;
     @Mock UserStateService userStateService;
     @Mock TelegramClient telegramClient;
+    @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
     @InjectMocks BulkAddCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(friendService.getFriends(anyLong())).thenReturn(List.of());
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());
     }
@@ -118,7 +120,7 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("handleState RU valid entry → returns RU success message")
     void handleState_ru_returnsRuSuccess() {
-        when(userStateService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         var result = handler.handleState(update("Alice,15.03.1990"));
         assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.BULK_ADD_SUCCESS, 1));
     }

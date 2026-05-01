@@ -9,7 +9,8 @@ import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import com.festiva.util.HtmlEscaper;
-import com.festiva.util.UserDateService;
+import com.festiva.user.api.UserDateService;
+import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -28,6 +29,7 @@ public class SearchCommandHandler implements StatefulCommandHandler {
 
     private final FriendService friendService;
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
     private final UserDateService userDateService;
 
     @Override
@@ -41,14 +43,14 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         userStateService.setState(userId, BotState.WAITING_FOR_SEARCH);
-        return MessageBuilder.html(chatId, Messages.get(userStateService.getLanguage(userId), Messages.SEARCH_PROMPT));
+        return MessageBuilder.html(chatId, Messages.get(userPreferenceService.getLanguage(userId), Messages.SEARCH_PROMPT));
     }
 
     @Override
     public SendMessage handleState(Update update) {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
-        Lang lang = userStateService.getLanguage(userId);
+        Lang lang = userPreferenceService.getLanguage(userId);
         String rawQuery = update.getMessage().getText().trim();
         String query = rawQuery.toLowerCase(Locale.ROOT);
 

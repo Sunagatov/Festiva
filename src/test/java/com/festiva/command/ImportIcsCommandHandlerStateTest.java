@@ -2,10 +2,12 @@ package com.festiva.command;
 
 import com.festiva.command.handler.ImportIcsCommandHandler;
 import com.festiva.friend.api.FriendService;
+import com.festiva.importing.PendingIcsImportService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,15 +34,19 @@ import static org.mockito.Mockito.when;
 class ImportIcsCommandHandlerStateTest extends MessagesTestSupport {
 
     @Mock UserStateService userStateService;
+    @Mock UserPreferenceService userPreferenceService;
+    @Mock PendingIcsImportService pendingIcsImportService;
     private ImportIcsCommandHandler handler;
 
     @BeforeEach
     void defaults() {
-        lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
+        lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         handler = new ImportIcsCommandHandler(
                 mock(FriendService.class),
                 userStateService,
-                mock(TelegramClient.class)
+                mock(TelegramClient.class),
+                userPreferenceService,
+                pendingIcsImportService
         );
     }
 

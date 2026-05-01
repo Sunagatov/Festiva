@@ -3,6 +3,7 @@ package com.festiva.command;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.user.api.UserPreferenceService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -17,12 +18,16 @@ import java.util.stream.Collectors;
 public class CommandRouter {
 
     private final UserStateService userStateService;
+    private final UserPreferenceService userPreferenceService;
     private final Map<String, CommandHandler> handlers;
     private final Map<BotState, StatefulCommandHandler> statefulHandlers;
     private final CommandHandler defaultHandler;
 
-    public CommandRouter(UserStateService userStateService, List<CommandHandler> allHandlers) {
+    public CommandRouter(UserStateService userStateService,
+                         UserPreferenceService userPreferenceService,
+                         List<CommandHandler> allHandlers) {
         this.userStateService = userStateService;
+        this.userPreferenceService = userPreferenceService;
         this.handlers = allHandlers.stream()
                 .filter(h -> h.command() != null)
                 .collect(Collectors.toMap(CommandHandler::command, Function.identity()));
@@ -54,7 +59,7 @@ public class CommandRouter {
         if (h == null) {
             if (state != BotState.IDLE) {
                 return MessageBuilder.html(update.getMessage().getChatId(),
-                        Messages.get(userStateService.getLanguage(userId), Messages.USE_BUTTONS));
+                        Messages.get(userPreferenceService.getLanguage(userId), Messages.USE_BUTTONS));
             }
             return null;
         }
@@ -82,7 +87,7 @@ public class CommandRouter {
 
         if (state != BotState.IDLE) {
             return MessageBuilder.html(update.getMessage().getChatId(),
-                    Messages.get(userStateService.getLanguage(userId), Messages.USE_BUTTONS));
+                    Messages.get(userPreferenceService.getLanguage(userId), Messages.USE_BUTTONS));
         }
 
         return handlers.getOrDefault(command, defaultHandler).handle(update);
