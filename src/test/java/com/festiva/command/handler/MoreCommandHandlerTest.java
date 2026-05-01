@@ -46,6 +46,16 @@ class MoreCommandHandlerTest extends MessagesTestSupport {
                 .contains(Messages.get(Lang.EN, Messages.MORE_SEARCH_BTN), Messages.get(Lang.EN, Messages.MORE_SETTINGS_BTN));
     }
 
+    @Test
+    @DisplayName("more keyboard does not show back button on the hub itself")
+    void keyboard_hubDoesNotShowBackButton() {
+        var markup = MoreCommandHandler.keyboard(Lang.EN);
+
+        assertThat(markup.getKeyboard()).flatExtracting(row -> row)
+                .extracting(org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton::getCallbackData)
+                .doesNotContain(MoreCommandHandler.CALLBACK_BACK);
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

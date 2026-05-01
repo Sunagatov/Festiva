@@ -43,7 +43,7 @@ public class TodayCommandHandler implements CommandHandler {
                 .toList();
 
         if (todayFriends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.TODAY_NONE));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.TODAY_NONE), MessageBuilder.todayEmptyMarkup(lang));
         }
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER) + "\n\n");
@@ -55,7 +55,9 @@ public class TodayCommandHandler implements CommandHandler {
             }
             sb.append("\n");
         });
-        sb.append("\n").append(Messages.get(lang, Messages.TODAY_HINT));
-        return MessageBuilder.html(chatId, sb.toString());
+        sb.append("\n").append(Messages.get(lang, Messages.TODAY_CELEBRATE))
+                .append("\n")
+                .append(Messages.get(lang, Messages.TODAY_HINT));
+        return MessageBuilder.html(chatId, sb.toString(), MessageBuilder.todayCelebrationMarkup(lang));
     }
 }

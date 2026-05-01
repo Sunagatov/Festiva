@@ -54,6 +54,9 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
 
         verify(userStateService).setState(1L, BotState.WAITING_FOR_BULK_ADD);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_ADD_CHOOSE));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test
@@ -62,6 +65,9 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
         var result = handler.promptPaste(1L, 1L, Lang.EN);
         verify(userStateService).setState(1L, BotState.WAITING_FOR_BULK_ADD);
         assertThat(result.getText()).contains("/cancel");
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

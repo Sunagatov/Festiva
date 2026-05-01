@@ -2,6 +2,7 @@ package com.festiva.user.api;
 
 import com.festiva.bot.BotCommandsService;
 import com.festiva.bot.CallbackResult;
+import com.festiva.command.MessageBuilder;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -44,7 +45,8 @@ public class UserLanguageCallbackService {
             userPreferenceService.setLanguage(userId, newLang);
             userStateService.clearState(userId);
             commandsService.updateCommandsForUser(userId, newLang);
-            return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET), keyboard(newLang));
+            return new CallbackResult(Messages.get(newLang, Messages.LANGUAGE_SET),
+                    MessageBuilder.withBackToMore(newLang, keyboard(newLang)));
         } catch (IllegalArgumentException e) {
             Lang lang = userPreferenceService.getLanguage(userId);
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);

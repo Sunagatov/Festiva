@@ -49,7 +49,10 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
         when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        assertThat(handler.handle(update()).getText()).contains("Alice");
+        String text = handler.handle(update()).getText();
+        assertThat(text).contains("Alice");
+        assertThat(text).contains("↳");
+        assertThat(text).contains("in 5 days");
     }
 
     @Test
@@ -93,6 +96,7 @@ class UpcomingBirthdaysCommandHandlerTest extends com.festiva.i18n.MessagesTestS
         var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();
         assertThat(markup.getKeyboard().getFirst()).hasSize(3);
+        assertThat(markup.getKeyboard()).hasSize(3);
     }
 
     private Update update() {

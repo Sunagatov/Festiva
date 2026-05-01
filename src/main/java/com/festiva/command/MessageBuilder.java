@@ -2,6 +2,7 @@ package com.festiva.command;
 
 import com.festiva.friend.api.FriendAction;
 import com.festiva.command.handler.MoreCommandHandler;
+import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -13,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,6 +86,122 @@ public final class MessageBuilder {
                 .build();
     }
 
+    public static InlineKeyboardMarkup searchResultsMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.QUICK_EDIT))
+                                        .callbackData(MoreCommandHandler.CALLBACK_EDIT)
+                                        .build(),
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.QUICK_LIST))
+                                        .callbackData("LIST_SORT_DATE_0")
+                                        .build()
+                        ),
+                        backToMoreRow(lang)
+                ))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup exportEmptyMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER))
+                                        .callbackData(FriendAction.ACTION_ADD)
+                                        .build()
+                        ),
+                        backToMoreRow(lang)
+                ))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup todayEmptyMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.TODAY_BTN_UPCOMING))
+                                .callbackData(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX + "30")
+                                .build(),
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER))
+                                .callbackData(FriendAction.ACTION_ADD)
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup todayCelebrationMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_LIST))
+                                .callbackData("LIST_SORT_DATE_0")
+                                .build(),
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.TODAY_BTN_UPCOMING))
+                                .callbackData(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX + "30")
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup statsMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.QUICK_LIST))
+                                        .callbackData("LIST_SORT_DATE_0")
+                                        .build(),
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.MORE_JUBILEE_BTN))
+                                        .callbackData(MoreCommandHandler.CALLBACK_JUBILEE)
+                                        .build()
+                        ),
+                        backToMoreRow(lang)
+                ))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup upcomingMarkup(Lang lang, int activeDays) {
+        InlineKeyboardRow filter = new InlineKeyboardRow();
+        for (int d : new int[]{7, 14, 30}) {
+            String label = (d == activeDays ? "✅ " : "") + d + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX);
+            filter.add(InlineKeyboardButton.builder().text(label).callbackData(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX + d).build());
+        }
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        filter,
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.QUICK_LIST))
+                                        .callbackData("LIST_SORT_DATE_0")
+                                        .build(),
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.MORE_JUBILEE_BTN))
+                                        .callbackData(MoreCommandHandler.CALLBACK_JUBILEE)
+                                        .build()
+                        ),
+                        backToMoreRow(lang)
+                ))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup browseMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        new InlineKeyboardRow(
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.MORE_BROWSE_BTN))
+                                        .callbackData(MoreCommandHandler.CALLBACK_BROWSE)
+                                        .build()
+                        ),
+                        backToMoreRow(lang)
+                ))
+                .build();
+    }
+
     public static InlineKeyboardMarkup settingsButtonMarkup(Lang lang) {
         return InlineKeyboardMarkup.builder()
                 .keyboard(List.of(new InlineKeyboardRow(
@@ -92,6 +210,29 @@ public final class MessageBuilder {
                                 .callbackData(MoreCommandHandler.CALLBACK_SETTINGS)
                                 .build())))
                 .build();
+    }
+
+    public static InlineKeyboardMarkup backToMoreMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(backToMoreRow(lang)))
+                .build();
+    }
+
+    public static InlineKeyboardRow backToMoreRow(Lang lang) {
+        return new InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                        .text(Messages.get(lang, Messages.MORE_BACK_BTN))
+                        .callbackData(MoreCommandHandler.CALLBACK_BACK)
+                        .build());
+    }
+
+    public static InlineKeyboardMarkup withBackToMore(Lang lang, InlineKeyboardMarkup markup) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        if (markup != null) {
+            rows.addAll(markup.getKeyboard());
+        }
+        rows.add(backToMoreRow(lang));
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
     // EN labels → command

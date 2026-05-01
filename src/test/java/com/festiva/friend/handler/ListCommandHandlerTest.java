@@ -72,7 +72,12 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("<b>Alice</b>");
         assertThat(text).doesNotContain("🎂 <b>Alice</b>");
         assertThat(text).contains("\n↳ ");
-        assertThat(text).containsPattern("turned.*30|30.*turned");
+        assertThat(text).contains("↳ ");
+        assertThat(text).contains(" 30");
+        assertThat(text).doesNotContain("turned <b>30</b>");
+        assertThat(text).doesNotContain("in 3");
+        assertThat(text).doesNotContain("in 36");
+        assertThat(text).doesNotContain("in 30");
     }
 
     @Test
@@ -88,7 +93,9 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("<b>Bob</b>");
         assertThat(text).doesNotContain("🎂 <b>Bob</b>");
         assertThat(text).contains("\n↳ ");
-        assertThat(text).containsPattern("turns.*30|30.*turns");
+        assertThat(text).contains("in 1 day");
+        assertThat(text).contains("turns <b>30</b>");
+        assertThat(text).doesNotContain("·");
     }
 
     @Test
@@ -103,7 +110,10 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("Carol");
         assertThat(text).contains("🎂 <b>Carol</b>");
         assertThat(text).contains("\n↳ ");
-        assertThat(text).containsPattern("turned.*30|30.*turned");
+        assertThat(text).contains("today");
+        assertThat(text).contains("  today");
+        assertThat(text).contains(" 30");
+        assertThat(text).doesNotContain("·");
         assertThat(text).doesNotContain("currently");
     }
 
@@ -120,6 +130,50 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("🎂 <b>Carol</b>");
         assertThat(text).contains("<b>Bob</b>");
         assertThat(text).doesNotContain("🎂 <b>Bob</b>");
+    }
+
+    @Test
+    @DisplayName("celebrated friend → omits long next-birthday countdown")
+    void celebratedFriend_omitsNextBirthdayCountdown() {
+        LocalDate today = LocalDate.of(2026, 5, 1);
+        when(userDateService.todayFor(1L)).thenReturn(today);
+        Friend friend = new Friend("Ayrat", LocalDate.of(1996, 2, 26));
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
+
+        String text = handler.handle(update()).getText();
+
+        assertThat(text).contains("─── Already celebrated ───");
+        assertThat(text).contains("↳ 26 Feb 1996");
+        assertThat(text).contains("♓ 30");
+        assertThat(text).doesNotContain("in 301 days");
+    }
+
+    @Test
+    @DisplayName("relationship is shown with its own emoji on the name line")
+    void relationship_shownWithItsEmoji() {
+        LocalDate today = LocalDate.now();
+        Friend friend = new Friend("Galiya", today.plusDays(1).minusYears(30),
+                com.festiva.friend.entity.Relationship.AUNT);
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
+
+        String text = handler.handle(update()).getText();
+
+        assertThat(text).contains("<b>Galiya</b> 👩 Aunt");
+        assertThat(text).doesNotContain("💞");
+    }
+
+    @Test
+    @DisplayName("russian month labels are capped at three letters")
+    void russianMonthLabels_areThreeLetters() {
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.RU);
+        when(userDateService.todayFor(1L)).thenReturn(LocalDate.of(2026, 5, 1));
+        Friend friend = new Friend("Ayrat", LocalDate.of(1996, 2, 26));
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(friend));
+
+        String text = handler.handle(update()).getText();
+
+        assertThat(text).contains("↳ 26 Фев 1996");
+        assertThat(text).doesNotContain("Февр");
     }
 
     @Test

@@ -49,6 +49,9 @@ class LanguageCommandHandlerTest extends MessagesTestSupport {
         var result = handler.handle(update());
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.LANGUAGE_CHOOSE));
         assertThat(result.getReplyMarkup()).isNotNull();
+        var markup = (InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test
@@ -86,6 +89,11 @@ class LanguageCommandHandlerTest extends MessagesTestSupport {
                 .keyboard(List.of(new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text((lang == Lang.EN ? "✅ " : "") + Messages.get(lang, Messages.LANG_EN_BTN)).callbackData("LANG_EN").build(),
                         InlineKeyboardButton.builder().text((lang == Lang.RU ? "✅ " : "") + Messages.get(lang, Messages.LANG_RU_BTN)).callbackData("LANG_RU").build()
+                ), new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.MORE_BACK_BTN))
+                                .callbackData(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK)
+                                .build()
                 )))
                 .build();
     }

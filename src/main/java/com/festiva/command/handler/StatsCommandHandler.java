@@ -59,7 +59,7 @@ public class StatsCommandHandler implements CommandHandler {
         text.add(nextBirthday);
         text.add(Messages.get(lang, Messages.STATS_THIS_MONTH, thisMonth, progressBar(thisMonth)));
         text.add(Messages.get(lang, Messages.STATS_JUBILEES, jubilees));
-        return MessageBuilder.html(chatId, text.toString());
+        return MessageBuilder.html(chatId, text.toString(), MessageBuilder.statsMarkup(lang));
     }
 
     private String formatNextBirthday(List<Friend> friends, LocalDate today, Lang lang) {

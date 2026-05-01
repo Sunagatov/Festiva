@@ -232,7 +232,7 @@ public class FriendCallbackService {
                 return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
             }
             return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
-                    removeCommandHandler.keyboard(friends, page));
+                    removeCommandHandler.keyboard(friends, page, lang));
         } catch (NumberFormatException e) {
             log.atDebug()
                     .setMessage("callback_remove_page_parse_failed")
@@ -255,7 +255,7 @@ public class FriendCallbackService {
                 return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
             }
             return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
-                    editFriendCommandHandler.keyboard(friends, page));
+                    editFriendCommandHandler.keyboard(friends, page, lang));
         } catch (NumberFormatException e) {
             log.atDebug()
                     .setMessage("callback_edit_page_parse_failed")
@@ -329,31 +329,60 @@ public class FriendCallbackService {
         String raw = Month.of(month).getDisplayName(TextStyle.FULL_STANDALONE, lang.locale());
         String monthName = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
         if (filtered.isEmpty()) {
-            return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), null);
+            return new CallbackResult(Messages.get(lang, Messages.BIRTHDAYS_NONE, monthName), MessageBuilder.browseMarkup(lang));
         }
 
         LocalDate today = userDateService.todayFor(userId);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName) + "\n\n");
         filtered.forEach(f -> {
-            String dateStr = f.hasYear()
-                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
-                    : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            long days = java.time.temporal.ChronoUnit.DAYS.between(today, f.nextBirthday(today));
+            LocalDate next = f.nextBirthday(today);
+            boolean alreadyCelebrated = next.equals(today) || next.getYear() > today.getYear();
 
-            sb.append("– <b>").append(dateStr)
-                    .append("</b> ").append(com.festiva.util.HtmlEscaper.escape(f.getName()));
-
-            if (f.hasYear()) {
-                LocalDate next = f.nextBirthday(today);
-                boolean alreadyCelebrated = next.equals(today) || next.getYear() > today.getYear();
-                String ageLabel = alreadyCelebrated
-                        ? Messages.get(lang, Messages.YEARS_OLD, Messages.yearsRu(lang, f.getAge(today)))
-                        : Messages.get(lang, Messages.YEARS_TURNS, Messages.yearsRu(lang, f.getNextAge(today)));
-                sb.append(" (<i>").append(ageLabel).append("</i>)");
+            sb.append(days == 0 ? "🎂 " : "")
+                    .append("<b>").append(com.festiva.util.HtmlEscaper.escape(f.getName())).append("</b>");
+            if (f.getRelationship() != null) {
+                String label = f.getRelationship().label(lang);
+                int firstSpace = label.indexOf(' ');
+                sb.append(" ").append(label);
             }
+            sb.append("\n");
 
+            List<String> detail = new java.util.ArrayList<>();
+            detail.add(formatMonthCardDate(f, lang));
+            detail.add(f.getZodiac());
+            if (f.hasYear() && alreadyCelebrated) {
+                detail.add(Messages.yearsRu(lang, f.getAge(today)));
+            }
+            sb.append("↳ ").append(String.join(" ", detail)).append("\n");
+
+            List<String> status = new java.util.ArrayList<>();
+            if (!alreadyCelebrated) {
+                status.add(Messages.get(lang, Messages.LIST_DAYS_LEFT, days));
+                if (f.hasYear()) {
+                    status.add(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getNextAge(today))));
+                }
+            } else if (days == 0) {
+                status.add(Messages.get(lang, Messages.LIST_DAYS_TODAY));
+            }
+            if (!status.isEmpty()) {
+                sb.append("  ").append(String.join(" ", status)).append("\n");
+            }
             sb.append("\n");
         });
-        return new CallbackResult(sb.toString(), null);
+        return new CallbackResult(sb.toString(), MessageBuilder.browseMarkup(lang));
+    }
+
+    private String formatMonthCardDate(Friend friend, Lang lang) {
+        int month = friend.getBirthMonthDay().getMonthValue();
+        String rawMonth = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
+        String normalizedMonth = rawMonth.replace(".", "");
+        String trimmedMonth = normalizedMonth.length() > 3 ? normalizedMonth.substring(0, 3) : normalizedMonth;
+        String shortMonth = Character.toUpperCase(trimmedMonth.charAt(0)) + trimmedMonth.substring(1);
+        if (friend.hasYear()) {
+            return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth + " " + friend.getBirthYear();
+        }
+        return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth;
     }
 
     private InlineKeyboardMarkup confirmKeyboard(String id, Lang lang) {

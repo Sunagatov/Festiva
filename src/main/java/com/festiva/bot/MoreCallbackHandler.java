@@ -29,6 +29,10 @@ public class MoreCallbackHandler {
     }
 
     public CallbackResult handle(String data, long chatId, long userId, Lang lang) {
+        if (MoreCommandHandler.CALLBACK_BACK.equals(data)) {
+            return new CallbackResult(Messages.get(lang, Messages.MORE_HEADER), MoreCommandHandler.keyboard(lang));
+        }
+
         String command = MoreCommandHandler.commandForCallback(data);
         if (command == null) {
             return null;

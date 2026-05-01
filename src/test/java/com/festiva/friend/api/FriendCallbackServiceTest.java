@@ -93,6 +93,9 @@ class FriendCallbackServiceTest extends MessagesTestSupport {
         CallbackResult result = service.handle("MONTH_6", 1L, Lang.EN);
 
         assertThat(result.text).contains("Alice").doesNotContain("Bob");
+        assertThat(result.markup).isNotNull();
+        assertThat(result.markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BROWSE);
     }
 
     @Test
@@ -105,5 +108,6 @@ class FriendCallbackServiceTest extends MessagesTestSupport {
 
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.BIRTHDAYS_NONE,
                 Month.MARCH.getDisplayName(TextStyle.FULL_STANDALONE, Lang.EN.locale())));
+        assertThat(result.markup).isNotNull();
     }
 }

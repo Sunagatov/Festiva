@@ -4,6 +4,7 @@ import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -122,38 +123,60 @@ public class ListCommandHandler implements CommandHandler {
 
     private void appendFriend(StringBuilder sb, Friend f, LocalDate today, Lang lang) {
         long daysUntil = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
-        String daysLabel = daysUntil == 0
-                ? Messages.get(lang, Messages.LIST_DAYS_TODAY)
-                : Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
-        String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
+        String relLabel = relationshipLabel(lang, f.getRelationship());
         String namePrefix = daysUntil == 0 ? "🎂 " : "";
+        LocalDate next = f.nextBirthday(today);
+        boolean alreadyHadBirthday = next.equals(today) || next.getYear() > today.getYear();
 
         sb.append(namePrefix).append("<b>").append(HtmlEscaper.escape(f.getName())).append("</b>")
-                .append(relLabel).append("\n")
-                .append("↳ ").append(formatDateLabel(f, lang))
-                .append(" · ").append(f.getZodiac());
+                .append(relLabel).append("\n");
+
+        List<String> firstLine = new ArrayList<>();
+        firstLine.add(formatDateLabel(f, lang));
+        firstLine.add(f.getZodiac());
+        if (f.hasYear() && alreadyHadBirthday) {
+            firstLine.add(Messages.yearsRu(lang, f.getAge(today)));
+        }
+        sb.append("↳ ").append(String.join(" ", firstLine)).append("\n");
 
         List<String> details = new ArrayList<>();
+        if (!alreadyHadBirthday) {
+            details.add(Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil));
+        } else if (daysUntil == 0) {
+            details.add(Messages.get(lang, Messages.LIST_DAYS_TODAY));
+        }
         if (f.hasYear()) {
-            LocalDate next = f.nextBirthday(today);
-            boolean alreadyHadBirthday = next.equals(today) || next.getYear() > today.getYear();
-            if (alreadyHadBirthday) {
-                details.add(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
-            } else {
+            if (!alreadyHadBirthday) {
                 details.add(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getNextAge(today))));
             }
         }
-        details.add(daysLabel);
-        sb.append(" · ").append(String.join(" · ", details)).append("\n");
+        if (!details.isEmpty()) {
+            sb.append("  ").append(String.join(" ", details)).append("\n");
+        }
+        sb.append("\n");
     }
 
     private String formatDateLabel(Friend friend, Lang lang) {
         int month = friend.getBirthMonthDay().getMonthValue();
         String rawMonth = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
-        String shortMonth = Character.toUpperCase(rawMonth.charAt(0)) + rawMonth.substring(1).replace(".", "");
+        String normalizedMonth = rawMonth.replace(".", "");
+        String trimmedMonth = normalizedMonth.length() > 3 ? normalizedMonth.substring(0, 3) : normalizedMonth;
+        String shortMonth = Character.toUpperCase(trimmedMonth.charAt(0)) + trimmedMonth.substring(1);
         if (friend.hasYear()) {
             return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth + " " + friend.getBirthYear();
         }
         return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth;
+    }
+
+    private String relationshipLabel(Lang lang, Relationship relationship) {
+        if (relationship == null) {
+            return "";
+        }
+        String label = relationship.label(lang);
+        int firstSpace = label.indexOf(' ');
+        if (firstSpace < 0 || firstSpace == label.length() - 1) {
+            return " " + label;
+        }
+        return " " + label.substring(0, firstSpace) + " " + label.substring(firstSpace + 1);
     }
 }

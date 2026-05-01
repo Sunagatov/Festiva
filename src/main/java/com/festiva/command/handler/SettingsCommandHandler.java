@@ -137,8 +137,9 @@ public class SettingsCommandHandler implements CommandHandler {
         Lang lang = userPreferenceService.getLanguage(userId);
         int currentHour = userPreferenceService.getNotifyHour(userId);
         String currentTz = userPreferenceService.getTimezone(userId);
-        String text = Messages.get(lang, Messages.SETTINGS_HEADER) + "\n\n" +
-                      Messages.get(lang, Messages.SETTINGS_TZ_HEADER);
+        String text = Messages.get(lang, Messages.SETTINGS_HEADER)
+                + "\n\n"
+                + Messages.get(lang, Messages.SETTINGS_TZ_HEADER);
         InlineKeyboardMarkup keyboard = combined(currentHour, currentTz, lang);
         return MessageBuilder.html(chatId, text, keyboard);
     }
@@ -153,6 +154,7 @@ public class SettingsCommandHandler implements CommandHandler {
         if (expandedRegion != null) {
             rows.addAll(tzKeyboard(expandedRegion, activeTz).getKeyboard());
         }
+        rows.add(MessageBuilder.backToMoreRow(lang));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
@@ -205,9 +207,11 @@ public class SettingsCommandHandler implements CommandHandler {
     }
 
     public static InlineKeyboardMarkup hourKeyboard(int activeHour) {
+        // Order: morning first (06-23), then night (00-05) so popular times appear at top
+        int[] order = {6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5};
         List<InlineKeyboardRow> rows = new ArrayList<>();
         InlineKeyboardRow row = new InlineKeyboardRow();
-        for (int h = 0; h < 24; h++) {
+        for (int h : order) {
             row.add(btn(h, activeHour));
             if (row.size() == 4) { rows.add(row); row = new InlineKeyboardRow(); }
         }
@@ -216,7 +220,8 @@ public class SettingsCommandHandler implements CommandHandler {
     }
 
     private static InlineKeyboardButton btn(int hour, int activeHour) {
-        String label = (hour == activeHour ? "✅ " : "") + String.format("%02d:00", hour);
+        String emoji = hour >= 6 && hour < 12 ? "☀️" : hour >= 12 && hour < 18 ? "🌤" : hour >= 18 ? "🌙" : "🌚";
+        String label = (hour == activeHour ? "✅ " : "") + emoji + " " + String.format("%02d:00", hour);
         return InlineKeyboardButton.builder().text(label).callbackData(SETTINGS_HOUR_PREFIX + hour).build();
     }
 

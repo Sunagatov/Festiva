@@ -61,7 +61,9 @@ class BirthdaysCommandHandlerTest extends MessagesTestSupport {
         when(friendService.getFriends(1L)).thenReturn(List.of());
         var keyboard = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 handler.handle(update()).getReplyMarkup();
-        assertThat(keyboard.getKeyboard()).hasSize(4);
+        assertThat(keyboard.getKeyboard()).hasSize(5);
+        assertThat(keyboard.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

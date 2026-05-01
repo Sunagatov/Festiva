@@ -230,6 +230,19 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("MORE_BACK callback → re-renders more hub")
+    void moreBackCallback_rerendersMoreHub() {
+        when(moreCallbackHandler.handle(MoreCommandHandler.CALLBACK_BACK, 1L, 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.MORE_HEADER), MoreCommandHandler.keyboard(Lang.EN)));
+
+        EditMessageText result = handler.handle(callback(MoreCommandHandler.CALLBACK_BACK));
+
+        verify(moreCallbackHandler).handle(MoreCommandHandler.CALLBACK_BACK, 1L, 1L, Lang.EN);
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.MORE_HEADER));
+        assertThat(result.getReplyMarkup()).isNotNull();
+    }
+
+    @Test
     @DisplayName("EDIT_PAGE callback with empty list — keeps add-first-friend CTA")
     void editPageCallback_emptyList_keepsAddCta() {
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(

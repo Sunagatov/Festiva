@@ -52,7 +52,7 @@ class TodayCommandHandlerTest extends MessagesTestSupport {
 
         SendMessage result = handler.handle(update());
 
-        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.TODAY_NONE));
+        assertThat(result.getText()).isEqualTo(Messages.get(Lang.EN, Messages.TODAY_NONE));
     }
 
     @Test
@@ -64,14 +64,18 @@ class TodayCommandHandlerTest extends MessagesTestSupport {
         SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains("Bob");
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.TODAY_HEADER));
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test
-    @DisplayName("birthday today → result contains next-step hint")
-    void birthdayToday_containsNextStepHint() {
+    @DisplayName("birthday today → result contains celebration message")
+    void birthdayToday_containsCelebrationMessage() {
         when(friendService.getFriends(1L)).thenReturn(List.of(
                 new Friend("Bob", LocalDate.now().minusYears(25))));
-        assertThat(handler.handle(update()).getText()).contains("/list");
+        String text = handler.handle(update()).getText();
+        assertThat(text).contains(Messages.get(Lang.EN, Messages.TODAY_CELEBRATE));
+        assertThat(text).contains(Messages.get(Lang.EN, Messages.TODAY_HINT));
     }
 
     @Test

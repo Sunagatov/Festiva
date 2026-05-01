@@ -36,6 +36,8 @@ class UserLanguageCallbackServiceTest extends MessagesTestSupport {
         verify(commandsService).updateCommandsForUser(1L, Lang.EN);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.LANGUAGE_SET));
         assertThat(result.markup).isNotNull();
+        assertThat(result.markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

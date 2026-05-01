@@ -55,6 +55,7 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
         SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.EXPORT_EMPTY));
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test
@@ -86,10 +87,14 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("no friends → export-empty message contains /add hint")
-    void noFriends_containsAddHint() {
+    @DisplayName("no friends → export-empty message uses add-first-friend CTA")
+    void noFriends_containsAddCta() {
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
-        assertThat(handler.handle(update()).getText()).contains("/add");
+        SendMessage result = handler.handle(update());
+        assertThat(result.getText()).doesNotContain("/add");
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.friend.api.FriendAction.ACTION_ADD);
     }
 
     @Test
@@ -102,14 +107,15 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("with friends → document caption contains /addmany hint")
-    void withFriends_captionContainsAddManyHint() throws Exception {
+    @DisplayName("with friends → document caption points to import without slash-command hint")
+    void withFriends_captionContainsImportHint() throws Exception {
         when(friendService.getFriendsSortedByDayMonth(1L))
                 .thenReturn(List.of(new Friend("Alice", LocalDate.of(1990, 3, 15))));
         handler.handle(update());
         ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
         verify(telegramClient).execute(captor.capture());
-        assertThat(captor.getValue().getCaption()).contains("/addmany");
+        assertThat(captor.getValue().getCaption()).contains("Import");
+        assertThat(captor.getValue().getCaption()).doesNotContain("/addmany");
     }
 
     @Test
@@ -121,6 +127,7 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
                 .thenThrow(new org.telegram.telegrambots.meta.exceptions.TelegramApiException("fail"));
         SendMessage result = handler.handle(update());
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.EXPORT_FAILED));
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test

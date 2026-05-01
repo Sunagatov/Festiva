@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
@@ -49,7 +50,11 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         Friend friend = new Friend("Alice", today.plusDays(1).minusYears(30));
         when(friendService.getFriends(1L)).thenReturn(List.of(friend));
 
-        assertThat(handler.handle(update()).getText()).contains("Alice");
+        var result = handler.handle(update());
+        assertThat(result.getText()).contains("Alice");
+        var markup = (InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test
@@ -76,6 +81,8 @@ class JubileeCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         assertThat(markup).isNotNull();
         assertThat(markup.getKeyboard().getFirst().getFirst().getText())
                 .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

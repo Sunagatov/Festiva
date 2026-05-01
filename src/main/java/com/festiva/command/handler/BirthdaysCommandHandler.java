@@ -72,6 +72,7 @@ public class BirthdaysCommandHandler implements CommandHandler {
             }
             rows.add(row);
         }
+        rows.add(MessageBuilder.backToMoreRow(lang));
         return rows;
     }
 

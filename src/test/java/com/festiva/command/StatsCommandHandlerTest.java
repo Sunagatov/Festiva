@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
@@ -58,6 +59,21 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("👥 Friends: 4");
         assertThat(text).contains("🎂 Next: Maria — in 3 days");
         assertThat(text).contains("📅 This month: 4  ████░░░░░░");
+    }
+
+    @Test
+    @DisplayName("stats screen → includes back to more action")
+    void stats_includesBackToMoreAction() {
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        var result = handler.handle(update());
+        var markup = (InlineKeyboardMarkup) result.getReplyMarkup();
+
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo("LIST_SORT_DATE_0");
+        assertThat(markup.getKeyboard().get(1).getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

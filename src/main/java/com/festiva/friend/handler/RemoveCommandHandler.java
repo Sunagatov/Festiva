@@ -44,13 +44,18 @@ public class RemoveCommandHandler implements CommandHandler {
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
+                    MessageBuilder.withBackToMore(lang, MessageBuilder.emptyStateAddMarkup(lang)));
         }
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.SELECT_REMOVE),
-                keyboard(friends, 0));
+                keyboard(friends, 0, lang));
     }
 
     public InlineKeyboardMarkup keyboard(List<Friend> friends, int page) {
+        return keyboard(friends, page, Lang.EN);
+    }
+
+    public InlineKeyboardMarkup keyboard(List<Friend> friends, int page, Lang lang) {
         int from = page * PAGE_SIZE;
         if (from >= friends.size()) from = 0;
         int to = Math.min(from + PAGE_SIZE, friends.size());
@@ -75,6 +80,7 @@ public class RemoveCommandHandler implements CommandHandler {
                 nav.add(InlineKeyboardButton.builder().text("▶").callbackData(REMOVE_PAGE_PREFIX + (page + 1)).build());
             rows.add(nav);
         }
+        rows.add(MessageBuilder.backToMoreRow(lang));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 }

@@ -86,7 +86,8 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                         ),
                         new InlineKeyboardRow(
                                 InlineKeyboardButton.builder().text(Messages.get(lang, Messages.BULK_ADD_ICS_BTN)).callbackData(CALLBACK_ICS).build()
-                        )
+                        ),
+                        MessageBuilder.backToMoreRow(lang)
                 )).build();
 
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_CHOOSE), keyboard);
@@ -110,7 +111,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
     public SendMessage promptPaste(long chatId, long userId, Lang lang) {
         userStateService.setState(userId, BotState.WAITING_FOR_BULK_ADD);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_PROMPT));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_ADD_PROMPT), MessageBuilder.backToMoreMarkup(lang));
     }
 
     @Override

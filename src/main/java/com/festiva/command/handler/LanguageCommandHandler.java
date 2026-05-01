@@ -34,6 +34,7 @@ public class LanguageCommandHandler implements CommandHandler {
         userStateService.clearState(userId);
 
         Lang lang = userPreferenceService.getLanguage(userId);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.LANGUAGE_CHOOSE), userLanguageCallbackService.keyboard(lang));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.LANGUAGE_CHOOSE),
+                MessageBuilder.withBackToMore(lang, userLanguageCallbackService.keyboard(lang)));
     }
 }

@@ -45,9 +45,17 @@ public class JubileeCommandHandler implements CommandHandler {
                 .sorted(Comparator.comparing(f -> f.nextBirthday(today)))
                 .toList();
         if (friends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
+                    MessageBuilder.withBackToMore(lang, MessageBuilder.emptyStateAddMarkup(lang)));
         }
-        return MessageBuilder.html(chatId, buildText(friends, lang, today));
+        return MessageBuilder.html(chatId, buildText(friends, lang, today), MessageBuilder.backToMoreMarkup(lang));
+    }
+
+    private static String milestoneEmoji(int age) {
+        if (age >= 75) return "💎";
+        if (age >= 60) return "🏆";
+        if (age >= 50) return "🥇";
+        return "🎉";
     }
 
     private String buildText(List<Friend> friends, Lang lang, LocalDate today) {
@@ -64,13 +72,19 @@ public class JubileeCommandHandler implements CommandHandler {
         jubilee.forEach(f -> {
             LocalDate next = f.nextBirthday(today);
             long days = ChronoUnit.DAYS.between(today, next);
-            String daysLabel = days == 0
-                    ? " " + Messages.get(lang, Messages.JUBILEE_DAYS_TODAY)
-                    : " " + Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days);
-            sb.append("– <b>").append(next.format(MessageBuilder.DATE_FORMATTER))
-                    .append("</b> <i>").append(HtmlEscaper.escape(f.getName())).append("</i> ")
-                    .append(Messages.get(lang, Messages.JUBILEE_TURNS, Messages.yearsRu(lang, f.getNextAge(today))))
-                    .append(daysLabel).append("\n");
+            int age = f.getNextAge(today);
+
+            sb.append(milestoneEmoji(age)).append(" <b>")
+              .append(String.format("%02d.%02d", next.getDayOfMonth(), next.getMonthValue()))
+              .append("</b>  →  <i>").append(HtmlEscaper.escape(f.getName())).append("</i>  —  ")
+              .append(Messages.get(lang, Messages.JUBILEE_TURNS, Messages.yearsRu(lang, age)));
+
+            if (days == 0) {
+                sb.append("  ").append(Messages.get(lang, Messages.JUBILEE_DAYS_TODAY));
+            } else {
+                sb.append("  ").append(Messages.get(lang, Messages.JUBILEE_DAYS_LEFT, days));
+            }
+            sb.append("\n");
         });
         return sb.toString();
     }

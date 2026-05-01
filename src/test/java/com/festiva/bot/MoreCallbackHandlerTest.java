@@ -14,6 +14,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +50,21 @@ class MoreCallbackHandlerTest extends MessagesTestSupport {
         CallbackResult result = handler.handle(MoreCommandHandler.CALLBACK_EXPORT, 1L, 1L, Lang.EN);
 
         verify(exportHandler).handle(any());
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.MORE_HEADER));
+        assertThat(result.markup).isEqualTo(MoreCommandHandler.keyboard(Lang.EN));
+    }
+
+    @Test
+    @DisplayName("back callback → returns more hub without dispatching to a handler")
+    void handle_backReturnsMoreHub() {
+        CommandHandler searchHandler = mock(CommandHandler.class);
+        when(searchHandler.command()).thenReturn("/search");
+
+        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(searchHandler));
+
+        CallbackResult result = handler.handle(MoreCommandHandler.CALLBACK_BACK, 1L, 1L, Lang.EN);
+
+        verify(searchHandler, never()).handle(any());
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.MORE_HEADER));
         assertThat(result.markup).isEqualTo(MoreCommandHandler.keyboard(Lang.EN));
     }

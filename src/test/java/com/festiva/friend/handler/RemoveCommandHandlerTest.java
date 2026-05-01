@@ -51,6 +51,9 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         SendMessage result = handler.handle(update());
 
         assertThat(result.getReplyMarkup()).isNotNull();
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test
@@ -65,6 +68,8 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         assertThat(markup).isNotNull();
         assertThat(markup.getKeyboard().getFirst().getFirst().getText())
                 .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

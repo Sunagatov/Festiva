@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
@@ -53,10 +54,26 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
 
         var result = handler.handle(update(""));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
-        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        var markup = (InlineKeyboardMarkup) result.getReplyMarkup();
         assertThat(markup).isNotNull();
         assertThat(markup.getKeyboard().getFirst().getFirst().getText())
                 .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
+    }
+
+    @Test
+    @DisplayName("handle with friends → includes back to more action")
+    void handle_withFriends_includesBackToMoreAction() {
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(
+                new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1))));
+
+        var result = handler.handle(update(""));
+        var markup = (InlineKeyboardMarkup) result.getReplyMarkup();
+
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getLast().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test

@@ -33,6 +33,7 @@ public class MoreCommandHandler implements CommandHandler {
     public static final String CALLBACK_LANGUAGE = "MORE_LANGUAGE";
     public static final String CALLBACK_SETTINGS = "MORE_SETTINGS";
     public static final String CALLBACK_ABOUT = "MORE_ABOUT";
+    public static final String CALLBACK_BACK = "MORE_BACK";
 
     private static final Map<String, String> CALLBACK_TO_COMMAND = Map.ofEntries(
             Map.entry(CALLBACK_SEARCH, "/search"),
@@ -81,15 +82,17 @@ public class MoreCommandHandler implements CommandHandler {
                         ),
                         new InlineKeyboardRow(
                                 button(lang, Messages.MORE_JUBILEE_BTN, CALLBACK_JUBILEE),
-                                button(lang, Messages.MORE_BROWSE_BTN, CALLBACK_BROWSE),
-                                button(lang, Messages.MORE_STATS_BTN, CALLBACK_STATS)
+                                button(lang, Messages.MORE_BROWSE_BTN, CALLBACK_BROWSE)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_IMPORT_BTN, CALLBACK_IMPORT),
-                                button(lang, Messages.MORE_EXPORT_BTN, CALLBACK_EXPORT)
+                                button(lang, Messages.MORE_STATS_BTN, CALLBACK_STATS),
+                                button(lang, Messages.MORE_IMPORT_BTN, CALLBACK_IMPORT)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_LANGUAGE_BTN, CALLBACK_LANGUAGE),
+                                button(lang, Messages.MORE_EXPORT_BTN, CALLBACK_EXPORT),
+                                button(lang, Messages.MORE_LANGUAGE_BTN, CALLBACK_LANGUAGE)
+                        ),
+                        new InlineKeyboardRow(
                                 button(lang, Messages.MORE_SETTINGS_BTN, CALLBACK_SETTINGS),
                                 button(lang, Messages.MORE_ABOUT_BTN, CALLBACK_ABOUT)
                         )

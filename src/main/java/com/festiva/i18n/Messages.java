@@ -58,6 +58,7 @@ public final class Messages {
     public static final String MORE_LANGUAGE_BTN      = "more_language_btn";
     public static final String MORE_SETTINGS_BTN      = "more_settings_btn";
     public static final String MORE_ABOUT_BTN         = "more_about_btn";
+    public static final String MORE_BACK_BTN          = "more_back_btn";
     public static final String WELCOME                = "welcome";
     public static final String MENU                   = "menu";
     public static final String ABOUT                  = "about";
@@ -148,6 +149,8 @@ public final class Messages {
     public static final String DELETE_ACCOUNT_DONE   = "delete_account_done";
     public static final String DELETE_ACCOUNT_CANCEL = "delete_account_cancel";
     public static final String TODAY_HEADER            = "today_header";
+    public static final String TODAY_BTN_UPCOMING      = "today_btn_upcoming";
+    public static final String TODAY_CELEBRATE         = "today_celebrate";
     public static final String TODAY_NONE              = "today_none";
     public static final String TODAY_HINT              = "today_hint";
     public static final String BULK_ERROR_NO_DATA      = "bulk_error_no_data";

@@ -44,6 +44,8 @@ class SettingsCommandHandlerTest extends MessagesTestSupport {
     void handle_containsSettingsHeader() {
         assertThat(handler.handle(update()).getText())
                 .contains(Messages.get(Lang.EN, Messages.SETTINGS_HEADER));
+        assertThat(handler.handle(update()).getText())
+                .contains(Messages.get(Lang.EN, Messages.SETTINGS_TZ_HEADER));
     }
 
     @Test

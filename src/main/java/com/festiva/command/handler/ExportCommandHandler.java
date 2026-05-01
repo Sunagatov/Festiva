@@ -43,7 +43,7 @@ public class ExportCommandHandler implements CommandHandler {
 
         var friends = friendService.getFriendsSortedByDayMonth(userId);
         if (friends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_EMPTY));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_EMPTY), MessageBuilder.exportEmptyMarkup(lang));
         }
 
         StringBuilder csv = new StringBuilder("name,birthday,relationship\n");
@@ -83,7 +83,7 @@ public class ExportCommandHandler implements CommandHandler {
                     .addKeyValue("friendCount", friends.size())
                     .setCause(e)
                     .log();
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED), MessageBuilder.backToMoreMarkup(lang));
         }
         return null;
     }

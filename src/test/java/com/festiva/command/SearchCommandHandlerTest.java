@@ -50,6 +50,9 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
         var result = handler.handle(update(""));
         verify(userStateService).setState(1L, BotState.WAITING_FOR_SEARCH);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SEARCH_PROMPT));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK);
     }
 
     @Test
@@ -63,6 +66,7 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
     void handleState_blank_reshowsPrompt() {
         var result = handler.handleState(update("   "));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SEARCH_PROMPT));
+        assertThat(result.getReplyMarkup()).isNotNull();
         verify(userStateService, never()).clearState(anyLong());
     }
 
@@ -71,6 +75,7 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
     void handleState_tooLong_returnsError() {
         var result = handler.handleState(update("A".repeat(101)));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SEARCH_TOO_LONG));
+        assertThat(result.getReplyMarkup()).isNotNull();
         verify(userStateService, never()).clearState(anyLong());
     }
 
@@ -97,8 +102,10 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
     void handleState_match_containsNextStepHint() {
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(
                 List.of(new Friend("Alice", LocalDate.now().minusYears(25))));
-        assertThat(handler.handleState(update("alice")).getText())
-                .contains(Messages.get(Lang.EN, Messages.SEARCH_RESULTS_HINT));
+        var result = handler.handleState(update("alice"));
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SEARCH_RESULTS_HINT));
+        assertThat(result.getReplyMarkup()).isNotNull();
+        assertThat(result.getText()).contains("↳");
     }
 
     @Test
@@ -127,6 +134,7 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
 
         var result = handler.handleState(update("ali"));
         assertThat(result.getText()).contains("Alice");
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test
