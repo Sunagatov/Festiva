@@ -4,6 +4,7 @@ import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.UserStateService;
@@ -62,12 +63,11 @@ public class RemoveCommandHandler implements CommandHandler {
 
         List<InlineKeyboardRow> rows = new ArrayList<>();
         friends.subList(from, to).forEach(f -> {
-            String dateStr = f.hasYear()
-                    ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
-                    : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
+            String dateStr = compactDate(f);
+            String relationship = relationshipLabel(lang, f.getRelationship());
             rows.add(new InlineKeyboardRow(
                     InlineKeyboardButton.builder()
-                            .text(f.getName() + " (" + dateStr + ")")
+                            .text(f.getName() + relationship + " — " + dateStr)
                             .callbackData("REMOVE_" + f.getId()).build()));
         });
 
@@ -82,5 +82,23 @@ public class RemoveCommandHandler implements CommandHandler {
         }
         rows.add(MessageBuilder.backToMoreRow(lang));
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
+    private String compactDate(Friend friend) {
+        return friend.hasYear()
+                ? friend.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
+                : String.format("%02d.%02d", friend.getBirthMonthDay().getDayOfMonth(), friend.getBirthMonthDay().getMonthValue());
+    }
+
+    private String relationshipLabel(Lang lang, Relationship relationship) {
+        if (relationship == null) {
+            return "";
+        }
+        String label = relationship.label(lang);
+        int firstSpace = label.indexOf(' ');
+        if (firstSpace < 0 || firstSpace == label.length() - 1) {
+            return " " + label;
+        }
+        return " " + label.substring(0, firstSpace);
     }
 }

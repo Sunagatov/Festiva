@@ -137,7 +137,7 @@ public class CallbackQueryHandler {
             }
             case BulkAddCommandHandler.CALLBACK_ICS -> {
                 userStateService.setState(userId, BotState.WAITING_FOR_ICS_FILE);
-                return new CallbackResult(Messages.get(lang, Messages.ICS_PROMPT), null);
+                return new CallbackResult(Messages.get(lang, Messages.ICS_PROMPT), MessageBuilder.backToMoreMarkup(lang));
             }
             case AccountDeletionAction.CONFIRM_DELETE -> {
                 return handleConfirmDeleteAccount(userId, lang);

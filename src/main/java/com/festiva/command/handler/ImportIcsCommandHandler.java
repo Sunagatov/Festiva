@@ -82,7 +82,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         long chatId = update.getMessage().getChatId();
         Lang lang = userPreferenceService.getLanguage(userId);
         userStateService.setState(userId, BotState.WAITING_FOR_ICS_FILE);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PROMPT));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PROMPT), MessageBuilder.backToMoreMarkup(lang));
     }
 
     @Override
@@ -92,27 +92,27 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         Lang lang = userPreferenceService.getLanguage(userId);
 
         if (!update.getMessage().hasDocument()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NOT_A_FILE));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NOT_A_FILE), MessageBuilder.backToMoreMarkup(lang));
         }
 
         var doc = update.getMessage().getDocument();
         String mime = doc.getMimeType();
         if (mime != null && !mime.startsWith("text/") && !mime.equals("application/octet-stream")) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_WRONG_TYPE), MessageBuilder.backToMoreMarkup(lang));
         }
         if (doc.getFileSize() != null && doc.getFileSize() > MAX_ICS_FILE_SIZE_BYTES) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE), MessageBuilder.backToMoreMarkup(lang));
         }
 
         List<String> lines = downloadLines(doc.getFileId());
         if (lines == null) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR), MessageBuilder.backToMoreMarkup(lang));
         }
 
         List<IcsEntry> entries = extractYearlyEntries(lines);
         if (entries.isEmpty()) {
             userStateService.clearState(userId);
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS), MessageBuilder.backToMoreMarkup(lang));
         }
 
         List<Friend> candidates = new ArrayList<>();
@@ -160,7 +160,8 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             userStateService.clearState(userId);
             String preview = buildPreviewLines(List.of(), errors);
             return MessageBuilder.html(chatId,
-                    Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview));
+                    Messages.get(lang, Messages.ICS_PREVIEW_NO_VALID, entries.size(), preview),
+                    MessageBuilder.backToMoreMarkup(lang));
         }
 
         pendingIcsImportService.save(userId, toSave);

@@ -73,12 +73,12 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("/remove with friends → prompt contains /cancel hint")
-    void handle_withFriends_promptContainsCancelHint() {
+    @DisplayName("/remove with friends → prompt is tap-first")
+    void handle_withFriends_promptIsTapFirst() {
         when(friendService.getFriendsSortedByDayMonth(1L))
                 .thenReturn(List.of(new Friend("Alice", LocalDate.of(1990, 1, 1))));
 
-        assertThat(handler.handle(update()).getText()).contains("/cancel");
+        assertThat(handler.handle(update()).getText()).doesNotContain("/cancel");
     }
 
     @Test

@@ -49,6 +49,7 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
         assertThat(result.text).contains("Alice");
         assertThat(result.markup).isNotNull();
         result.markup.getKeyboard().stream().flatMap(Collection::stream)
+                .filter(btn -> !com.festiva.command.handler.MoreCommandHandler.CALLBACK_BACK.equals(btn.getCallbackData()))
                 .forEach(btn -> assertThat(btn.getCallbackData()).contains("id-alice"));
     }
 
@@ -109,10 +110,11 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleEditSelect prompt contains /cancel hint")
-    void handleEditSelect_prompt_containsCancelHint() {
+    @DisplayName("handleEditSelect prompt shows current-value summary")
+    void handleEditSelect_prompt_showsCurrentValueSummary() {
         CallbackResult result = handler.handleEditSelect(EditCallbackHandler.EDIT_PREFIX + "id-alice", 1L, Lang.EN);
-        assertThat(result.text).contains("/cancel");
+        assertThat(result.text).contains("Current date");
+        assertThat(result.text).contains("Current:");
     }
 
     @Test

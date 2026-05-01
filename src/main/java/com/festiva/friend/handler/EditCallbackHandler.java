@@ -51,7 +51,8 @@ public class EditCallbackHandler {
         friendWorkflowSessionService.setPendingName(userId, friend.getName());
         friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()), null);
+        String currentName = lang == Lang.RU ? "Текущее имя: <b>" + friend.getName() + "</b>" : "Current name: <b>" + friend.getName() + "</b>";
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()) + "\n" + currentName, null);
     }
 
     public CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
@@ -75,6 +76,7 @@ public class EditCallbackHandler {
         String currentDate = found.hasYear()
                 ? found.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
                 : String.format("%02d.%02d", found.getBirthMonthDay().getDayOfMonth(), found.getBirthMonthDay().getMonthValue());
+        String relationship = found.getRelationship() != null ? found.getRelationship().label(lang) : ("—");
         boolean notifyOn = found.isNotifyEnabled();
         InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
                 new InlineKeyboardRow(
@@ -82,9 +84,13 @@ public class EditCallbackHandler {
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_DATE_BTN)).callbackData(EDIT_FIELD_DATE + id).build()),
                 new InlineKeyboardRow(
                         InlineKeyboardButton.builder().text(Messages.get(lang, Messages.EDIT_FIELD_REL_BTN)).callbackData(EDIT_FIELD_REL + id).build(),
-                        InlineKeyboardButton.builder().text(notifyOn ? Messages.get(lang, Messages.EDIT_NOTIFS_ON) : Messages.get(lang, Messages.EDIT_NOTIFS_OFF)).callbackData(EDIT_FIELD_NOTIFY + id).build())
+                        InlineKeyboardButton.builder().text(notifyOn ? Messages.get(lang, Messages.EDIT_NOTIFS_ON) : Messages.get(lang, Messages.EDIT_NOTIFS_OFF)).callbackData(EDIT_FIELD_NOTIFY + id).build()),
+                MessageBuilder.backToMoreRow(lang)
         )).build();
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate), markup);
+        String summary = lang == Lang.RU
+                ? "\n\n💞 Сейчас: <b>" + relationship + "</b>\n🔔 Напоминания: <b>" + Messages.get(lang, notifyOn ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF) + "</b>"
+                : "\n\n💞 Current: <b>" + relationship + "</b>\n🔔 Reminders: <b>" + Messages.get(lang, notifyOn ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF) + "</b>";
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate) + summary, markup);
     }
 
 }
