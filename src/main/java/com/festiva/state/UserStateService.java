@@ -1,9 +1,7 @@
 package com.festiva.state;
 
 import com.festiva.friend.entity.Friend;
-import com.festiva.friend.workflow.FriendWorkflowSessionRepository;
 import com.festiva.friend.workflow.FriendWorkflowSessionService;
-import com.festiva.importing.PendingIcsImportRepository;
 import com.festiva.importing.PendingIcsImportService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -31,15 +29,6 @@ public class UserStateService {
         this.sessionRepository = sessionRepository;
         this.friendWorkflowSessionService = friendWorkflowSessionService;
         this.pendingIcsImportService = pendingIcsImportService;
-    }
-
-    @Deprecated
-    public UserStateService(UserSessionRepository sessionRepository,
-                            FriendWorkflowSessionRepository friendWorkflowSessionRepository,
-                            PendingIcsImportRepository pendingIcsImportRepository) {
-        this(sessionRepository,
-                new FriendWorkflowSessionService(friendWorkflowSessionRepository),
-                new PendingIcsImportService(pendingIcsImportRepository));
     }
 
     private UserSession session(long userId) {
