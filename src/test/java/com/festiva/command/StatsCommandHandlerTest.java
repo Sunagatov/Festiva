@@ -45,14 +45,19 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
     @Test
     @DisplayName("with friends → response contains friend count and next birthday name")
     void withFriends_containsCountAndNextName() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.of(2026, 3, 12);
+        when(userDateService.todayFor(1L)).thenReturn(today);
         when(friendService.getFriends(1L)).thenReturn(List.of(
-                new Friend("Alice", today.plusDays(1).minusYears(30)),
-                new Friend("Bob", today.plusDays(10).minusYears(25))));
+                new Friend("Maria", today.plusDays(3).minusYears(30)),
+                new Friend("Bob", today.plusDays(10).minusYears(25)),
+                new Friend("Cara", LocalDate.of(1998, 3, 1)),
+                new Friend("Dana", LocalDate.of(1995, 3, 5))));
 
         String text = handler.handle(update()).getText();
-        assertThat(text).contains("2");
-        assertThat(text).contains("Alice");
+        assertThat(text).contains("📊 <b>Your Festiva Stats</b>");
+        assertThat(text).contains("👥 Friends: 4");
+        assertThat(text).contains("🎂 Next: Maria — in 3 days");
+        assertThat(text).contains("📅 This month: 4  ████░░░░░░");
     }
 
     @Test
@@ -61,28 +66,35 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         String text = handler.handle(update()).getText();
-        assertThat(text).contains("0");
-        assertThat(text).contains("—");
+        assertThat(text).contains("👥 Friends: 0");
+        assertThat(text).contains("🎂 Next: —");
+        assertThat(text).contains("📅 This month: 0  ░░░░░░░░░░");
     }
 
     @Test
     @DisplayName("friend with birthday today → shown with cake emoji")
     void birthdayToday_shownWithCakeEmoji() {
+        LocalDate today = LocalDate.of(2026, 3, 12);
+        when(userDateService.todayFor(1L)).thenReturn(today);
         when(friendService.getFriends(1L)).thenReturn(List.of(
-                new Friend("Carol", LocalDate.now().minusYears(20))));
+                new Friend("Carol", today.minusYears(20))));
 
         String text = handler.handle(update()).getText();
-        assertThat(text).contains("Carol");
-        assertThat(text).contains("🎂");
+        assertThat(text).contains("🎂 Next: Carol — today");
     }
 
     @Test
     @DisplayName("with friends RU → response contains friend count")
     void withFriends_ru_containsCount() {
         when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
+        LocalDate today = LocalDate.of(2026, 3, 12);
+        when(userDateService.todayFor(1L)).thenReturn(today);
         when(friendService.getFriends(1L)).thenReturn(List.of(
-                new Friend("Alice", LocalDate.now().plusDays(1).minusYears(30))));
-        assertThat(handler.handle(update()).getText()).contains("1");
+                new Friend("Alice", today.plusDays(1).minusYears(30))));
+        String text = handler.handle(update()).getText();
+        assertThat(text).contains("📊 <b>Ваша статистика Festiva</b>");
+        assertThat(text).contains("👥 Друзья: 1");
+        assertThat(text).contains("🎂 Следующий: Alice — через 1 дн.");
     }
 
     private Update update() {

@@ -2,7 +2,6 @@ package com.festiva.friend.handler;
 
 import com.festiva.command.CommandHandler;
 import com.festiva.command.MessageBuilder;
-import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
@@ -50,10 +49,7 @@ public class ListCommandHandler implements CommandHandler {
         Lang lang = userPreferenceService.getLanguage(userId);
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
         if (friends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
-                    InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
-                            InlineKeyboardButton.builder().text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
-                                    .callbackData(FriendAction.ACTION_ADD).build()))).build());
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
         }
         return MessageBuilder.html(chatId, buildText(friends, lang, true, 0, userId), keyboard(lang, true, 0, friends.size()));
     }
@@ -130,8 +126,9 @@ public class ListCommandHandler implements CommandHandler {
                 ? Messages.get(lang, Messages.LIST_DAYS_TODAY)
                 : Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
         String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
+        String namePrefix = daysUntil == 0 ? "🎂 " : "";
 
-        sb.append("🎂 <b>").append(HtmlEscaper.escape(f.getName())).append("</b>")
+        sb.append(namePrefix).append("<b>").append(HtmlEscaper.escape(f.getName())).append("</b>")
                 .append(relLabel).append("\n")
                 .append("↳ ").append(formatDateLabel(f, lang))
                 .append(" · ").append(f.getZodiac());

@@ -44,10 +44,10 @@ public class JubileeCommandHandler implements CommandHandler {
         List<Friend> friends = friendService.getFriends(userId).stream()
                 .sorted(Comparator.comparing(f -> f.nextBirthday(today)))
                 .toList();
-        String text = friends.isEmpty()
-                ? Messages.get(lang, Messages.FRIENDS_EMPTY)
-                : buildText(friends, lang, today);
-        return MessageBuilder.html(chatId, text);
+        if (friends.isEmpty()) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
+        }
+        return MessageBuilder.html(chatId, buildText(friends, lang, today));
     }
 
     private String buildText(List<Friend> friends, Lang lang, LocalDate today) {

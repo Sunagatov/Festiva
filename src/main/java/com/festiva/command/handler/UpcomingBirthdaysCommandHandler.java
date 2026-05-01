@@ -67,23 +67,31 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER) + "\n\n");
         upcoming.forEach(e -> {
-            sb.append("– <b>")
-                    .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))
-                    .append("</b> <i>").append(HtmlEscaper.escape(e.friend().getName())).append("</i>");
-            
+            boolean isToday = e.days() == 0;
+
+            if (isToday) {
+                sb.append("🟢 <b>")
+                  .append(Messages.get(lang, Messages.UPCOMING_TODAY_LABEL))
+                  .append("</b>");
+            } else {
+                sb.append("📅 <b>")
+                  .append(String.format("%02d.%02d", e.next().getDayOfMonth(), e.next().getMonthValue()))
+                  .append("</b>");
+            }
+
+            sb.append("  →  <i>").append(HtmlEscaper.escape(e.friend().getName())).append("</i>");
+
             if (e.friend().hasYear()) {
-                String suffix = e.days() == 0
+                String suffix = isToday
                         ? Messages.get(lang, Messages.UPCOMING_TODAY, Messages.yearsRu(lang, e.friend().getNextAge(today)))
                         : Messages.get(lang, Messages.UPCOMING_TURNS, Messages.yearsRu(lang, e.friend().getNextAge(today)), e.days());
-                sb.append(" ").append(suffix);
+                sb.append("  ").append(suffix);
+            } else if (!isToday) {
+                sb.append("  ").append(Messages.get(lang, Messages.UPCOMING_IN_DAYS, e.days()));
             } else {
-                if (e.days() > 0) {
-                    sb.append(" ").append(Messages.get(lang, Messages.UPCOMING_IN_DAYS, e.days()));
-                } else {
-                    sb.append(" ").append(Messages.get(lang, Messages.UPCOMING_TODAY_NO_YEAR));
-                }
+                sb.append("  ").append(Messages.get(lang, Messages.UPCOMING_TODAY_NO_YEAR));
             }
-            
+
             sb.append("\n");
         });
         return sb.toString();

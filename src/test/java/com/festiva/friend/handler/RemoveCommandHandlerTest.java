@@ -61,6 +61,10 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
     }
 
     @Test
@@ -78,8 +82,11 @@ class RemoveCommandHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.RU);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
-        assertThat(handler.handle(update()).getText())
-                .contains(Messages.get(Lang.RU, Messages.FRIENDS_EMPTY));
+        SendMessage result = handler.handle(update());
+        assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.FRIENDS_EMPTY));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.RU, Messages.REMOVE_EMPTY_ADD));
     }
 
     private Update update() {

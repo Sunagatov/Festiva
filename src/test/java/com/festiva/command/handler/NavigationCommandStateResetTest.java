@@ -68,6 +68,16 @@ class NavigationCommandStateResetTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("/more clears state before rendering the inline hub")
+    void moreClearsState() {
+        when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.EN);
+
+        new MoreCommandHandler(userStateService, userPreferenceService).handle(update());
+
+        verify(userStateService).clearState(1L);
+    }
+
+    @Test
     @DisplayName("/help delegates to the menu handler")
     void helpDelegatesToMenuHandler() {
         Update update = mock(Update.class);

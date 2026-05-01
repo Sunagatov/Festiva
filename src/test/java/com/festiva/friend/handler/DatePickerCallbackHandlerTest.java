@@ -112,30 +112,84 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
         CallbackResult result = handler.handleYearPick(DatePickerKeyboard.DATE_YEAR_PREFIX + "1990", 1L, Lang.EN);
 
         assertThat(result.text).contains("/cancel");
+        assertThat(result.text).contains("📅 1990 → __");
     }
 
     @Test
-    @DisplayName("handleRelationship prompt contains /cancel hint")
-    void handleRelationship_prompt_containsCancelHint() {
+    @DisplayName("handleSkipYear prompt stays on month picker without breadcrumb")
+    void handleSkipYear_prompt_hasNoBreadcrumb() {
+        CallbackResult result = handler.handleSkipYear(1L, Lang.EN);
+
+        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.DATE_PICK_MONTH, "Alice"));
+        assertThat(result.text).doesNotContain("📅");
+    }
+
+    @Test
+    @DisplayName("handleMonthPick with year → day prompt shows month and year breadcrumb")
+    void handleMonthPick_withYear_showsMonthYearBreadcrumb() {
+        CallbackResult result = handler.handleMonthPick(DatePickerKeyboard.DATE_MONTH_PREFIX + "3", 1L, Lang.EN);
+
+        assertThat(result.text).contains("📅 March 1990 → __");
+    }
+
+    @Test
+    @DisplayName("handleMonthPick without year → day prompt shows month breadcrumb")
+    void handleMonthPick_withoutYear_showsMonthBreadcrumb() {
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(null);
+
+        CallbackResult result = handler.handleMonthPick(DatePickerKeyboard.DATE_MONTH_PREFIX + "3", 1L, Lang.EN);
+
+        assertThat(result.text).contains("📅 March → __");
+        assertThat(result.text).doesNotContain("1990");
+    }
+
+    @Test
+    @DisplayName("handleRelationship with year → returns preview card")
+    void handleRelationship_withYear_returnsPreviewCard() {
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(1990);
+        when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        CallbackResult result = handler.handleRelationship(
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "FRIEND", 1L, Lang.EN);
+
+        assertThat(result.text).isEqualTo("""
+                ✅ Added!
+                👤 Alice
+                📅 March 15, 1990
+                💞 Friend""");
+    }
+
+    @Test
+    @DisplayName("handleRelationship without year → omits year in preview card")
+    void handleRelationship_withoutYear_omitsYearInPreviewCard() {
+        when(friendWorkflowSessionService.getPendingYear(1L)).thenReturn(null);
         when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
                 DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.EN);
 
-        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.FRIEND_ADDED, "Alice"));
+        assertThat(result.text).isEqualTo("""
+                ✅ Added!
+                👤 Alice
+                📅 March 15""");
     }
 
     @Test
-    @DisplayName("handleRelationship RU → returns RU success message")
-    void handleRelationship_ru_returnsRuMessage() {
+    @DisplayName("handleRelationship RU → returns localized preview card")
+    void handleRelationship_ru_returnsLocalizedPreviewCard() {
         when(friendWorkflowSessionService.getPendingDay(1L)).thenReturn(15);
         when(friendService.getFriends(1L)).thenReturn(List.of());
 
         CallbackResult result = handler.handleRelationship(
-                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "SKIP", 1L, Lang.RU);
+                DatePickerCallbackHandler.RELATIONSHIP_PREFIX + "FRIEND", 1L, Lang.RU);
 
-        assertThat(result.text).contains(Messages.get(Lang.RU, Messages.FRIEND_ADDED, "Alice"));
+        assertThat(result.text).isEqualTo("""
+                ✅ Добавлено!
+                👤 Alice
+                📅 15 марта 1990
+                💞 Друг""");
     }
 
     @Test
@@ -170,6 +224,14 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
         verify(userStateService).setState(1L, BotState.WAITING_FOR_ADD_FRIEND_RELATIONSHIP);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.RELATIONSHIP_PICK, "Alice"));
         assertThat(result.markup).isNotNull();
+    }
+
+    @Test
+    @DisplayName("handleBackToMonth → month prompt keeps selected year breadcrumb")
+    void handleBackToMonth_keepsYearBreadcrumb() {
+        CallbackResult result = handler.handleBackToMonth(1L, Lang.EN);
+
+        assertThat(result.text).contains("📅 1990 → __");
     }
 
     @Test
@@ -234,7 +296,11 @@ class DatePickerCallbackHandlerTest extends MessagesTestSupport {
         verify(friendService).addFriend(eq(1L), argThat(f ->
                 "Alice".equals(f.getName()) && f.getRelationship() == Relationship.FRIEND));
         verify(userStateService).clearState(1L);
-        assertThat(result.text).contains(Messages.get(Lang.EN, Messages.FRIEND_ADDED, "Alice"));
+        assertThat(result.text).isEqualTo("""
+                ✅ Added!
+                👤 Alice
+                📅 March 15, 1990
+                💞 Friend""");
     }
 
     @Test

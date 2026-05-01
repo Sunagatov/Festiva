@@ -1,8 +1,10 @@
 package com.festiva.bot;
 
 import com.festiva.command.handler.BulkAddCommandHandler;
+import com.festiva.command.handler.MoreCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
+import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendCallbackService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
@@ -41,6 +43,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
     @Mock private BulkAddCommandHandler bulkAddHandler;
     @Mock private FriendCallbackService friendCallbackService;
+    @Mock private MoreCallbackHandler moreCallbackHandler;
     @Mock private AccountDeletionService accountDeletionService;
     @Mock private UserLanguageCallbackService userLanguageCallbackService;
     @Mock private UserPreferenceService userPreferenceService;
@@ -60,25 +63,25 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("SETTINGS_HOUR_ callback → sets hour and returns confirmation with next-step hint")
+    @DisplayName("SETTINGS_HOUR_ callback → sets hour and returns compact confirmation")
     void settingsHourCallback_setsHourAndContainsHint() {
         when(userPreferenceService.getNotifyHour(1L)).thenReturn(9);
         when(userPreferenceService.getTimezone(1L)).thenReturn("UTC");
         EditMessageText result = handler.handle(callback("SETTINGS_HOUR_9"));
         verify(userPreferenceService).setNotifyHour(1L, 9);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_HOUR_SET, 9));
-        assertThat(result.getText()).contains("/settings");
+        assertThat(result.getText()).doesNotContain("/settings");
     }
 
     @Test
-    @DisplayName("SETTINGS_TZ_ callback → sets timezone and returns confirmation with next-step hint")
+    @DisplayName("SETTINGS_TZ_ callback → sets timezone and returns compact confirmation")
     void settingsTzCallback_setsTzAndContainsHint() {
         when(userPreferenceService.getNotifyHour(1L)).thenReturn(9);
         when(userPreferenceService.getTimezone(1L)).thenReturn("UTC");
         EditMessageText result = handler.handle(callback("SETTINGS_TZ_UTC"));
         verify(userPreferenceService).setTimezone(1L, "UTC");
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_TZ_SET, "UTC"));
-        assertThat(result.getText()).contains("/settings");
+        assertThat(result.getText()).doesNotContain("/settings");
     }
 
     @Test
@@ -178,26 +181,29 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("CONFIRM_REMOVE_ callback → success message contains next-step hint")
-    void confirmRemoveCallback_success_containsNextStepHint() {
+    @DisplayName("CONFIRM_REMOVE_ callback → success message keeps quick actions")
+    void confirmRemoveCallback_success_containsQuickActions() {
         when(friendCallbackService.handle("CONFIRM_REMOVE_id-alice", 1L, Lang.EN))
-                .thenReturn(new CallbackResult("/list", null));
+                .thenReturn(new CallbackResult("removed", InlineKeyboardMarkup.builder().keyboard(List.of()).build()));
 
         EditMessageText result = handler.handle(callback("CONFIRM_REMOVE_id-alice"));
 
-        assertThat(result.getText()).contains("/list");
+        assertThat(result.getText()).contains("removed");
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test
     @DisplayName("CANCEL_REMOVE callback — clears state and returns cancelled message")
     void cancelRemoveCallback_clearsState() {
         when(friendCallbackService.handle("CANCEL_REMOVE", 1L, Lang.EN))
-                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL), null));
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL),
+                        org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup.builder().keyboard(List.of()).build()));
 
         EditMessageText result = handler.handle(callback("CANCEL_REMOVE"));
 
         verify(friendCallbackService).handle("CANCEL_REMOVE", 1L, Lang.EN);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.CONFIRM_REMOVE_CANCEL));
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test
@@ -209,6 +215,40 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         EditMessageText result = handler.handle(callback("MONTH_6"));
 
         assertThat(result.getText()).contains("/add");
+    }
+
+    @Test
+    @DisplayName("MORE_SETTINGS callback → dispatches through more callback handler")
+    void moreCallback_dispatchesThroughMoreHandler() {
+        when(moreCallbackHandler.handle(MoreCommandHandler.CALLBACK_SETTINGS, 1L, 1L, Lang.EN))
+                .thenReturn(new CallbackResult("settings", InlineKeyboardMarkup.builder().keyboard(List.of()).build()));
+
+        EditMessageText result = handler.handle(callback(MoreCommandHandler.CALLBACK_SETTINGS));
+
+        verify(moreCallbackHandler).handle(MoreCommandHandler.CALLBACK_SETTINGS, 1L, 1L, Lang.EN);
+        assertThat(result.getText()).contains("settings");
+    }
+
+    @Test
+    @DisplayName("EDIT_PAGE callback with empty list — keeps add-first-friend CTA")
+    void editPageCallback_emptyList_keepsAddCta() {
+        InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder().keyboard(List.of(
+                new org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD))
+                                .callbackData(FriendAction.ACTION_ADD)
+                                .build()))).build();
+        when(friendCallbackService.handle("EDIT_PAGE_0", 1L, Lang.EN))
+                .thenReturn(new CallbackResult(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY), markup));
+
+        EditMessageText result = handler.handle(callback("EDIT_PAGE_0"));
+
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
+        assertThat(result.getReplyMarkup()).isNotNull();
+        assertThat(result.getReplyMarkup().getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
+        assertThat(result.getReplyMarkup().getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(FriendAction.ACTION_ADD);
     }
 
     @Test
@@ -259,11 +299,12 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("CANCEL_DELETE_ACCOUNT callback → returns cancel message with /settings hint")
+    @DisplayName("CANCEL_DELETE_ACCOUNT callback → returns cancel message with quick settings action")
     void cancelDeleteAccount_returnsCancelWithHint() {
         EditMessageText result = handler.handle(callback("CANCEL_DELETE_ACCOUNT"));
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.DELETE_ACCOUNT_CANCEL));
-        assertThat(result.getText()).contains("/settings");
+        assertThat(result.getText()).doesNotContain("/settings");
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test

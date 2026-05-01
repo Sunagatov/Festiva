@@ -1,8 +1,14 @@
 package com.festiva.command;
 
+import com.festiva.friend.api.FriendAction;
+import com.festiva.command.handler.MoreCommandHandler;
+import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
@@ -30,9 +36,70 @@ public final class MessageBuilder {
         return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).replyMarkup(markup).build();
     }
 
+    public static InlineKeyboardMarkup emptyStateAddMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.REMOVE_EMPTY_ADD))
+                                .callbackData(FriendAction.ACTION_ADD)
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup listButtonMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_LIST))
+                                .callbackData("LIST_SORT_DATE_0")
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup addAndListMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_LIST))
+                                .callbackData("LIST_SORT_DATE_0")
+                                .build(),
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER))
+                                .callbackData(FriendAction.ACTION_ADD)
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup editAndListMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_EDIT))
+                                .callbackData(MoreCommandHandler.CALLBACK_EDIT)
+                                .build(),
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.QUICK_LIST))
+                                .callbackData("LIST_SORT_DATE_0")
+                                .build())))
+                .build();
+    }
+
+    public static InlineKeyboardMarkup settingsButtonMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(
+                        InlineKeyboardButton.builder()
+                                .text(Messages.get(lang, Messages.MORE_SETTINGS_BTN))
+                                .callbackData(MoreCommandHandler.CALLBACK_SETTINGS)
+                                .build())))
+                .build();
+    }
+
     // EN labels → command
     private static final Map<String, String> LABEL_TO_COMMAND_EN = Map.ofEntries(
             Map.entry("➕ Add", "/add"),
+            Map.entry("🎂 Today", "/today"),
+            Map.entry("👥 Friends", "/list"),
+            Map.entry("⚙️ More", "/more"),
             Map.entry("\uD83D\uDDD1 Remove", "/remove"),
             Map.entry("\uD83D\uDCCB List", "/list"),
             Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
@@ -51,6 +118,9 @@ public final class MessageBuilder {
     // RU labels → command
     private static final Map<String, String> LABEL_TO_COMMAND_RU = Map.ofEntries(
             Map.entry("➕ Добавить", "/add"),
+            Map.entry("🎂 Сегодня", "/today"),
+            Map.entry("👥 Друзья", "/list"),
+            Map.entry("⚙️ Ещё", "/more"),
             Map.entry("\uD83D\uDDD1 Удалить", "/remove"),
             Map.entry("\uD83D\uDCCB Список", "/list"),
             Map.entry("\uD83C\uDF82 Дни рождения", "/birthdays"),
@@ -78,11 +148,13 @@ public final class MessageBuilder {
         boolean ru = lang == com.festiva.i18n.Lang.RU;
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "➕ Добавить" : "➕ Add"), new KeyboardButton(ru ? "\uD83D\uDDD1 Удалить" : "\uD83D\uDDD1 Remove"), new KeyboardButton(ru ? "\uD83D\uDCCB Список" : "\uD83D\uDCCB List"))),
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83C\uDF82 Дни рождения" : "\uD83C\uDF82 Birthdays"), new KeyboardButton(ru ? "\uD83D\uDD14 Ближайшие" : "\uD83D\uDD14 Upcoming"), new KeyboardButton(ru ? "\uD83C\uDF89 Сегодня" : "\uD83C\uDF89 Today"))),
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83C\uDFC6 Юбилеи" : "\uD83C\uDFC6 Jubilee"), new KeyboardButton(ru ? "\uD83D\uDCDD Изменить" : "\uD83D\uDCDD Edit"), new KeyboardButton(ru ? "\uD83D\uDD0D Поиск" : "\uD83D\uDD0D Search"))),
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83D\uDCCA Статистика" : "\uD83D\uDCCA Stats"), new KeyboardButton(ru ? "\uD83D\uDD27 Настройки" : "\uD83D\uDD27 Settings"), new KeyboardButton(ru ? "\uD83C\uDF10 Язык" : "\uD83C\uDF10 Language"))),
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83D\uDCD6 Меню" : "\uD83D\uDCD6 Menu"), new KeyboardButton(ru ? "ℹ️ О боте" : "ℹ️ About")))
+                        new KeyboardRow(List.of(
+                                new KeyboardButton(ru ? "➕ Добавить" : "➕ Add"),
+                                new KeyboardButton(ru ? "🎂 Сегодня" : "🎂 Today"),
+                                new KeyboardButton(ru ? "🔔 Ближайшие" : "🔔 Upcoming"))),
+                        new KeyboardRow(List.of(
+                                new KeyboardButton(ru ? "👥 Друзья" : "👥 Friends"),
+                                new KeyboardButton(ru ? "⚙️ Ещё" : "⚙️ More")))
                 ))
                 .resizeKeyboard(true)
                 .isPersistent(true)

@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.StringJoiner;
 
 @Component
 @RequiredArgsConstructor
@@ -49,15 +50,34 @@ public class StatsCommandHandler implements CommandHandler {
                 .filter(Friend::hasYear)  // Only count friends with known year
                 .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .count();
+        String nextBirthday = formatNextBirthday(friends, today, lang);
+
+        StringJoiner text = new StringJoiner("\n");
+        text.add(Messages.get(lang, Messages.STATS_HEADER));
+        text.add("");
+        text.add(Messages.get(lang, Messages.STATS_FRIENDS, total));
+        text.add(nextBirthday);
+        text.add(Messages.get(lang, Messages.STATS_THIS_MONTH, thisMonth, progressBar(thisMonth)));
+        text.add(Messages.get(lang, Messages.STATS_JUBILEES, jubilees));
+        return MessageBuilder.html(chatId, text.toString());
+    }
+
+    private String formatNextBirthday(List<Friend> friends, LocalDate today, Lang lang) {
         record Entry(Friend friend, long days) {}
-        String nextBirthday = friends.stream()
+        return friends.stream()
                 .map(f -> new Entry(f, ChronoUnit.DAYS.between(today, f.nextBirthday(today))))
                 .min(Comparator.comparingLong(Entry::days))
-                .map(e -> e.days() == 0
-                        ? HtmlEscaper.escape(e.friend().getName()) + " 🎂"
-                        : HtmlEscaper.escape(e.friend().getName()) + " (" + e.days() + Messages.get(lang, Messages.UPCOMING_DAYS_SUFFIX) + ")")
-                .orElse("—");
+                .map(e -> {
+                    String name = HtmlEscaper.escape(e.friend().getName());
+                    return e.days() == 0
+                            ? Messages.get(lang, Messages.STATS_NEXT_TODAY, name)
+                            : Messages.get(lang, Messages.STATS_NEXT_IN_DAYS, name, e.days());
+                })
+                .orElse(Messages.get(lang, Messages.STATS_NEXT_NONE));
+    }
 
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.STATS_HEADER, total, nextBirthday, thisMonth, jubilees));
+    private String progressBar(int count) {
+        int filled = Math.clamp(count, 0, 10);
+        return "█".repeat(filled) + "░".repeat(10 - filled);
     }
 }

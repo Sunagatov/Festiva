@@ -1,5 +1,6 @@
 package com.festiva.bot;
 
+import com.festiva.command.MessageBuilder;
 import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.ImportIcsCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
@@ -41,6 +42,7 @@ public class CallbackQueryHandler {
     private final UpcomingBirthdaysCommandHandler upcomingHandler;
     private final BulkAddCommandHandler bulkAddHandler;
     private final FriendCallbackService friendCallbackService;
+    private final MoreCallbackHandler moreCallbackHandler;
     private final AccountDeletionService accountDeletionService;
     private final UserLanguageCallbackService userLanguageCallbackService;
     private final UserPreferenceService userPreferenceService;
@@ -112,6 +114,9 @@ public class CallbackQueryHandler {
         if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX)) {
             return handleUpcoming(data, userId, lang);
         }
+        if ((r = moreCallbackHandler.handle(data, chatId, userId, lang)) != null) {
+            return r;
+        }
         if ((r = userLanguageCallbackService.handle(data, userId)) != null) {
             return r;
         }
@@ -138,7 +143,7 @@ public class CallbackQueryHandler {
                 return handleConfirmDeleteAccount(userId, lang);
             }
             case AccountDeletionAction.CANCEL_DELETE -> {
-                return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_CANCEL), null);
+                return new CallbackResult(Messages.get(lang, Messages.DELETE_ACCOUNT_CANCEL), MessageBuilder.settingsButtonMarkup(lang));
             }
             case ImportIcsCommandHandler.CALLBACK_ICS_CONFIRM -> {
                 return handleIcsConfirm(userId, lang);

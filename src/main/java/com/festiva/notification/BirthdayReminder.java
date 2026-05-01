@@ -175,21 +175,7 @@ public class BirthdayReminder {
         }
 
         try {
-            String message;
-            if (friend.hasYear()) {
-                message = Messages.get(lang, key,
-                        HtmlEscaper.escape(friend.getName()),
-                        friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
-                        friend.getZodiac(),
-                        Messages.yearsRu(lang, friend.getNextAge(today)),
-                        botUsername);
-            } else {
-                message = Messages.get(lang, key,
-                        HtmlEscaper.escape(friend.getName()),
-                        friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
-                        friend.getZodiac(),
-                        botUsername);
-            }
+            String message = buildReminderMessage(friend, today, lang, key);
 
             boolean sent = notificationSender.send(userId, message);
             if (!sent) {
@@ -215,6 +201,32 @@ public class BirthdayReminder {
                     .log();
             return false;
         }
+    }
+
+    private String buildReminderMessage(Friend friend, LocalDate today, Lang lang, String key) {
+        String escapedName = HtmlEscaper.escape(friend.getName());
+
+        if (lang == Lang.EN) {
+            if (friend.hasYear()) {
+                return Messages.get(lang, key, escapedName, Messages.yearsRu(lang, friend.getNextAge(today)), botUsername);
+            }
+            return Messages.get(lang, key, escapedName, botUsername);
+        }
+
+        if (friend.hasYear()) {
+            return Messages.get(lang, key,
+                    escapedName,
+                    friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
+                    friend.getZodiac(),
+                    Messages.yearsRu(lang, friend.getNextAge(today)),
+                    botUsername);
+        }
+
+        return Messages.get(lang, key,
+                escapedName,
+                friend.getRelationship() != null ? " " + friend.getRelationship().label(lang) : "",
+                friend.getZodiac(),
+                botUsername);
     }
 
     private static final class ReminderRunStats {

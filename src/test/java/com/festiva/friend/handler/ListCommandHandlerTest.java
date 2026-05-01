@@ -51,6 +51,12 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         SendMessage result = handler.handle(update());
 
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
+        assertThat(markup.getKeyboard().getFirst().getFirst().getCallbackData())
+                .isEqualTo(com.festiva.friend.api.FriendAction.ACTION_ADD);
     }
 
     @Test
@@ -63,7 +69,8 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Alice");
-        assertThat(text).contains("🎂 <b>Alice</b>");
+        assertThat(text).contains("<b>Alice</b>");
+        assertThat(text).doesNotContain("🎂 <b>Alice</b>");
         assertThat(text).contains("\n↳ ");
         assertThat(text).containsPattern("turned.*30|30.*turned");
     }
@@ -78,7 +85,8 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Bob");
-        assertThat(text).contains("🎂 <b>Bob</b>");
+        assertThat(text).contains("<b>Bob</b>");
+        assertThat(text).doesNotContain("🎂 <b>Bob</b>");
         assertThat(text).contains("\n↳ ");
         assertThat(text).containsPattern("turns.*30|30.*turns");
     }
@@ -100,12 +108,30 @@ class ListCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("mixed list → only today's birthday gets cake highlight")
+    void mixedList_onlyTodayGetsCakeHighlight() {
+        LocalDate today = LocalDate.now();
+        Friend todayFriend = new Friend("Carol", today.minusYears(30));
+        Friend upcomingFriend = new Friend("Bob", today.plusDays(1).minusYears(30));
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of(todayFriend, upcomingFriend));
+
+        String text = handler.handle(update()).getText();
+
+        assertThat(text).contains("🎂 <b>Carol</b>");
+        assertThat(text).contains("<b>Bob</b>");
+        assertThat(text).doesNotContain("🎂 <b>Bob</b>");
+    }
+
+    @Test
     @DisplayName("empty list RU → returns RU friends-empty")
     void emptyList_ru_returnsFriendsEmpty() {
         when(userPreferenceService.getLanguage(1L)).thenReturn(Lang.RU);
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
-        assertThat(handler.handle(update()).getText())
-                .contains(Messages.get(Lang.RU, Messages.FRIENDS_EMPTY));
+        SendMessage result = handler.handle(update());
+        assertThat(result.getText()).contains(Messages.get(Lang.RU, Messages.FRIENDS_EMPTY));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.RU, Messages.REMOVE_EMPTY_ADD));
     }
 
     @Test

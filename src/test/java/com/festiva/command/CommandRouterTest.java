@@ -28,6 +28,7 @@ class CommandRouterTest {
     CommandHandler cancelHandler;
     StatefulCommandHandler statefulHandler;
     CommandHandler startHandler;
+    CommandHandler moreHandler;
     CommandHandler defaultHandler;
 
     @BeforeEach
@@ -42,12 +43,13 @@ class CommandRouterTest {
 
         cancelHandler   = handler("/cancel",  "cancelled");
         startHandler    = handler("/start",   "started");
+        moreHandler     = handler("/more",    "more");
         defaultHandler  = handler(null,       "default");
         statefulHandler = statefulHandler(Set.of(BotState.WAITING_FOR_ADD_FRIEND_NAME));
 
         router = new CommandRouter(stateService,
                 userPreferenceService,
-                List.of(cancelHandler, startHandler, statefulHandler, defaultHandler));
+                List.of(cancelHandler, startHandler, moreHandler, statefulHandler, defaultHandler));
     }
 
     @Test
@@ -85,6 +87,13 @@ class CommandRouterTest {
     void unknownCommand_routesToDefault() {
         SendMessage result = router.route(update("/unknown"));
         assertThat(result.getText()).isEqualTo("default");
+    }
+
+    @Test
+    @DisplayName("reply keyboard label routes to /more command")
+    void moreReplyLabel_routesToMoreCommand() {
+        SendMessage result = router.route(update("⚙️ More"));
+        assertThat(result.getText()).isEqualTo("more");
     }
 
     @Test

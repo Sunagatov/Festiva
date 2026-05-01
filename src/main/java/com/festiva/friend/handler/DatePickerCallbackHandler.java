@@ -1,7 +1,7 @@
 package com.festiva.friend.handler;
 
 import com.festiva.bot.CallbackResult;
-import com.festiva.friend.api.FriendAction;
+import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
@@ -19,8 +19,11 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 @Slf4j
 @Component
@@ -67,7 +70,7 @@ public class DatePickerCallbackHandler {
         }
 
         friendWorkflowSessionService.setPendingYear(userId, year);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
+        return new CallbackResult(datePrompt(lang, Messages.DATE_PICK_MONTH, name, year, null),
                 DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
     }
 
@@ -78,7 +81,7 @@ public class DatePickerCallbackHandler {
         }
 
         friendWorkflowSessionService.setPendingYear(userId, null);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
+        return new CallbackResult(datePrompt(lang, Messages.DATE_PICK_MONTH, name, null, null),
                 DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
     }
 
@@ -98,7 +101,7 @@ public class DatePickerCallbackHandler {
         friendWorkflowSessionService.setPendingMonth(userId, month);
 
         int yearForDayPicker = year != null ? year : 2000;
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_DAY, name),
+        return new CallbackResult(datePrompt(lang, Messages.DATE_PICK_DAY, name, year, month),
                 DatePickerKeyboard.dayKeyboard(yearForDayPicker, month, lang));
     }
 
@@ -165,8 +168,8 @@ public class DatePickerCallbackHandler {
                         DatePickerKeyboard.dayKeyboard(year != null ? year : 2000, month, lang));
             }
 
-            userStateService.clearState(userId);
-            return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), null);
+        userStateService.clearState(userId);
+            return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), MessageBuilder.editAndListMarkup(lang));
         }
 
         friendWorkflowSessionService.setPendingYear(userId, year);
@@ -201,8 +204,29 @@ public class DatePickerCallbackHandler {
         }
 
         friendWorkflowSessionService.setPendingMonth(userId, null);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_MONTH, name),
+        return new CallbackResult(datePrompt(lang, Messages.DATE_PICK_MONTH, name, friendWorkflowSessionService.getPendingYear(userId), null),
                 DatePickerKeyboard.monthKeyboard(lang, friendWorkflowSessionService.getYearPageOffset(userId)));
+    }
+
+    private String datePrompt(Lang lang, String key, String name, Integer year, Integer month) {
+        String base = Messages.get(lang, key, name);
+        String breadcrumb = dateBreadcrumb(lang, year, month);
+        if (breadcrumb == null) {
+            return base;
+        }
+        return base + "\n📅 " + breadcrumb + " → __";
+    }
+
+    private String dateBreadcrumb(Lang lang, Integer year, Integer month) {
+        if (month != null) {
+            String monthLabel = Month.of(month).getDisplayName(TextStyle.FULL, lang.locale());
+            monthLabel = monthLabel.substring(0, 1).toUpperCase(lang.locale()) + monthLabel.substring(1);
+            return year != null ? monthLabel + " " + year : monthLabel;
+        }
+        if (year != null) {
+            return String.valueOf(year);
+        }
+        return null;
     }
 
     public CallbackResult handleRelationship(String data, long userId, Lang lang) {
@@ -247,13 +271,7 @@ public class DatePickerCallbackHandler {
         }
 
         userStateService.clearState(userId);
-
-        String messageKey = year != null ? Messages.FRIEND_ADDED : Messages.FRIEND_ADDED_NO_YEAR;
-        return new CallbackResult(Messages.get(lang, messageKey, name),
-                InlineKeyboardMarkup.builder().keyboard(List.of(new InlineKeyboardRow(
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_LIST)).callbackData(LIST_SORT_DATE + "_0").build(),
-                        InlineKeyboardButton.builder().text(Messages.get(lang, Messages.QUICK_ADD_ANOTHER)).callbackData(FriendAction.ACTION_ADD).build()
-                ))).build());
+        return new CallbackResult(buildAddedPreview(lang, name, year, month, day, rel), MessageBuilder.addAndListMarkup(lang));
     }
 
     public CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
@@ -295,7 +313,7 @@ public class DatePickerCallbackHandler {
 
         friendService.updateFriendRelationshipById(id, userId, rel);
         userStateService.clearState(userId);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, name), null);
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, name), MessageBuilder.editAndListMarkup(lang));
     }
 
     private InlineKeyboardMarkup relationshipKeyboard(Lang lang) {
@@ -338,5 +356,36 @@ public class DatePickerCallbackHandler {
 
     private CallbackResult sessionExpired(Lang lang) {
         return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
+    }
+
+    private String buildAddedPreview(Lang lang, String name, Integer year, int month, int day, Relationship relationship) {
+        StringJoiner text = new StringJoiner("\n");
+        text.add(Messages.get(lang, Messages.FRIEND_ADDED_CARD));
+        text.add("👤 " + name);
+        text.add("📅 " + formatBirthDate(lang, year, month, day));
+        if (relationship != null) {
+            text.add("💞 " + relationshipTitle(lang, relationship));
+        }
+        return text.toString();
+    }
+
+    private String formatBirthDate(Lang lang, Integer year, int month, int day) {
+        String monthLabel = Month.of(month).getDisplayName(TextStyle.FULL, lang.locale());
+        if (lang == Lang.EN) {
+            monthLabel = monthLabel.substring(0, 1).toUpperCase(lang.locale()) + monthLabel.substring(1);
+        }
+        if (lang == Lang.EN) {
+            return year != null ? monthLabel + " " + day + ", " + year : monthLabel + " " + day;
+        }
+        return year != null ? day + " " + monthLabel + " " + year : day + " " + monthLabel;
+    }
+
+    private String relationshipTitle(Lang lang, Relationship relationship) {
+        String label = relationship.label(lang);
+        int firstSpace = label.indexOf(' ');
+        if (firstSpace < 0 || firstSpace == label.length() - 1) {
+            return label;
+        }
+        return label.substring(firstSpace + 1);
     }
 }

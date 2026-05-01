@@ -39,7 +39,8 @@ public class EditCallbackHandler {
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         boolean enabled = friendService.toggleFriendNotifyById(id, userId);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, friend.getName(),
-                Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)), null);
+                Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)),
+                MessageBuilder.editAndListMarkup(lang));
     }
 
     public CallbackResult handleEditFieldName(String data, long userId, Lang lang) {

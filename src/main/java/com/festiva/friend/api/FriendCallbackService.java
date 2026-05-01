@@ -229,7 +229,7 @@ public class FriendCallbackService {
 
             var friends = friendService.getFriendsSortedByDayMonth(userId);
             if (friends.isEmpty()) {
-                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
+                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
             }
             return new CallbackResult(Messages.get(lang, Messages.SELECT_REMOVE),
                     removeCommandHandler.keyboard(friends, page));
@@ -252,7 +252,7 @@ public class FriendCallbackService {
 
             var friends = friendService.getFriendsSortedByDayMonth(userId);
             if (friends.isEmpty()) {
-                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), null);
+                return new CallbackResult(Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
             }
             return new CallbackResult(Messages.get(lang, Messages.EDIT_SELECT),
                     editFriendCommandHandler.keyboard(friends, page));
@@ -288,12 +288,12 @@ public class FriendCallbackService {
         String name = friend.getName();
         friendService.deleteFriendById(id, userId);
         userStateService.clearState(userId);
-        return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, name), null);
+        return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, name), MessageBuilder.addAndListMarkup(lang));
     }
 
     private CallbackResult handleCancelRemove(long userId, Lang lang) {
         userStateService.clearState(userId);
-        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_CANCEL), null);
+        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_CANCEL), MessageBuilder.listButtonMarkup(lang));
     }
 
     private CallbackResult handleMonth(long userId, String data, Lang lang) {

@@ -51,8 +51,12 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     void handle_emptyList_returnsFriendsEmpty() {
         when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(List.of());
 
-        assertThat(handler.handle(update("")).getText())
-                .contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
+        var result = handler.handle(update(""));
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.FRIENDS_EMPTY));
+        var markup = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(markup).isNotNull();
+        assertThat(markup.getKeyboard().getFirst().getFirst().getText())
+                .isEqualTo(Messages.get(Lang.EN, Messages.REMOVE_EMPTY_ADD));
     }
 
     @Test
@@ -109,11 +113,13 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleState success → next-step hint contains /edit")
-    void handleState_success_containsNextStepHint() {
+    @DisplayName("handleState success → returns quick action buttons")
+    void handleState_success_returnsQuickActions() {
         when(friendService.friendExists(1L, "Bob")).thenReturn(false);
 
-        assertThat(handler.handleState(update("Bob")).getText()).contains("/edit");
+        var result = handler.handleState(update("Bob"));
+        assertThat(result.getText()).doesNotContain("/edit");
+        assertThat(result.getReplyMarkup()).isNotNull();
     }
 
     @Test

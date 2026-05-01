@@ -116,11 +116,12 @@ class EditCallbackHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("handleEditNotify success contains next-step hint")
-    void handleEditNotify_success_containsNextStepHint() {
+    @DisplayName("handleEditNotify success returns quick action buttons")
+    void handleEditNotify_success_returnsQuickActions() {
         when(friendService.toggleFriendNotifyById("id-alice", 1L)).thenReturn(true);
         CallbackResult result = handler.handleEditNotify(EditCallbackHandler.EDIT_FIELD_NOTIFY + "id-alice", 1L, Lang.EN);
-        assertThat(result.text).contains("/edit");
+        assertThat(result.text).doesNotContain("/edit");
+        assertThat(result.markup).isNotNull();
     }
 
     @Test

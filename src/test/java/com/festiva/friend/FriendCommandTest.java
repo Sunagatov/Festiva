@@ -22,6 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 
 import java.time.LocalDate;
 
@@ -61,11 +62,16 @@ class FriendCommandTest extends IntegrationTestBase {
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_YEAR_PREFIX + "1990"));
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_MONTH_PREFIX + "6"));
         callbackQueryHandler.handle(callback(1L, DatePickerKeyboard.DATE_DAY_PREFIX + "15"));
-        callbackQueryHandler.handle(callback(1L, "RELATIONSHIP_FRIEND"));
+        EditMessageText result = callbackQueryHandler.handle(callback(1L, "RELATIONSHIP_FRIEND"));
 
         Friend saved = friendService.getFriends(1L).getFirst();
         assertThat(saved.getName()).isEqualTo("Alice");
         assertThat(saved.getBirthDate()).isEqualTo(LocalDate.of(1990, 6, 15));
+        assertThat(result.getText()).isEqualTo("""
+                ✅ Добавлено!
+                👤 Alice
+                📅 15 июня 1990
+                💞 Друг""");
     }
 
     @Test

@@ -49,7 +49,7 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         List<Friend> friends = friendService.getFriendsSortedByDayMonth(userId);
 
         if (friends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY), MessageBuilder.emptyStateAddMarkup(lang));
         }
         return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_SELECT), keyboard(friends, 0));
     }
@@ -112,6 +112,6 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
 
         friendService.updateFriendNameById(id, userId, newName);
         userStateService.clearState(userId);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_NAME_DONE, newName));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_NAME_DONE, newName), MessageBuilder.editAndListMarkup(lang));
     }
 }

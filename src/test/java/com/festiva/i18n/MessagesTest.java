@@ -61,4 +61,38 @@ class MessagesTest extends MessagesTestSupport {
         assertThat(Lang.EN.locale().getLanguage()).isEqualTo("en");
         assertThat(Lang.RU.locale().getLanguage()).isEqualTo("ru");
     }
+
+    @Test
+    @DisplayName("notify_today EN — uses warmer copy without relationship or zodiac fragments")
+    void notifyToday_en_usesWarmCopy() {
+        String value = Messages.get(Lang.EN, Messages.NOTIFY_TODAY, "Alice", "30", "festiva_bot");
+        assertThat(value).isEqualTo(
+                """
+                🎂 <b>Happy Birthday!</b>
+                <b>Alice</b> turns <b>30</b> today.
+                💌 Don't forget to wish them well!
+                👉 <a href="https://t.me/festiva_bot">Open Festiva</a>"""
+        );
+        assertThat(value)
+                .doesNotContain("birthday day")
+                .doesNotContain("Friend")
+                .doesNotContain("Aries");
+    }
+
+    @Test
+    @DisplayName("notify_today_no_year EN — says has a birthday today")
+    void notifyTodayNoYear_en_usesBirthdayTodayCopy() {
+        String value = Messages.get(Lang.EN, Messages.NOTIFY_TODAY_NO_YEAR, "Alice", "festiva_bot");
+        assertThat(value).isEqualTo(
+                """
+                🎂 <b>Happy Birthday!</b>
+                <b>Alice</b> has a birthday today.
+                💌 Don't forget to wish them well!
+                👉 <a href="https://t.me/festiva_bot">Open Festiva</a>"""
+        );
+        assertThat(value)
+                .doesNotContain("celebrating")
+                .doesNotContain("Friend")
+                .doesNotContain("Aries");
+    }
 }
