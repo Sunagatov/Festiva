@@ -1,4 +1,4 @@
-package com.festiva.command.handler;
+package com.festiva.friend.handler;
 
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;

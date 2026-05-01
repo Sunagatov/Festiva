@@ -1,6 +1,6 @@
-package com.festiva.bot;
+package com.festiva.friend.handler;
 
-import com.festiva.command.DatePickerKeyboard;
+import com.festiva.bot.CallbackResult;
 import com.festiva.command.MessageBuilder;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
@@ -19,31 +19,31 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
-class EditCallbackHandler {
+public class EditCallbackHandler {
 
-    static final String EDIT_PREFIX       = "EDIT_";
-    static final String EDIT_FIELD_NAME   = "EDIT_FIELD_NAME_";
-    static final String EDIT_FIELD_DATE   = "EDIT_FIELD_DATE_";
-    static final String EDIT_FIELD_NOTIFY = "EDIT_FIELD_NOTIFY_";
-    static final String EDIT_FIELD_REL    = "EDIT_FIELD_REL_";
+    public static final String EDIT_PREFIX = "EDIT_";
+    public static final String EDIT_FIELD_NAME = "EDIT_FIELD_NAME_";
+    public static final String EDIT_FIELD_DATE = "EDIT_FIELD_DATE_";
+    public static final String EDIT_FIELD_NOTIFY = "EDIT_FIELD_NOTIFY_";
+    public static final String EDIT_FIELD_REL = "EDIT_FIELD_REL_";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
 
-    CallbackResult handleEditNotify(String data, long userId, Lang lang) {
+    public CallbackResult handleEditNotify(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_NOTIFY.length());
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
-        if (friend == null) 
+        if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         boolean enabled = friendService.toggleFriendNotifyById(id, userId);
         return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, friend.getName(),
                 Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)), null);
     }
 
-    CallbackResult handleEditFieldName(String data, long userId, Lang lang) {
+    public CallbackResult handleEditFieldName(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_NAME.length());
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
-        if (friend == null) 
+        if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
@@ -51,10 +51,10 @@ class EditCallbackHandler {
         return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()), null);
     }
 
-    CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
+    public CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_FIELD_DATE.length());
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
-        if (friend == null) 
+        if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         userStateService.setPendingName(userId, friend.getName());
         userStateService.setPendingId(userId, id);
@@ -64,7 +64,7 @@ class EditCallbackHandler {
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 
-    CallbackResult handleEditSelect(String data, long userId, Lang lang) {
+    public CallbackResult handleEditSelect(String data, long userId, Lang lang) {
         String id = data.substring(EDIT_PREFIX.length());
         Friend found = friendService.findOwnedFriend(id, userId).orElse(null);
         if (found == null) return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);

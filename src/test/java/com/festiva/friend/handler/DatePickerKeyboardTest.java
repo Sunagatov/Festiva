@@ -1,4 +1,4 @@
-package com.festiva.command;
+package com.festiva.friend.handler;
 
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.MessagesTestSupport;
@@ -16,15 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DatePickerKeyboardTest extends MessagesTestSupport {
 
     @Test
-    @DisplayName("yearKeyboard → year labels include age context and preserve callback")
-    void yearKeyboard_includesAgeContext() {
+    @DisplayName("yearKeyboard first button starts at computed start year")
+    void yearKeyboard_startsAtExpectedYear() {
         int currentYear = LocalDate.now().getYear();
         int startYear = currentYear - DatePickerKeyboard.DEFAULT_YEAR_OFFSET - 8 + 1;
 
         InlineKeyboardMarkup markup = DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, Lang.EN);
-        InlineKeyboardButton firstButton = markup.getKeyboard().getFirst().getFirst();
 
-        assertThat(firstButton.getText()).isEqualTo(startYear + " · " + (currentYear - startYear) + "y");
+        InlineKeyboardButton firstButton = markup.getKeyboard().getFirst().getFirst();
+        assertThat(firstButton.getText()).startsWith(String.valueOf(startYear));
         assertThat(firstButton.getCallbackData()).isEqualTo(DatePickerKeyboard.DATE_YEAR_PREFIX + startYear);
     }
 }

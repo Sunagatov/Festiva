@@ -1,7 +1,5 @@
-package com.festiva.command;
+package com.festiva.friend.validation;
 
-import com.festiva.command.handler.BulkAddParser;
-import com.festiva.command.handler.BulkAddParser.ParseResult;
 import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.MessagesTestSupport;
@@ -23,14 +21,14 @@ class BulkAddParserTest extends MessagesTestSupport {
 
     private static final LocalDate TODAY = LocalDate.of(2024, 3, 15);
 
-    private static ParseResult parse(List<String> lines, Set<String> existing) {
+    private static BulkAddParser.ParseResult parse(List<String> lines, Set<String> existing) {
         return BulkAddParser.parse(lines, existing, Lang.EN, TODAY);
     }
 
     @Test
     @DisplayName("valid rows without header → all parsed correctly")
     void validRows_noParsedCorrectly() {
-        ParseResult r = parse(List.of("Alice,15.03.1990", "Bob,22.07.1985"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990", "Bob,22.07.1985"), Set.of());
 
         assertThat(r.valid()).hasSize(2);
         assertThat(r.errors()).isEmpty();
@@ -42,7 +40,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("first row contains 'name' → header is skipped")
     void headerRow_isSkipped() {
-        ParseResult r = parse(List.of("name,birthday", "Alice,15.03.1990"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("name,birthday", "Alice,15.03.1990"), Set.of());
 
         assertThat(r.valid()).hasSize(1);
         assertThat(r.valid().getFirst().getName()).isEqualTo("Alice");
@@ -51,7 +49,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("header detection is case-insensitive")
     void headerRow_caseInsensitive() {
-        ParseResult r = parse(List.of("Name,Birthday", "Bob,22.07.1985"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Name,Birthday", "Bob,22.07.1985"), Set.of());
 
         assertThat(r.valid()).hasSize(1);
     }
@@ -59,7 +57,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("blank lines are ignored")
     void blankLines_areIgnored() {
-        ParseResult r = parse(List.of("Alice,15.03.1990", "  ", "", "Bob,22.07.1985"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990", "  ", "", "Bob,22.07.1985"), Set.of());
 
         assertThat(r.valid()).hasSize(2);
         assertThat(r.errors()).isEmpty();
@@ -68,7 +66,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("name already in existing set → rejected with error")
     void existingName_isRejected() {
-        ParseResult r = parse(List.of("Alice,15.03.1990"), Set.of("alice"));
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990"), Set.of("alice"));
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -77,7 +75,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("duplicate name within batch → second occurrence rejected")
     void duplicateInBatch_isRejected() {
-        ParseResult r = parse(List.of("Alice,15.03.1990", "Alice,01.01.2000"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990", "Alice,01.01.2000"), Set.of());
 
         assertThat(r.valid()).hasSize(1);
         assertThat(r.errors()).hasSize(1);
@@ -86,7 +84,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("date not in DD.MM.YYYY format → rejected with error")
     void invalidDateFormat_isRejected() {
-        ParseResult r = parse(List.of("Alice,1990-03-15"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,1990-03-15"), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -97,7 +95,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     void futureDate_isRejected() {
         String future = TODAY.plusDays(1)
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT));
-        ParseResult r = parse(List.of("Alice," + future), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice," + future), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -106,7 +104,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("row without comma → rejected with error")
     void missingComma_isRejected() {
-        ParseResult r = parse(List.of("Alice 15.03.1990"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice 15.03.1990"), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -115,7 +113,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("empty name before comma → rejected with error")
     void emptyName_isRejected() {
-        ParseResult r = parse(List.of(",15.03.1990"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of(",15.03.1990"), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -124,7 +122,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("name longer than 100 characters → rejected with error")
     void nameTooLong_isRejected() {
-        ParseResult r = parse(List.of("A".repeat(101) + ",15.03.1990"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("A".repeat(101) + ",15.03.1990"), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -137,7 +135,7 @@ class BulkAddParserTest extends MessagesTestSupport {
         for (int i = 1; i <= BulkAddParser.MAX_ENTRIES + 5; i++) {
             lines.add("Person" + i + ",01.01.1990");
         }
-        ParseResult r = parse(lines, Set.of());
+        BulkAddParser.ParseResult r = parse(lines, Set.of());
 
         assertThat(r.valid()).hasSize(BulkAddParser.MAX_ENTRIES);
         assertThat(r.errors()).hasSize(1);
@@ -146,7 +144,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("empty input list → returns single error and noData=true")
     void emptyInput_returnsError() {
-        ParseResult r = parse(List.of(), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of(), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -156,7 +154,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("only blank lines → returns single error and noData=true")
     void onlyBlankLines_returnsError() {
-        ParseResult r = parse(List.of("  ", "\t", ""), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("  ", "\t", ""), Set.of());
 
         assertThat(r.valid()).isEmpty();
         assertThat(r.errors()).hasSize(1);
@@ -166,7 +164,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("header-only CSV → noData=true")
     void headerOnly_returnsNoData() {
-        ParseResult r = parse(List.of("name,birthday,relationship"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("name,birthday,relationship"), Set.of());
 
         assertThat(r.noData()).isTrue();
         assertThat(r.valid()).isEmpty();
@@ -175,7 +173,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("valid row RU → error messages in Russian")
     void invalidRow_ru_returnsRuError() {
-        ParseResult r = BulkAddParser.parse(List.of(",15.03.1990"), Set.of(), Lang.RU, TODAY);
+        BulkAddParser.ParseResult r = BulkAddParser.parse(List.of(",15.03.1990"), Set.of(), Lang.RU, TODAY);
 
         assertThat(r.errors()).hasSize(1);
         assertThat(r.errors().getFirst())
@@ -185,7 +183,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("relationship column present → parsed and set on friend")
     void relationshipColumn_parsedCorrectly() {
-        ParseResult r = parse(List.of("Alice,15.03.1990,friend"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990,friend"), Set.of());
 
         assertThat(r.valid()).hasSize(1);
         assertThat(r.valid().getFirst().getRelationship()).isEqualTo(Relationship.FRIEND);
@@ -194,7 +192,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("unknown relationship value → parsed with null relationship, no error")
     void unknownRelationship_parsedAsNull() {
-        ParseResult r = parse(List.of("Alice,15.03.1990,alien"), Set.of());
+        BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990,alien"), Set.of());
 
         assertThat(r.valid()).hasSize(1);
         assertThat(r.valid().getFirst().getRelationship()).isNull();
@@ -203,7 +201,7 @@ class BulkAddParserTest extends MessagesTestSupport {
     @Test
     @DisplayName("mix of valid and invalid rows → valid saved, errors collected")
     void mixedRows_validSavedErrorsCollected() {
-        ParseResult r = parse(List.of(
+        BulkAddParser.ParseResult r = parse(List.of(
                 "Alice,15.03.1990",
                 "bad-line",
                 "Bob,22.07.1985",

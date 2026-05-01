@@ -1,6 +1,7 @@
-package com.festiva.bot;
+package com.festiva.friend.handler;
 
-import com.festiva.command.DatePickerKeyboard;
+import com.festiva.bot.CallbackQueryHandler;
+import com.festiva.bot.CallbackResult;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
@@ -24,17 +25,17 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
-class DatePickerCallbackHandler {
+public class DatePickerCallbackHandler {
 
-    static final String RELATIONSHIP_PREFIX = "RELATIONSHIP_";
-    static final String EDIT_REL_PREFIX     = "EDIT_REL_";
+    public static final String RELATIONSHIP_PREFIX = "RELATIONSHIP_";
+    public static final String EDIT_REL_PREFIX = "EDIT_REL_";
     private static final String LIST_SORT_DATE = "LIST_SORT_DATE";
 
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final UserDateService userDateService;
 
-    CallbackResult handleYearPage(String data, long userId, Lang lang) {
+    public CallbackResult handleYearPage(String data, long userId, Lang lang) {
         Integer offset = parseInteger(data.substring(DatePickerKeyboard.DATE_YEAR_PAGE_PREFIX.length()),
                 "callback.date.year.page.parse.failed", data);
         if (offset == null || offset < 0) {
@@ -51,7 +52,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
-    CallbackResult handleYearPick(String data, long userId, Lang lang) {
+    public CallbackResult handleYearPick(String data, long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
@@ -68,7 +69,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
 
-    CallbackResult handleSkipYear(long userId, Lang lang) {
+    public CallbackResult handleSkipYear(long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
@@ -79,7 +80,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
 
-    CallbackResult handleMonthPick(String data, long userId, Lang lang) {
+    public CallbackResult handleMonthPick(String data, long userId, Lang lang) {
         Integer month = parseInteger(data.substring(DatePickerKeyboard.DATE_MONTH_PREFIX.length()),
                 "callback.date.month.parse.failed", data);
         if (month == null || month < 1 || month > 12) {
@@ -99,7 +100,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.dayKeyboard(yearForDayPicker, month, lang));
     }
 
-    CallbackResult handleDayPick(String data, long userId, Lang lang) {
+    public CallbackResult handleDayPick(String data, long userId, Lang lang) {
         Integer day = parseInteger(data.substring(DatePickerKeyboard.DATE_DAY_PREFIX.length()),
                 "callback.date.day.parse.failed", data);
         Integer year = userStateService.getPendingYear(userId);
@@ -173,7 +174,7 @@ class DatePickerCallbackHandler {
         return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, name), relationshipKeyboard(lang));
     }
 
-    CallbackResult handleBackToYear(String data, long userId, Lang lang) {
+    public CallbackResult handleBackToYear(String data, long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
@@ -191,7 +192,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
-    CallbackResult handleBackToMonth(long userId, Lang lang) {
+    public CallbackResult handleBackToMonth(long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         if (name == null) {
             return sessionExpired(lang);
@@ -202,7 +203,7 @@ class DatePickerCallbackHandler {
                 DatePickerKeyboard.monthKeyboard(lang, userStateService.getYearPageOffset(userId)));
     }
 
-    CallbackResult handleRelationship(String data, long userId, Lang lang) {
+    public CallbackResult handleRelationship(String data, long userId, Lang lang) {
         String name = userStateService.getPendingName(userId);
         Integer year = userStateService.getPendingYear(userId);
         Integer month = userStateService.getPendingMonth(userId);
@@ -253,7 +254,7 @@ class DatePickerCallbackHandler {
                 ))).build());
     }
 
-    CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
+    public CallbackResult handleEditFieldRel(String data, long userId, Lang lang) {
         String id = data.substring(EditCallbackHandler.EDIT_FIELD_REL.length());
         Friend friend = friendService.findOwnedFriend(id, userId).orElse(null);
         if (friend == null) {
@@ -266,7 +267,7 @@ class DatePickerCallbackHandler {
         return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, friend.getName()), editRelKeyboard(lang));
     }
 
-    CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
+    public CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
         String id = userStateService.getPendingId(userId);
         String name = userStateService.getPendingName(userId);
         if (id == null || name == null) {

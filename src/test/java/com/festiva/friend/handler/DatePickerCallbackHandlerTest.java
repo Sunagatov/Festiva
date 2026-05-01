@@ -1,6 +1,6 @@
-package com.festiva.bot;
+package com.festiva.friend.handler;
 
-import com.festiva.command.DatePickerKeyboard;
+import com.festiva.bot.CallbackResult;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @DisplayName("DatePickerCallbackHandler")

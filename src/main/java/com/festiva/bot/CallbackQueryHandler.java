@@ -1,17 +1,19 @@
 package com.festiva.bot;
 
-import com.festiva.command.DatePickerKeyboard;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.DeleteAccountCommandHandler;
-import com.festiva.command.handler.EditFriendCommandHandler;
 import com.festiva.command.handler.ImportIcsCommandHandler;
-import com.festiva.command.handler.ListCommandHandler;
-import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
+import com.festiva.friend.handler.DatePickerCallbackHandler;
+import com.festiva.friend.handler.DatePickerKeyboard;
+import com.festiva.friend.handler.EditCallbackHandler;
+import com.festiva.friend.handler.EditFriendCommandHandler;
+import com.festiva.friend.handler.ListCommandHandler;
+import com.festiva.friend.handler.RemoveCommandHandler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;

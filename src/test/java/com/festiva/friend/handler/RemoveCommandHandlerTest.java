@@ -1,6 +1,5 @@
-package com.festiva.command;
+package com.festiva.friend.handler;
 
-import com.festiva.command.handler.RemoveCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;

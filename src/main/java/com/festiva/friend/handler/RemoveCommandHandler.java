@@ -1,4 +1,4 @@
-package com.festiva.command.handler;
+package com.festiva.friend.handler;
 
 import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandHandler;

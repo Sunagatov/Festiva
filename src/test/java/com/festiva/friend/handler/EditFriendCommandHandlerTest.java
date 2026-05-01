@@ -1,6 +1,5 @@
-package com.festiva.command;
+package com.festiva.friend.handler;
 
-import com.festiva.command.handler.EditFriendCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
@@ -36,8 +35,7 @@ class EditFriendCommandHandlerTest extends MessagesTestSupport {
         lenient().when(userStateService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(userStateService.getPendingName(anyLong())).thenReturn("Alice");
         lenient().when(userStateService.getPendingId(anyLong())).thenReturn("id-alice");
-        
-        // Mock the current friend for edit operations
+
         com.festiva.friend.entity.Friend alice = new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
         alice.setId("id-alice");
         alice.setTelegramUserId(1L);

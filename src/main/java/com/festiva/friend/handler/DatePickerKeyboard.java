@@ -1,4 +1,4 @@
-package com.festiva.command;
+package com.festiva.friend.handler;
 
 import com.festiva.i18n.Lang;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -13,15 +13,18 @@ import java.util.List;
 
 public final class DatePickerKeyboard {
 
-    public static final String DATE_YEAR_PREFIX      = "DATE_YEAR_";
-    public static final String DATE_MONTH_PREFIX     = "DATE_MONTH_";
-    public static final String DATE_DAY_PREFIX       = "DATE_DAY_";
+    public static final String DATE_YEAR_PREFIX = "DATE_YEAR_";
+    public static final String DATE_MONTH_PREFIX = "DATE_MONTH_";
+    public static final String DATE_DAY_PREFIX = "DATE_DAY_";
     public static final String DATE_YEAR_PAGE_PREFIX = "DATE_YEAR_PAGE_";
-    public static final String DATE_SKIP_YEAR        = "DATE_SKIP_YEAR";
+    public static final String DATE_SKIP_YEAR = "DATE_SKIP_YEAR";
 
     private static final int YEARS_PER_PAGE = 8;
     public static final int DEFAULT_YEAR_OFFSET =
             java.time.LocalDate.now().getYear() - 1995 - YEARS_PER_PAGE + 1;
+
+    public static final String DATE_BACK_TO_YEAR = "DATE_BACK_YEAR";
+    public static final String DATE_BACK_TO_MONTH = "DATE_BACK_MONTH";
 
     private DatePickerKeyboard() {}
 
@@ -45,17 +48,13 @@ public final class DatePickerKeyboard {
             nav.add(btn(com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_YEAR_LATER), DATE_YEAR_PAGE_PREFIX + (pageOffset - YEARS_PER_PAGE)));
         }
         rows.add(nav);
-        
-        // Add "Skip year" button
+
         rows.add(new InlineKeyboardRow(btn(
                 com.festiva.i18n.Messages.get(lang, com.festiva.i18n.Messages.DATE_SKIP_YEAR),
                 DATE_SKIP_YEAR)));
 
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
-
-    public static final String DATE_BACK_TO_YEAR  = "DATE_BACK_YEAR";
-    public static final String DATE_BACK_TO_MONTH = "DATE_BACK_MONTH";
 
     public static InlineKeyboardMarkup monthKeyboard(Lang lang, int yearPageOffset) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
@@ -76,7 +75,6 @@ public final class DatePickerKeyboard {
     }
 
     public static InlineKeyboardMarkup dayKeyboard(int year, int month, Lang lang) {
-        // Use leap year 2000 for unknown-year birthdays to allow Feb 29
         int effectiveYear = year > 0 ? year : 2000;
         int daysInMonth = YearMonth.of(effectiveYear, month).lengthOfMonth();
         List<InlineKeyboardRow> rows = new ArrayList<>();

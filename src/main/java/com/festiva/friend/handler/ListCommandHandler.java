@@ -1,4 +1,4 @@
-package com.festiva.command.handler;
+package com.festiva.friend.handler;
 
 import com.festiva.bot.CallbackQueryHandler;
 import com.festiva.command.CommandHandler;
@@ -20,8 +20,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.time.temporal.ChronoUnit;
 import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

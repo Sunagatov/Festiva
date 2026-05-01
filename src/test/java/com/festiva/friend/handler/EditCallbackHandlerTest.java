@@ -1,5 +1,6 @@
-package com.festiva.bot;
+package com.festiva.friend.handler;
 
+import com.festiva.bot.CallbackResult;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;

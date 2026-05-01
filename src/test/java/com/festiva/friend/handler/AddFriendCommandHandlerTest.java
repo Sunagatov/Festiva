@@ -1,6 +1,5 @@
-package com.festiva.command;
+package com.festiva.friend.handler;
 
-import com.festiva.command.handler.AddFriendCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;

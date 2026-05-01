@@ -1,4 +1,4 @@
-package com.festiva.command.handler;
+package com.festiva.friend.validation;
 
 import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
@@ -29,7 +29,7 @@ public final class BulkAddParser {
     private BulkAddParser() {}
 
     public record ParseResult(List<Friend> valid, List<String> errors, boolean noData) {}
-    
+
     private record DateParseResult(Integer year, int month, int day) {}
 
     public static ParseResult parse(List<String> lines, Set<String> existingNames, Lang lang, LocalDate today) {
@@ -37,39 +37,36 @@ public final class BulkAddParser {
         List<String> errors = new ArrayList<>();
         Set<String> seenInBatch = new HashSet<>();
 
-        // Filter out blank lines
         List<String> nonBlankLines = lines.stream()
-            .filter(line -> line != null && !line.trim().isEmpty())
-            .toList();
+                .filter(line -> line != null && !line.trim().isEmpty())
+                .toList();
 
         if (nonBlankLines.isEmpty()) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
             return new ParseResult(valid, errors, true);
         }
 
-        // Check if first line looks like a header (contains common header keywords)
         String firstLine = nonBlankLines.getFirst().toLowerCase(Locale.ROOT);
         boolean hasHeader = firstLine.matches(".*\\b(name|birthday|date|relationship)\\b.*");
 
         String csvContent = String.join("\n", nonBlankLines);
 
         CSVFormat.Builder formatBuilder = CSVFormat.DEFAULT.builder()
-            .setIgnoreHeaderCase(true)
-            .setTrim(true)
-            .setAllowMissingColumnNames(true);
-        
+                .setIgnoreHeaderCase(true)
+                .setTrim(true)
+                .setAllowMissingColumnNames(true);
+
         if (hasHeader) {
             formatBuilder.setHeader().setSkipHeaderRecord(true);
         }
 
         try (CSVParser parser = CSVParser.parse(new StringReader(csvContent), formatBuilder.build())) {
-            
             List<CSVRecord> records = parser.getRecords();
             if (records.isEmpty()) {
                 errors.add(Messages.get(lang, Messages.BULK_ERROR_NO_DATA));
                 return new ParseResult(valid, errors, true);
             }
-            
+
             if (records.size() > MAX_ENTRIES) {
                 errors.add(Messages.get(lang, Messages.BULK_ERROR_TOO_MANY, records.size(), MAX_ENTRIES, MAX_ENTRIES));
                 records = records.subList(0, MAX_ENTRIES);
@@ -81,13 +78,13 @@ public final class BulkAddParser {
         } catch (IOException e) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, 0));
         }
-        
+
         return new ParseResult(valid, errors, false);
     }
 
     private static void parseRow(CSVRecord record, int lineNum, Set<String> existingNames,
-                                  Set<String> seenInBatch, Lang lang, LocalDate today,
-                                  List<Friend> valid, List<String> errors) {
+                                 Set<String> seenInBatch, Lang lang, LocalDate today,
+                                 List<Friend> valid, List<String> errors) {
         if (record.size() < 2) {
             errors.add(Messages.get(lang, Messages.BULK_ERROR_FORMAT, lineNum));
             return;
@@ -98,44 +95,55 @@ public final class BulkAddParser {
         String relStr = record.size() > 2 && record.get(2) != null ? record.get(2).trim() : "";
 
         String nameError = validateName(name, lineNum, existingNames, seenInBatch, lang);
-        if (nameError != null) { errors.add(nameError); return; }
+        if (nameError != null) {
+            errors.add(nameError);
+            return;
+        }
 
         DateParseResult dateResult = parseDate(dateStr, name, lineNum, lang, today, errors);
-        if (dateResult == null) return;
+        if (dateResult == null) {
+            return;
+        }
 
         RelationshipParseResult relResult = parseRelationship(relStr, name, lineNum, lang);
-        if (relResult.warning() != null) errors.add(relResult.warning());
+        if (relResult.warning() != null) {
+            errors.add(relResult.warning());
+        }
         seenInBatch.add(name.toLowerCase(Locale.ROOT));
         valid.add(new Friend(name, dateResult.year(), dateResult.month(), dateResult.day(), relResult.relationship()));
     }
 
     private static String validateName(String name, int lineNum, Set<String> existingNames,
-                                        Set<String> seenInBatch, Lang lang) {
-        if (name.isBlank())          return Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum);
-        if (name.length() > 100)     return Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, lineNum);
+                                       Set<String> seenInBatch, Lang lang) {
+        if (name.isBlank()) {
+            return Messages.get(lang, Messages.BULK_ERROR_NAME_EMPTY, lineNum);
+        }
+        if (name.length() > 100) {
+            return Messages.get(lang, Messages.BULK_ERROR_NAME_LONG, lineNum);
+        }
         String lower = name.toLowerCase(Locale.ROOT);
-        if (existingNames.contains(lower)) return Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name);
-        if (seenInBatch.contains(lower))   return Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name);
+        if (existingNames.contains(lower)) {
+            return Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name);
+        }
+        if (seenInBatch.contains(lower)) {
+            return Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name);
+        }
         return null;
     }
 
     private static DateParseResult parseDate(String dateStr, String name, int lineNum, Lang lang, LocalDate today, List<String> errors) {
         try {
-            // Check if year is missing (format: DD.MM. or DD.MM)
             if (dateStr.endsWith(".") || dateStr.matches("\\d{2}\\.\\d{2}$")) {
-                // Parse as DD.MM without year
                 String normalized = dateStr.endsWith(".") ? dateStr.substring(0, dateStr.length() - 1) : dateStr;
                 String[] parts = normalized.split("\\.");
                 if (parts.length == 2) {
                     int day = Integer.parseInt(parts[0]);
                     int month = Integer.parseInt(parts[1]);
-                    // Validate using MonthDay
                     java.time.MonthDay.of(month, day);
                     return new DateParseResult(null, month, day);
                 }
             }
-            
-            // Parse full date with year
+
             LocalDate date = LocalDate.parse(dateStr, FMT);
             if (date.isAfter(today)) {
                 errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
@@ -152,13 +160,17 @@ public final class BulkAddParser {
     private record RelationshipParseResult(Relationship relationship, String warning) {}
 
     private static RelationshipParseResult parseRelationship(String relStr, String name, int lineNum, Lang lang) {
-        if (relStr.isBlank()) return new RelationshipParseResult(null, null);
+        if (relStr.isBlank()) {
+            return new RelationshipParseResult(null, null);
+        }
         try {
             return new RelationshipParseResult(Relationship.valueOf(relStr.toUpperCase(Locale.ROOT)), null);
         } catch (IllegalArgumentException e) {
             log.debug("bulk.parse.unknown.relationship: line={}, value={}", lineNum, relStr, e);
-            return new RelationshipParseResult(null,
-                    Messages.get(lang, Messages.BULK_ERROR_RELATIONSHIP_INVALID, lineNum, name, relStr));
+            return new RelationshipParseResult(
+                    null,
+                    Messages.get(lang, Messages.BULK_ERROR_RELATIONSHIP_INVALID, lineNum, name, relStr)
+            );
         }
     }
 }
