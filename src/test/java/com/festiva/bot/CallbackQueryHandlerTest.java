@@ -5,6 +5,7 @@ import com.festiva.command.handler.DeleteAccountCommandHandler;
 import com.festiva.command.handler.EditFriendCommandHandler;
 import com.festiva.command.handler.ListCommandHandler;
 import com.festiva.command.handler.RemoveCommandHandler;
+import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
@@ -25,6 +26,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageTe
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.message.MaybeInaccessibleMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -87,6 +89,23 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         verify(userStateService).setTimezone(1L, "UTC");
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_TZ_SET, "UTC"));
         assertThat(result.getText()).contains("/settings");
+    }
+
+    @Test
+    @DisplayName("SETTINGS_TZ_REGION_ callback → re-renders settings with filtered timezone choices")
+    void settingsTzRegionCallback_rerendersFilteredTimezoneChoices() {
+        when(userStateService.getNotifyHour(1L)).thenReturn(9);
+        when(userStateService.getTimezone(1L)).thenReturn("UTC");
+
+        EditMessageText result = handler.handle(callback("SETTINGS_TZ_REGION_" + SettingsCommandHandler.REGION_EUROPE));
+
+        verify(userStateService, never()).setTimezone(anyLong(), anyString());
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SETTINGS_HEADER));
+        assertThat(result.getReplyMarkup()).isNotNull();
+        assertThat(result.getReplyMarkup().getKeyboard()).flatExtracting(row -> row)
+                .extracting(InlineKeyboardButton::getCallbackData)
+                .contains(SettingsCommandHandler.SETTINGS_TZ_PREFIX + "Europe/London")
+                .doesNotContain(SettingsCommandHandler.SETTINGS_TZ_PREFIX + "UTC");
     }
 
     @Test

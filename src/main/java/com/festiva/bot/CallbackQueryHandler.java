@@ -196,6 +196,9 @@ public class CallbackQueryHandler {
         if (data.startsWith(SettingsCommandHandler.SETTINGS_HOUR_PREFIX)) {
             return handleSettingsHour(data, userId, lang);
         }
+        if (data.startsWith(SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX)) {
+            return handleSettingsTzRegion(data, userId, lang);
+        }
         if (data.startsWith(SettingsCommandHandler.SETTINGS_TZ_PREFIX)) {
             return handleSettingsTz(data, userId, lang);
         }
@@ -267,7 +270,8 @@ public class CallbackQueryHandler {
             }
             userStateService.setNotifyHour(userId, hour);
             return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HOUR_SET, hour),
-                    SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId)));
+                    SettingsCommandHandler.combined(hour, userStateService.getTimezone(userId), lang,
+                            SettingsCommandHandler.regionForTimezone(userStateService.getTimezone(userId))));
         } catch (NumberFormatException e) {
             log.atDebug()
                     .setMessage("callback_settings_hour_parse_failed")
@@ -275,6 +279,22 @@ public class CallbackQueryHandler {
                     .log();
             return sessionExpired(lang);
         }
+    }
+
+    private CallbackResult handleSettingsTzRegion(String data, long userId, Lang lang) {
+        String region = data.substring(SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX.length());
+        if (SettingsCommandHandler.tzKeyboard(region, userStateService.getTimezone(userId)).getKeyboard().isEmpty()) {
+            log.atDebug()
+                    .setMessage("callback_settings_timezone_region_invalid")
+                    .addKeyValue("userId", userId)
+                    .addKeyValue("region", region)
+                    .log();
+            return sessionExpired(lang);
+        }
+        return new CallbackResult(Messages.get(lang, Messages.SETTINGS_HEADER) + "\n\n" +
+                Messages.get(lang, Messages.SETTINGS_TZ_HEADER),
+                SettingsCommandHandler.combined(userStateService.getNotifyHour(userId),
+                        userStateService.getTimezone(userId), lang, region));
     }
 
     private CallbackResult handleSettingsTz(String data, long userId, Lang lang) {
@@ -292,7 +312,8 @@ public class CallbackQueryHandler {
         }
         userStateService.setTimezone(userId, tz);
         return new CallbackResult(Messages.get(lang, Messages.SETTINGS_TZ_SET, tz),
-                SettingsCommandHandler.combined(userStateService.getNotifyHour(userId), tz));
+                SettingsCommandHandler.combined(userStateService.getNotifyHour(userId), tz, lang,
+                        SettingsCommandHandler.regionForTimezone(tz)));
     }
 
     // ── List ─────────────────────────────────────────────────────────────────

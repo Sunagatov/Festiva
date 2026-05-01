@@ -71,14 +71,44 @@ class SettingsCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("tzKeyboard → active timezone has checkmark in label")
+    @DisplayName("tzRegionKeyboard → contains regional submenu buttons")
+    void tzRegionKeyboard_containsRegionalButtons() {
+        InlineKeyboardMarkup markup = SettingsCommandHandler.tzRegionKeyboard(Lang.EN, null);
+        var callbacks = markup.getKeyboard().stream()
+                .flatMap(Collection::stream)
+                .map(InlineKeyboardButton::getCallbackData)
+                .collect(Collectors.toList());
+        assertThat(callbacks).containsExactly(
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_EUROPE,
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_ASIA,
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_AMERICAS,
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_AFRICA,
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_PACIFIC,
+                SettingsCommandHandler.SETTINGS_TZ_REGION_PREFIX + SettingsCommandHandler.REGION_UTC
+        );
+    }
+
+    @Test
+    @DisplayName("tzKeyboard(region) → active timezone has checkmark in label")
     void tzKeyboard_activeTzHasCheckmark() {
-        InlineKeyboardMarkup markup = SettingsCommandHandler.tzKeyboard("UTC");
+        InlineKeyboardMarkup markup = SettingsCommandHandler.tzKeyboard(SettingsCommandHandler.REGION_UTC, "UTC");
         var activeBtn = markup.getKeyboard().stream()
                 .flatMap(Collection::stream)
                 .filter(btn -> btn.getCallbackData().equals(SettingsCommandHandler.SETTINGS_TZ_PREFIX + "UTC"))
                 .findFirst().orElseThrow();
         assertThat(activeBtn.getText()).startsWith("✅");
+    }
+
+    @Test
+    @DisplayName("combined with expanded region → includes only that region's timezones")
+    void combined_expandedRegionShowsFilteredTimezones() {
+        InlineKeyboardMarkup markup = SettingsCommandHandler.combined(9, "UTC", Lang.EN, SettingsCommandHandler.REGION_UTC);
+        var callbacks = markup.getKeyboard().stream()
+                .flatMap(Collection::stream)
+                .map(InlineKeyboardButton::getCallbackData)
+                .collect(Collectors.toList());
+        assertThat(callbacks).contains(SettingsCommandHandler.SETTINGS_TZ_PREFIX + "UTC");
+        assertThat(callbacks).doesNotContain(SettingsCommandHandler.SETTINGS_TZ_PREFIX + "Europe/London");
     }
 
     @Test

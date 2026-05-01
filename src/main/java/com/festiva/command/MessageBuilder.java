@@ -37,7 +37,7 @@ public final class MessageBuilder {
             Map.entry("\uD83D\uDCCB List", "/list"),
             Map.entry("\uD83C\uDF82 Birthdays", "/birthdays"),
             Map.entry("\uD83D\uDD14 Upcoming", "/upcomingbirthdays"),
-            Map.entry("\uD83C\uDF82 Today", "/today"),
+            Map.entry("\uD83C\uDF89 Today", "/today"),
             Map.entry("\uD83C\uDFC6 Jubilee", "/jubilee"),
             Map.entry("\uD83D\uDCDD Edit", "/edit"),
             Map.entry("\uD83C\uDF10 Language", "/language"),
@@ -55,7 +55,7 @@ public final class MessageBuilder {
             Map.entry("\uD83D\uDCCB Список", "/list"),
             Map.entry("\uD83C\uDF82 Дни рождения", "/birthdays"),
             Map.entry("\uD83D\uDD14 Ближайшие", "/upcomingbirthdays"),
-            Map.entry("\uD83C\uDF82 Сегодня", "/today"),
+            Map.entry("\uD83C\uDF89 Сегодня", "/today"),
             Map.entry("\uD83C\uDFC6 Юбилеи", "/jubilee"),
             Map.entry("\uD83D\uDCDD Изменить", "/edit"),
             Map.entry("\uD83C\uDF10 Язык", "/language"),
@@ -79,7 +79,7 @@ public final class MessageBuilder {
         return ReplyKeyboardMarkup.builder()
                 .keyboard(List.of(
                         new KeyboardRow(List.of(new KeyboardButton(ru ? "➕ Добавить" : "➕ Add"), new KeyboardButton(ru ? "\uD83D\uDDD1 Удалить" : "\uD83D\uDDD1 Remove"), new KeyboardButton(ru ? "\uD83D\uDCCB Список" : "\uD83D\uDCCB List"))),
-                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83C\uDF82 Дни рождения" : "\uD83C\uDF82 Birthdays"), new KeyboardButton(ru ? "\uD83D\uDD14 Ближайшие" : "\uD83D\uDD14 Upcoming"), new KeyboardButton(ru ? "\uD83C\uDF82 Сегодня" : "\uD83C\uDF82 Today"))),
+                        new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83C\uDF82 Дни рождения" : "\uD83C\uDF82 Birthdays"), new KeyboardButton(ru ? "\uD83D\uDD14 Ближайшие" : "\uD83D\uDD14 Upcoming"), new KeyboardButton(ru ? "\uD83C\uDF89 Сегодня" : "\uD83C\uDF89 Today"))),
                         new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83C\uDFC6 Юбилеи" : "\uD83C\uDFC6 Jubilee"), new KeyboardButton(ru ? "\uD83D\uDCDD Изменить" : "\uD83D\uDCDD Edit"), new KeyboardButton(ru ? "\uD83D\uDD0D Поиск" : "\uD83D\uDD0D Search"))),
                         new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83D\uDCCA Статистика" : "\uD83D\uDCCA Stats"), new KeyboardButton(ru ? "\uD83D\uDD27 Настройки" : "\uD83D\uDD27 Settings"), new KeyboardButton(ru ? "\uD83C\uDF10 Язык" : "\uD83C\uDF10 Language"))),
                         new KeyboardRow(List.of(new KeyboardButton(ru ? "\uD83D\uDCD6 Меню" : "\uD83D\uDCD6 Menu"), new KeyboardButton(ru ? "ℹ️ О боте" : "ℹ️ About")))

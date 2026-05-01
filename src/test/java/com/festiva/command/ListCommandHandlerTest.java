@@ -62,6 +62,8 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Alice");
+        assertThat(text).contains("🎂 <b>Alice</b>");
+        assertThat(text).contains("\n↳ ");
         assertThat(text).containsPattern("turned.*30|30.*turned");
     }
 
@@ -75,6 +77,8 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Bob");
+        assertThat(text).contains("🎂 <b>Bob</b>");
+        assertThat(text).contains("\n↳ ");
         assertThat(text).containsPattern("turns.*30|30.*turns");
     }
 
@@ -88,8 +92,10 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         String text = handler.handle(update()).getText();
 
         assertThat(text).contains("Carol");
+        assertThat(text).contains("🎂 <b>Carol</b>");
+        assertThat(text).contains("\n↳ ");
         assertThat(text).containsPattern("turned.*30|30.*turned");
-        assertThat(text).doesNotContainPattern("currently.*30.*turns.*30|turns.*30.*currently.*30");
+        assertThat(text).doesNotContain("currently");
     }
 
     @Test

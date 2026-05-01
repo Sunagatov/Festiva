@@ -34,7 +34,7 @@ public final class DatePickerKeyboard {
             InlineKeyboardRow row = new InlineKeyboardRow();
             for (int j = 0; j < 4 && i + j < YEARS_PER_PAGE; j++) {
                 int year = startYear + i + j;
-                row.add(btn(String.valueOf(year), DATE_YEAR_PREFIX + year));
+                row.add(btn(year + " · " + (currentYear - year) + "y", DATE_YEAR_PREFIX + year));
             }
             rows.add(row);
         }

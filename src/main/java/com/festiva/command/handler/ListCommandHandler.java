@@ -19,7 +19,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.temporal.ChronoUnit;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -123,28 +125,36 @@ public class ListCommandHandler implements CommandHandler {
     private void appendFriend(StringBuilder sb, Friend f, LocalDate today, Lang lang) {
         long daysUntil = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
         String daysLabel = daysUntil == 0
-                ? " " + Messages.get(lang, Messages.LIST_DAYS_TODAY)
-                : " " + Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
+                ? Messages.get(lang, Messages.LIST_DAYS_TODAY)
+                : Messages.get(lang, Messages.LIST_DAYS_LEFT, daysUntil);
         String relLabel = f.getRelationship() != null ? " <i>" + f.getRelationship().label(lang) + "</i>" : "";
-        
-        String dateStr = f.hasYear()
-                ? f.getBirthDate().format(MessageBuilder.DATE_FORMATTER)
-                : String.format("%02d.%02d", f.getBirthMonthDay().getDayOfMonth(), f.getBirthMonthDay().getMonthValue());
 
-        sb.append("– <b>").append(dateStr)
-                .append("</b> ").append(f.getZodiac()).append(" <i>").append(HtmlEscaper.escape(f.getName())).append("</i>")
-                .append(relLabel).append(" ");
+        sb.append("🎂 <b>").append(HtmlEscaper.escape(f.getName())).append("</b>")
+                .append(relLabel).append("\n")
+                .append("↳ ").append(formatDateLabel(f, lang))
+                .append(" · ").append(f.getZodiac());
 
+        List<String> details = new ArrayList<>();
         if (f.hasYear()) {
             LocalDate next = f.nextBirthday(today);
             boolean alreadyHadBirthday = next.equals(today) || next.getYear() > today.getYear();
             if (alreadyHadBirthday) {
-                sb.append(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
+                details.add(Messages.get(lang, Messages.LIST_TURNED, Messages.yearsRu(lang, f.getAge(today))));
             } else {
-                sb.append(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getAge(today)), Messages.yearsRu(lang, f.getNextAge(today))));
+                details.add(Messages.get(lang, Messages.LIST_WILL_TURN, Messages.yearsRu(lang, f.getNextAge(today))));
             }
         }
-        
-        sb.append(daysLabel).append("\n");
+        details.add(daysLabel);
+        sb.append(" · ").append(String.join(" · ", details)).append("\n");
+    }
+
+    private String formatDateLabel(Friend friend, Lang lang) {
+        int month = friend.getBirthMonthDay().getMonthValue();
+        String rawMonth = Month.of(month).getDisplayName(TextStyle.SHORT, lang.locale());
+        String shortMonth = Character.toUpperCase(rawMonth.charAt(0)) + rawMonth.substring(1).replace(".", "");
+        if (friend.hasYear()) {
+            return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth + " " + friend.getBirthYear();
+        }
+        return friend.getBirthMonthDay().getDayOfMonth() + " " + shortMonth;
     }
 }
