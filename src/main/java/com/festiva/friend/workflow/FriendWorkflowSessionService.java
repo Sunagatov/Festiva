@@ -21,16 +21,12 @@ public class FriendWorkflowSessionService {
     private FriendWorkflowSession session(long userId) {
         return cache.get(userId, id -> {
             FriendWorkflowSession session = repository.findById(id).orElse(new FriendWorkflowSession());
-            session.setUserId(id);
-            session.touch();
-
             if (session.getLastActivity() != null
                     && session.getLastActivity().isBefore(LocalDateTime.now().minusHours(1))) {
                 session = new FriendWorkflowSession();
-                session.setUserId(id);
-                session.touch();
             }
-
+            session.setUserId(id);
+            session.touch();
             return session;
         });
     }

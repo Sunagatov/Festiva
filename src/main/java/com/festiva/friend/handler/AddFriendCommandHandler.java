@@ -8,6 +8,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -70,14 +71,14 @@ public class AddFriendCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_TOO_LONG));
         }
         if (friendService.friendExists(userId, name)) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, name));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, HtmlEscaper.escape(name)));
         }
 
         friendWorkflowSessionService.setPendingName(userId, name);
         friendWorkflowSessionService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_DATE);
         return MessageBuilder.html(chatId,
-                Messages.get(lang, Messages.DATE_PICK_YEAR, name),
+                Messages.get(lang, Messages.DATE_PICK_YEAR, HtmlEscaper.escape(name)),
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 }

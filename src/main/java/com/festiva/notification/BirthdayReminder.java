@@ -129,8 +129,18 @@ public class BirthdayReminder {
         LocalDate today = userNow.toLocalDate();
         Lang lang = pref != null && pref.getLang() != null ? pref.getLang() : UserPreference.DEFAULT_LANG;
 
-        int count = (int) friends.stream().filter(f -> checkAndNotify(userId, f, today, lang, stats)).count();
-        if (count > 0) {
+        int due = 0;
+        int sent = 0;
+        for (Friend friend : friends) {
+            DeliveryResult result = checkAndNotify(userId, friend, today, lang, stats);
+            if (result != DeliveryResult.NOT_DUE) {
+                due++;
+            }
+            if (result == DeliveryResult.SENT) {
+                sent++;
+            }
+        }
+        if (due > 0 && sent == due) {
             userPreferenceService.markLastNotifiedDate(userId, today);
             stats.notifiedUsers++;
         }
@@ -161,9 +171,9 @@ public class BirthdayReminder {
         return !today.equals(pref != null ? pref.getLastNotifiedDate() : null);
     }
 
-    private boolean checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang, ReminderRunStats stats) {
+    private DeliveryResult checkAndNotify(long userId, Friend friend, LocalDate today, Lang lang, ReminderRunStats stats) {
         if (!friend.isNotifyEnabled()) {
-            return false;
+            return DeliveryResult.NOT_DUE;
         }
 
         long daysUntil = ChronoUnit.DAYS.between(today, friend.nextBirthday(today));
@@ -171,13 +181,15 @@ public class BirthdayReminder {
         Map<Long, String> templates = friend.hasYear() ? TEMPLATE_KEYS : TEMPLATE_KEYS_NO_YEAR;
         String key = templates.get(daysUntil);
         if (key == null) {
-            return false;
+            return DeliveryResult.NOT_DUE;
         }
 
         try {
             String message = buildReminderMessage(friend, today, lang, key);
-
             boolean sent = notificationSender.send(userId, message);
+            if (!sent) {
+                sent = notificationSender.send(userId, message);
+            }
             if (!sent) {
                 stats.notificationFailures++;
                 log.atError()
@@ -189,8 +201,19 @@ public class BirthdayReminder {
             } else {
                 stats.notificationsSent++;
             }
-            return sent;
+            return sent ? DeliveryResult.SENT : DeliveryResult.FAILED;
         } catch (RuntimeException e) {
+            try {
+                String message = buildReminderMessage(friend, today, lang, key);
+                if (notificationSender.send(userId, message)) {
+                    stats.notificationsSent++;
+                    return DeliveryResult.SENT;
+                }
+            } catch (RuntimeException retryError) {
+                if (retryError != e) {
+                    e.addSuppressed(retryError);
+                }
+            }
             stats.notificationFailures++;
             log.atError()
                     .setMessage("birthday_reminder_notification_failed")
@@ -199,7 +222,7 @@ public class BirthdayReminder {
                     .addKeyValue("daysUntil", daysUntil)
                     .setCause(e)
                     .log();
-            return false;
+            return DeliveryResult.FAILED;
         }
     }
 
@@ -236,5 +259,11 @@ public class BirthdayReminder {
         private int notificationsSent;
         private int notificationFailures;
         private int invalidTimezones;
+    }
+
+    private enum DeliveryResult {
+        NOT_DUE,
+        SENT,
+        FAILED
     }
 }

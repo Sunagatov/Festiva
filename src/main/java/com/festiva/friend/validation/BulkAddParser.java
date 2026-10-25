@@ -4,6 +4,7 @@ import com.festiva.friend.entity.Friend;
 import com.festiva.friend.entity.Relationship;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.util.HtmlEscaper;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -46,8 +47,7 @@ public final class BulkAddParser {
             return new ParseResult(valid, errors, true);
         }
 
-        String firstLine = nonBlankLines.getFirst().toLowerCase(Locale.ROOT);
-        boolean hasHeader = firstLine.matches(".*\\b(name|birthday|date|relationship)\\b.*");
+        boolean hasHeader = looksLikeHeader(nonBlankLines.getFirst());
 
         String csvContent = String.join("\n", nonBlankLines);
 
@@ -108,9 +108,15 @@ public final class BulkAddParser {
         RelationshipParseResult relResult = parseRelationship(relStr, name, lineNum, lang);
         if (relResult.warning() != null) {
             errors.add(relResult.warning());
+            return;
         }
         seenInBatch.add(name.toLowerCase(Locale.ROOT));
         valid.add(new Friend(name, dateResult.year(), dateResult.month(), dateResult.day(), relResult.relationship()));
+    }
+
+    private static boolean looksLikeHeader(String line) {
+        return line != null && line.matches(
+                "(?i)^\\s*\"?name\"?\\s*,\\s*\"?(birthday|date)\"?\\s*(,\\s*\"?relationship\"?\\s*)?$");
     }
 
     private static String validateName(String name, int lineNum, Set<String> existingNames,
@@ -123,10 +129,10 @@ public final class BulkAddParser {
         }
         String lower = name.toLowerCase(Locale.ROOT);
         if (existingNames.contains(lower)) {
-            return Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, name);
+            return Messages.get(lang, Messages.BULK_ERROR_EXISTS, lineNum, display(name));
         }
         if (seenInBatch.contains(lower)) {
-            return Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, name);
+            return Messages.get(lang, Messages.BULK_ERROR_DUPLICATE, lineNum, display(name));
         }
         return null;
     }
@@ -146,13 +152,14 @@ public final class BulkAddParser {
 
             LocalDate date = LocalDate.parse(dateStr, FMT);
             if (date.isAfter(today)) {
-                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, name));
+                errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_FUTURE, lineNum, display(name)));
                 return null;
             }
             return new DateParseResult(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
         } catch (Exception e) {
             log.debug("bulk.parse.date.invalid: line={}, value={}", lineNum, dateStr, e);
-            errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum, name, dateStr));
+            errors.add(Messages.get(lang, Messages.BULK_ERROR_DATE_INVALID, lineNum,
+                    display(name), display(dateStr)));
             return null;
         }
     }
@@ -169,8 +176,14 @@ public final class BulkAddParser {
             log.debug("bulk.parse.unknown.relationship: line={}, value={}", lineNum, relStr, e);
             return new RelationshipParseResult(
                     null,
-                    Messages.get(lang, Messages.BULK_ERROR_RELATIONSHIP_INVALID, lineNum, name, relStr)
+                    Messages.get(lang, Messages.BULK_ERROR_RELATIONSHIP_INVALID, lineNum,
+                            display(name), display(relStr))
             );
         }
+    }
+
+    private static String display(String value) {
+        String clipped = value.length() <= 100 ? value : value.substring(0, 97) + "…";
+        return HtmlEscaper.escape(clipped);
     }
 }

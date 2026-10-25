@@ -34,17 +34,12 @@ public class UserStateService {
     private UserSession session(long userId) {
         return cache.get(userId, id -> {
             UserSession session = sessionRepository.findById(id).orElse(new UserSession());
+            if (session.getLastActivity() != null
+                    && session.getLastActivity().isBefore(LocalDateTime.now().minusHours(1))) {
+                session = new UserSession();
+            }
             session.setUserId(id);
             session.touch();
-            
-            // Reject stale sessions from DB
-            if (session.getLastActivity() != null && 
-                session.getLastActivity().isBefore(LocalDateTime.now().minusHours(1))) {
-                session = new UserSession();
-                session.setUserId(id);
-                session.touch();
-            }
-            
             return session;
         });
     }
@@ -83,5 +78,14 @@ public class UserStateService {
     
     public java.util.List<Friend> getPendingIcsImport(long userId) {
         return pendingIcsImportService.get(userId);
+    }
+
+    public void setLastSearchQuery(long userId, String query) {
+        session(userId).setLastSearchQuery(query);
+        saveSession(userId);
+    }
+
+    public String getLastSearchQuery(long userId) {
+        return session(userId).getLastSearchQuery();
     }
 }

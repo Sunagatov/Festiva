@@ -96,7 +96,7 @@ In 7d:    "📅 In one week it's <name> <relationship>'s birthday <zodiac> — t
 | `NotificationSender.send()` throws | Error logged per friend, processing continues |
 | Bot restarted during notification window | Startup check fires immediately and catches up |
 | No `UserPreference` record for a user | Defaults applied: hour=9, timezone=UTC, lang=RU |
-| Feb 29 birthday in non-leap year | `Friend.nextBirthday()` advances to next leap year — reminder fires on Feb 28 in non-leap years |
+| Feb 29 birthday in non-leap year | Observed on Feb 28; reminder timing and age calculations use that date |
 
 ---
 
@@ -187,7 +187,7 @@ Reads from `friends`. Reads and writes `user_preferences`.
 - **Startup check uses current UTC time** — if the bot restarts at 10:05 UTC and a user's notify hour is 9 in UTC, the startup check will not re-send (hour mismatch). The dedup guard also prevents re-sending even if the hour matched.
 - **No retry mechanism** — if `NotificationSender.send()` fails, the notification is lost. There is no queue or retry.
 - **`lastNotifiedDate` is updated even if no friends had birthdays** — any user with friends gets their `lastNotifiedDate` stamped, which prevents a second attempt later the same day even if the first run had zero notifications to send.
-- **Feb 29 birthdays** — in non-leap years, `nextBirthday()` advances to the next leap year. The reminder fires on the correct future date, but the "days until" calculation may skip Feb 28 of the current year entirely.
+- **Feb 29 birthdays** — observed on Feb 28 in non-leap years, consistently with Today and Upcoming views.
 - **Single timezone per user** — all friends of a user share the user's timezone. There is no per-friend timezone.
 
 ---

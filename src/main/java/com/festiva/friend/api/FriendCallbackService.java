@@ -14,6 +14,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import com.festiva.user.api.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class FriendCallbackService {
     private static final String CURRENT_MONTH = "CURRENT";
     private static final String LIST_SORT_DATE = "LIST_SORT_DATE";
     private static final String LIST_SORT_NAME = "LIST_SORT_NAME";
+    private static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -142,9 +144,11 @@ public class FriendCallbackService {
 
     private CallbackResult dispatchList(String data, long userId, Lang lang) {
         if (data.startsWith(ListCommandHandler.LIST_PAGE_PREFIX)) {
+            userStateService.clearState(userId);
             return handleListPage(data, userId, lang);
         }
         if (data.startsWith(LIST_SORT_DATE) || data.startsWith(LIST_SORT_NAME)) {
+            userStateService.clearState(userId);
             return handleListSort(data, userId, lang);
         }
         return null;
@@ -276,7 +280,7 @@ public class FriendCallbackService {
         friendWorkflowSessionService.setPendingName(userId, name);
         friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_REMOVE_CONFIRM);
-        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, name), confirmKeyboard(id, lang));
+        return new CallbackResult(Messages.get(lang, Messages.CONFIRM_REMOVE_ASK, HtmlEscaper.escape(name)), confirmKeyboard(id, lang));
     }
 
     private CallbackResult handleConfirmRemove(long userId, String id, Lang lang) {
@@ -288,7 +292,7 @@ public class FriendCallbackService {
         String name = friend.getName();
         friendService.deleteFriendById(id, userId);
         userStateService.clearState(userId);
-        return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, name), MessageBuilder.addAndListMarkup(lang));
+        return new CallbackResult(Messages.get(lang, Messages.FRIEND_REMOVED, HtmlEscaper.escape(name)), MessageBuilder.addAndListMarkup(lang));
     }
 
     private CallbackResult handleCancelRemove(long userId, Lang lang) {
@@ -297,7 +301,18 @@ public class FriendCallbackService {
     }
 
     private CallbackResult handleMonth(long userId, String data, Lang lang) {
+        userStateService.clearState(userId);
         String value = data.substring(MONTH_PREFIX.length());
+        int requestedPage = 0;
+        int pageSeparator = value.lastIndexOf("_PAGE_");
+        if (pageSeparator >= 0) {
+            try {
+                requestedPage = Integer.parseInt(value.substring(pageSeparator + "_PAGE_".length()));
+                value = value.substring(0, pageSeparator);
+            } catch (NumberFormatException e) {
+                return new CallbackResult(Messages.get(lang, Messages.MONTH_PARSE_ERROR), null);
+            }
+        }
         int month;
         if (CURRENT_MONTH.equalsIgnoreCase(value)) {
             month = userDateService.todayFor(userId).getMonthValue();
@@ -333,8 +348,12 @@ public class FriendCallbackService {
         }
 
         LocalDate today = userDateService.todayFor(userId);
+        int totalPages = (int) Math.ceil((double) filtered.size() / PAGE_SIZE);
+        int page = Math.max(0, Math.min(requestedPage, totalPages - 1));
+        int from = page * PAGE_SIZE;
+        List<Friend> pageFriends = filtered.subList(from, Math.min(from + PAGE_SIZE, filtered.size()));
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.BIRTHDAYS_HEADER, monthName) + "\n\n");
-        filtered.forEach(f -> {
+        pageFriends.forEach(f -> {
             long days = java.time.temporal.ChronoUnit.DAYS.between(today, f.nextBirthday(today));
             LocalDate next = f.nextBirthday(today);
             boolean alreadyCelebrated = next.equals(today) || next.getYear() > today.getYear();
@@ -370,7 +389,12 @@ public class FriendCallbackService {
             }
             sb.append("\n");
         });
-        return new CallbackResult(sb.toString(), MessageBuilder.browseMarkup(lang));
+        if (totalPages > 1) {
+            sb.append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages)).append("\n");
+        }
+        InlineKeyboardMarkup markup = MessageBuilder.withPagination(
+                MessageBuilder.browseMarkup(lang), MONTH_PREFIX + month + "_PAGE_", page, totalPages);
+        return new CallbackResult(sb.toString(), markup);
     }
 
     private String formatMonthCardDate(Friend friend, Lang lang) {

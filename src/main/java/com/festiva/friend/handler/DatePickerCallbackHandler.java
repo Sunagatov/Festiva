@@ -10,6 +10,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import com.festiva.user.api.UserDateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class DatePickerCallbackHandler {
         }
 
         friendWorkflowSessionService.setYearPageOffset(userId, offset);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, HtmlEscaper.escape(name)),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
@@ -169,14 +170,14 @@ public class DatePickerCallbackHandler {
             }
 
         userStateService.clearState(userId);
-            return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, name), MessageBuilder.editAndListMarkup(lang));
+            return new CallbackResult(Messages.get(lang, Messages.EDIT_DATE_DONE, HtmlEscaper.escape(name)), MessageBuilder.editAndListMarkup(lang));
         }
 
         friendWorkflowSessionService.setPendingYear(userId, year);
         friendWorkflowSessionService.setPendingMonth(userId, month);
         friendWorkflowSessionService.setPendingDay(userId, day);
         userStateService.setState(userId, BotState.WAITING_FOR_ADD_FRIEND_RELATIONSHIP);
-        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, name), relationshipKeyboard(lang));
+        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, HtmlEscaper.escape(name)), relationshipKeyboard(lang));
     }
 
     public CallbackResult handleBackToYear(String data, long userId, Lang lang) {
@@ -193,7 +194,7 @@ public class DatePickerCallbackHandler {
 
         friendWorkflowSessionService.setYearPageOffset(userId, offset);
         friendWorkflowSessionService.setPendingYear(userId, null);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, name),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, HtmlEscaper.escape(name)),
                 DatePickerKeyboard.yearKeyboard(offset, lang));
     }
 
@@ -209,7 +210,7 @@ public class DatePickerCallbackHandler {
     }
 
     private String datePrompt(Lang lang, String key, String name, Integer year, Integer month) {
-        String base = Messages.get(lang, key, name);
+        String base = Messages.get(lang, key, HtmlEscaper.escape(name));
         String breadcrumb = dateBreadcrumb(lang, year, month);
         if (breadcrumb == null) {
             return base;
@@ -265,7 +266,7 @@ public class DatePickerCallbackHandler {
         } catch (IllegalArgumentException e) {
             userStateService.clearState(userId);
             String text = friendService.friendExists(userId, name)
-                    ? Messages.get(lang, Messages.NAME_EXISTS, name)
+                    ? Messages.get(lang, Messages.NAME_EXISTS, HtmlEscaper.escape(name))
                     : Messages.get(lang, Messages.SESSION_EXPIRED);
             return new CallbackResult(text, null);
         }
@@ -284,7 +285,7 @@ public class DatePickerCallbackHandler {
         friendWorkflowSessionService.setPendingName(userId, friend.getName());
         friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_RELATIONSHIP);
-        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, friend.getName()), editRelKeyboard(lang));
+        return new CallbackResult(Messages.get(lang, Messages.RELATIONSHIP_PICK, HtmlEscaper.escape(friend.getName())), editRelKeyboard(lang));
     }
 
     public CallbackResult handleEditRelationship(String data, long userId, Lang lang) {
@@ -313,7 +314,7 @@ public class DatePickerCallbackHandler {
 
         friendService.updateFriendRelationshipById(id, userId, rel);
         userStateService.clearState(userId);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, name), MessageBuilder.editAndListMarkup(lang));
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_REL_DONE, HtmlEscaper.escape(name)), MessageBuilder.editAndListMarkup(lang));
     }
 
     private InlineKeyboardMarkup relationshipKeyboard(Lang lang) {
@@ -361,7 +362,7 @@ public class DatePickerCallbackHandler {
     private String buildAddedPreview(Lang lang, String name, Integer year, int month, int day, Relationship relationship) {
         StringJoiner text = new StringJoiner("\n");
         text.add(Messages.get(lang, Messages.FRIEND_ADDED_CARD));
-        text.add("👤 " + name);
+        text.add("👤 " + HtmlEscaper.escape(name));
         text.add("📅 " + formatBirthDate(lang, year, month, day));
         if (relationship != null) {
             text.add("💞 " + relationshipTitle(lang, relationship));

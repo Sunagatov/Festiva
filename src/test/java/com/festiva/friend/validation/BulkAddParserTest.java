@@ -55,6 +55,15 @@ class BulkAddParserTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("friend named Birthday is not mistaken for a header")
+    void birthdayName_isNotHeader() {
+        BulkAddParser.ParseResult r = parse(List.of("Birthday,15.03.1990"), Set.of());
+
+        assertThat(r.valid()).singleElement().extracting("name").isEqualTo("Birthday");
+        assertThat(r.errors()).isEmpty();
+    }
+
+    @Test
     @DisplayName("blank lines are ignored")
     void blankLines_areIgnored() {
         BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990", "  ", "", "Bob,22.07.1985"), Set.of());
@@ -190,12 +199,12 @@ class BulkAddParserTest extends MessagesTestSupport {
     }
 
     @Test
-    @DisplayName("unknown relationship value → parsed with null relationship, no error")
-    void unknownRelationship_parsedAsNull() {
+    @DisplayName("unknown relationship value → row is rejected")
+    void unknownRelationship_isRejected() {
         BulkAddParser.ParseResult r = parse(List.of("Alice,15.03.1990,alien"), Set.of());
 
-        assertThat(r.valid()).hasSize(1);
-        assertThat(r.valid().getFirst().getRelationship()).isNull();
+        assertThat(r.valid()).isEmpty();
+        assertThat(r.errors()).hasSize(1);
     }
 
     @Test

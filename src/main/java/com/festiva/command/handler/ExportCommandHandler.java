@@ -54,9 +54,7 @@ public class ExportCommandHandler implements CommandHandler {
                 n = "'" + n;
             }
 
-            String name = (n.contains(",") || n.contains("\""))
-                    ? "\"" + n.replace("\"", "\"\"") + "\""
-                    : n;
+            String name = csvField(n);
             String rel = f.getRelationship() != null ? f.getRelationship().name().toLowerCase(Locale.ROOT) : "";
 
             String birthday = f.hasYear()
@@ -86,5 +84,12 @@ public class ExportCommandHandler implements CommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.EXPORT_FAILED), MessageBuilder.backToMoreMarkup(lang));
         }
         return null;
+    }
+
+    private String csvField(String value) {
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 }

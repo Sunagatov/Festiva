@@ -64,7 +64,7 @@ User sends: /today with no matches
 |---|---|---|
 | No friends | Empty friend list | `today_none` shown |
 | No birthdays today | Friends exist but none match today | `today_none` shown |
-| Feb 29 birthday in non-leap year | `nextBirthday()` advances to next leap year | Friend does NOT appear on Feb 28 or Feb 29 in non-leap years |
+| Feb 29 birthday in non-leap year | Birthday is observed on Feb 28 | Friend appears on Feb 28 |
 | Multiple birthdays today | Several friends share today's date | All shown, in `getFriends()` order |
 
 ---
@@ -122,7 +122,7 @@ No structured log events for this feature.
 
 - **Uses server date** — not the user's configured timezone. A user in UTC+12 at midnight may miss a birthday that is "today" in their timezone but "yesterday" on the server.
 - **No sort** — results are in DB insertion order, not alphabetical or by age.
-- **Feb 29 birthdays** — in non-leap years, `nextBirthday()` skips to the next leap year entirely. The friend will not appear on Feb 28 via `/today` even though the scheduler sends a reminder on Feb 28.
+- Results are limited to ten entries so the response remains within Telegram's message-size limit; `/list` shows the complete collection.
 
 ---
 
@@ -144,7 +144,6 @@ No structured log events for this feature.
 ## 16. Open Questions
 
 - [ ] Should `/today` use the user's configured timezone instead of server date, consistent with how the scheduler works?
-- [ ] Should Feb 29 birthdays appear on Feb 28 in non-leap years (matching scheduler behaviour)?
 
 ---
 

@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +23,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class TodayCommandHandler implements CommandHandler {
+
+    public static final String TODAY_PAGE_PREFIX = "TODAY_PAGE_";
+    private static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -36,18 +40,26 @@ public class TodayCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userPreferenceService.getLanguage(userId);
-        LocalDate today = userDateService.todayFor(userId);
+        View view = view(userId, lang, 0);
+        return MessageBuilder.html(chatId, view.text(), view.markup());
+    }
 
+    public View view(long userId, Lang lang, int requestedPage) {
+        LocalDate today = userDateService.todayFor(userId);
         List<Friend> todayFriends = friendService.getFriends(userId).stream()
-                .filter(f -> f.nextBirthday(today).equals(today))
+                .filter(friend -> friend.nextBirthday(today).equals(today))
                 .toList();
 
         if (todayFriends.isEmpty()) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.TODAY_NONE), MessageBuilder.todayEmptyMarkup(lang));
+            return new View(Messages.get(lang, Messages.TODAY_NONE), MessageBuilder.todayEmptyMarkup(lang));
         }
 
+        int totalPages = (int) Math.ceil((double) todayFriends.size() / PAGE_SIZE);
+        int page = Math.max(0, Math.min(requestedPage, totalPages - 1));
+        int from = page * PAGE_SIZE;
+        List<Friend> pageFriends = todayFriends.subList(from, Math.min(from + PAGE_SIZE, todayFriends.size()));
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.TODAY_HEADER) + "\n\n");
-        todayFriends.forEach(f -> {
+        pageFriends.forEach(f -> {
             sb.append("🎂 <b>").append(HtmlEscaper.escape(f.getName())).append("</b>");
             if (f.hasYear()) {
                 sb.append(" — ")
@@ -55,9 +67,16 @@ public class TodayCommandHandler implements CommandHandler {
             }
             sb.append("\n");
         });
+        if (totalPages > 1) {
+            sb.append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages)).append("\n");
+        }
         sb.append("\n").append(Messages.get(lang, Messages.TODAY_CELEBRATE))
                 .append("\n")
                 .append(Messages.get(lang, Messages.TODAY_HINT));
-        return MessageBuilder.html(chatId, sb.toString(), MessageBuilder.todayCelebrationMarkup(lang));
+        InlineKeyboardMarkup markup = MessageBuilder.withPagination(
+                MessageBuilder.todayCelebrationMarkup(lang), TODAY_PAGE_PREFIX, page, totalPages);
+        return new View(sb.toString(), markup);
     }
+
+    public record View(String text, InlineKeyboardMarkup markup) {}
 }

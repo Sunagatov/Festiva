@@ -199,6 +199,23 @@ class ListCommandHandlerTest extends MessagesTestSupport {
         assertThat(markup.getKeyboard().getFirst()).hasSize(2);
     }
 
+    @Test
+    @DisplayName("stale page callback is clamped to the last available page")
+    void stalePage_isClamped() {
+        List<Friend> friends = java.util.stream.IntStream.rangeClosed(1, 11)
+                .mapToObj(i -> new Friend("Friend " + i, LocalDate.of(1990, 1, Math.min(i, 28))))
+                .toList();
+
+        String text = handler.buildText(friends, Lang.EN, false, 99, 1L);
+        var keyboard = handler.keyboard(Lang.EN, false, 99, friends.size());
+
+        assertThat(text).contains(Messages.get(Lang.EN, Messages.LIST_PAGE, 2, 2));
+        assertThat(keyboard.getKeyboard()).flatExtracting(row -> row)
+                .extracting(org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton::getCallbackData)
+                .contains(ListCommandHandler.LIST_PAGE_PREFIX + "NAME_0")
+                .doesNotContain(ListCommandHandler.LIST_PAGE_PREFIX + "NAME_100");
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

@@ -197,4 +197,34 @@ class ImportIcsCommandHandlerTest {
         );
         assertThat(result).containsExactly("Birthday of Bob,22.07.1985");
     }
+
+    @Test
+    @DisplayName("escaped commas and semicolons in SUMMARY are decoded")
+    void summaryEscapes_areDecoded() {
+        var entries = ImportIcsCommandHandler.extractYearlyEntries(List.of(
+                "begin:vevent",
+                "summary:Smith\\, Alice\\; birthday",
+                "dtstart;value=date:19900315",
+                "rrule:freq=yearly",
+                "end:vevent"));
+
+        assertThat(entries).singleElement()
+                .extracting(ImportIcsCommandHandler.IcsEntry::summary)
+                .isEqualTo("Smith, Alice; birthday");
+    }
+
+    @Test
+    @DisplayName("generic recurring birthday date does not claim a trusted birth year")
+    void genericRecurringBirthday_yearIsNotTrusted() {
+        var entries = ImportIcsCommandHandler.extractYearlyEntries(List.of(
+                "BEGIN:VEVENT",
+                "SUMMARY:Alice birthday",
+                "DTSTART;VALUE=DATE:19900315",
+                "RRULE:FREQ=YEARLY",
+                "END:VEVENT"));
+
+        assertThat(entries).singleElement()
+                .extracting(ImportIcsCommandHandler.IcsEntry::yearTrusted)
+                .isEqualTo(false);
+    }
 }

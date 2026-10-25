@@ -40,7 +40,7 @@ The relationship is selected from a predefined list or skipped.
 - **i18n:** All messages must exist in `messages_en.properties` and `messages_ru.properties`.
 - **Validation:** Name is trimmed before validation. Blank check happens after trim.
 - **Limits:** Hard cap of 100 friends per user (`FriendService.FRIEND_CAP`). Cap is checked both at flow entry and at the moment of saving (race condition guard).
-- **Leap year:** Feb 29 is supported. `Friend.nextBirthday()` skips to the next leap year when the current year is not a leap year.
+- **Leap year:** Feb 29 is supported and observed on Feb 28 when the current year is not a leap year.
 
 ---
 

@@ -57,8 +57,9 @@ public class RemoveCommandHandler implements CommandHandler {
     }
 
     public InlineKeyboardMarkup keyboard(List<Friend> friends, int page, Lang lang) {
-        int from = page * PAGE_SIZE;
-        if (from >= friends.size()) from = 0;
+        int totalPages = Math.max(1, (int) Math.ceil((double) friends.size() / PAGE_SIZE));
+        int safePage = Math.max(0, Math.min(page, totalPages - 1));
+        int from = safePage * PAGE_SIZE;
         int to = Math.min(from + PAGE_SIZE, friends.size());
 
         List<InlineKeyboardRow> rows = new ArrayList<>();
@@ -71,13 +72,12 @@ public class RemoveCommandHandler implements CommandHandler {
                             .callbackData("REMOVE_" + f.getId()).build()));
         });
 
-        int totalPages = (int) Math.ceil((double) friends.size() / PAGE_SIZE);
         if (totalPages > 1) {
             InlineKeyboardRow nav = new InlineKeyboardRow();
-            if (page > 0)
-                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(REMOVE_PAGE_PREFIX + (page - 1)).build());
-            if (page < totalPages - 1)
-                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(REMOVE_PAGE_PREFIX + (page + 1)).build());
+            if (safePage > 0)
+                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(REMOVE_PAGE_PREFIX + (safePage - 1)).build());
+            if (safePage < totalPages - 1)
+                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(REMOVE_PAGE_PREFIX + (safePage + 1)).build());
             rows.add(nav);
         }
         rows.add(MessageBuilder.backToMoreRow(lang));

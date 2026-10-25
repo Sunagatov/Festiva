@@ -9,6 +9,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import com.festiva.user.api.UserDateService;
 import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
 
     private static final int FILE_CONNECT_TIMEOUT_MILLIS = 10_000;
     private static final int FILE_READ_TIMEOUT_MILLIS = 10_000;
+    private static final int DISPLAY_ERROR_LIMIT = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -163,7 +165,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 added.add(friend);
             } catch (IllegalArgumentException e) {
                 rejectedCount++;
-                errors.add(Messages.get(lang, Messages.NAME_EXISTS, friend.getName()));
+                errors.add(Messages.get(lang, Messages.NAME_EXISTS, HtmlEscaper.escape(friend.getName())));
             }
         }
 
@@ -185,16 +187,25 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private String buildResponse(Lang lang, BulkAddParser.ParseResult result) {
         StringBuilder sb = new StringBuilder();
         if (!result.valid().isEmpty()) {
-            sb.append(Messages.get(lang, Messages.BULK_ADD_SUCCESS, result.valid().size()));
+            sb.append(Messages.get(lang, Messages.BULK_ADD_SUCCESS, result.valid().size()))
+                    .append("\n")
+                    .append(Messages.get(lang, Messages.BULK_ADD_SUCCESS_HINT));
         }
         if (!result.errors().isEmpty()) {
             String errorList = result.errors().stream()
+                    .limit(DISPLAY_ERROR_LIMIT)
                     .map(e -> "• " + e)
                     .collect(Collectors.joining("\n"));
+            int hiddenErrors = result.errors().size() - Math.min(result.errors().size(), DISPLAY_ERROR_LIMIT);
+            if (hiddenErrors > 0) {
+                errorList += "\n" + Messages.get(lang, Messages.ITEMS_MORE, hiddenErrors);
+            }
             if (!sb.isEmpty()) {
                 sb.append("\n\n");
             }
-            sb.append(Messages.get(lang, Messages.BULK_ADD_ERRORS, result.errors().size(), errorList));
+            sb.append(Messages.get(lang, Messages.BULK_ADD_ERRORS, result.errors().size(), errorList))
+                    .append("\n")
+                    .append(Messages.get(lang, Messages.BULK_ADD_RETRY_HINT));
         }
         if (sb.isEmpty()) {
             sb.append(Messages.get(lang, Messages.BULK_ADD_EMPTY));
@@ -230,7 +241,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
             log.atWarn()
                     .setMessage("bulk_add_file_download_failed")
                     .addKeyValue("userId", userId)
-                    .setCause(e)
+                    .addKeyValue("exceptionType", e.getClass().getSimpleName())
                     .log();
             return null;
         }

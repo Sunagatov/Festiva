@@ -97,6 +97,18 @@ class AddFriendCommandHandlerTest extends MessagesTestSupport {
     }
 
     @Test
+    @DisplayName("handleState escapes the displayed name but preserves its stored value")
+    void handleState_htmlName_escapesDisplayAndPreservesValue() {
+        String name = "Tom & <Jerry>";
+        when(friendService.friendExists(1L, name)).thenReturn(false);
+
+        String text = handler.handleState(update(name)).getText();
+
+        assertThat(text).contains("Tom &amp; &lt;Jerry&gt;");
+        verify(friendWorkflowSessionService).setPendingName(1L, name);
+    }
+
+    @Test
     @DisplayName("handleState in non-name state → returns USE_BUTTONS")
     void handleState_nonNameState_returnsUseButtons() {
         when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ADD_FRIEND_DATE);

@@ -76,7 +76,7 @@ User taps "7d" with no friends in that window
 | Birthday today | `daysUntil = 0` | Special `upcoming_today` label shown |
 | Birthday exactly on boundary | `daysUntil == daysLimit` | Included in results |
 | Narrower window has no results | e.g. 7d window empty | `upcoming_none` with hint to try wider window |
-| Feb 29 in non-leap year | `nextBirthday()` advances to next leap year | Friend excluded from current year's window |
+| Feb 29 in non-leap year | Birthday is observed on Feb 28 | Included when Feb 28 falls inside the selected window |
 
 ---
 
@@ -137,8 +137,7 @@ No structured log events for this feature.
 
 - **Uses server date** — not the user's configured timezone. Same issue as `today`, `stats`, `jubilee`.
 - **Fixed window options** — only 7, 14, 30 days available. Hardcoded in `filterKeyboard()`.
-- **Feb 29 birthdays** — in non-leap years, `nextBirthday()` advances to the next leap year, so the friend is excluded from all windows in non-leap years.
-- **No pagination** — all results returned in one message. With 100 friends and a 30-day window, the message could approach Telegram's 4096-character limit.
+- Results are limited to ten entries so the response remains within Telegram's message-size limit; `/list` shows the complete collection.
 
 ---
 

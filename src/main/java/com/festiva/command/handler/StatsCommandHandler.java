@@ -57,7 +57,7 @@ public class StatsCommandHandler implements CommandHandler {
         text.add("");
         text.add(Messages.get(lang, Messages.STATS_FRIENDS, total));
         text.add(nextBirthday);
-        text.add(Messages.get(lang, Messages.STATS_THIS_MONTH, thisMonth, progressBar(thisMonth)));
+        text.add(Messages.get(lang, Messages.STATS_THIS_MONTH, thisMonth, progressBar(thisMonth, total)));
         text.add(Messages.get(lang, Messages.STATS_JUBILEES, jubilees));
         return MessageBuilder.html(chatId, text.toString(), MessageBuilder.statsMarkup(lang));
     }
@@ -76,8 +76,9 @@ public class StatsCommandHandler implements CommandHandler {
                 .orElse(Messages.get(lang, Messages.STATS_NEXT_NONE));
     }
 
-    private String progressBar(int count) {
-        int filled = Math.clamp(count, 0, 10);
+    private String progressBar(int count, int total) {
+        int filled = total == 0 ? 0 : (int) Math.round((double) count / total * 10);
+        filled = Math.clamp(filled, 0, 10);
         return "█".repeat(filled) + "░".repeat(10 - filled);
     }
 }

@@ -60,7 +60,8 @@ public class ListCommandHandler implements CommandHandler {
         List<Friend> sorted = byDate ? friends
                 : friends.stream().sorted(Comparator.comparing(f -> f.getName().toLowerCase(java.util.Locale.ROOT))).toList();
 
-        List<Friend> pageFriends = paginate(sorted, page);
+        int safePage = clampPage(page, sorted.size());
+        List<Friend> pageFriends = paginate(sorted, safePage);
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.LIST_HEADER) + "\n\n");
 
         if (byDate) {
@@ -82,29 +83,30 @@ public class ListCommandHandler implements CommandHandler {
 
         int totalPages = totalPages(sorted.size());
         if (totalPages > 1) {
-            sb.append("\n").append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages));
+            sb.append("\n").append(Messages.get(lang, Messages.LIST_PAGE, safePage + 1, totalPages));
         }
         return sb.toString();
     }
 
     public InlineKeyboardMarkup keyboard(Lang lang, boolean byDate, int page, int total) {
+        int safePage = clampPage(page, total);
         List<InlineKeyboardRow> rows = new ArrayList<>();
         rows.add(new InlineKeyboardRow(
                 InlineKeyboardButton.builder()
                         .text((byDate ? "✅ " : "") + Messages.get(lang, Messages.LIST_SORT_DATE))
-                        .callbackData("LIST_SORT_DATE_" + page).build(),
+                        .callbackData("LIST_SORT_DATE_" + safePage).build(),
                 InlineKeyboardButton.builder()
                         .text((!byDate ? "✅ " : "") + Messages.get(lang, Messages.LIST_SORT_NAME))
-                        .callbackData("LIST_SORT_NAME_" + page).build()
+                        .callbackData("LIST_SORT_NAME_" + safePage).build()
         ));
         int totalPages = totalPages(total);
         if (totalPages > 1) {
             InlineKeyboardRow nav = new InlineKeyboardRow();
             String mode = byDate ? "DATE" : "NAME";
-            if (page > 0)
-                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(LIST_PAGE_PREFIX + mode + "_" + (page - 1)).build());
-            if (page < totalPages - 1)
-                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(LIST_PAGE_PREFIX + mode + "_" + (page + 1)).build());
+            if (safePage > 0)
+                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(LIST_PAGE_PREFIX + mode + "_" + (safePage - 1)).build());
+            if (safePage < totalPages - 1)
+                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(LIST_PAGE_PREFIX + mode + "_" + (safePage + 1)).build());
             rows.add(nav);
         }
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
@@ -119,6 +121,11 @@ public class ListCommandHandler implements CommandHandler {
 
     private int totalPages(int total) {
         return (int) Math.ceil((double) total / PAGE_SIZE);
+    }
+
+    private int clampPage(int page, int total) {
+        int totalPages = Math.max(1, totalPages(total));
+        return Math.max(0, Math.min(page, totalPages - 1));
     }
 
     private void appendFriend(StringBuilder sb, Friend f, LocalDate today, Lang lang) {

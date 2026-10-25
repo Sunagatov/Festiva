@@ -156,8 +156,8 @@ class BirthdayReminderTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("partial send success → lastNotifiedDate is persisted for the user")
-    void partialSendSuccess_lastNotifiedDatePersistedForUser() {
+    @DisplayName("partial send failure → failed notification is retried and day is not marked complete")
+    void partialSendFailure_retriedAndNotMarkedComplete() {
         savePrefs(31L);
         friendService.addFriend(31L, new Friend("SentFriend", LocalDate.now().minusYears(30)));
         friendService.addFriend(31L, new Friend("FailedFriend", LocalDate.now().minusYears(28)));
@@ -167,7 +167,8 @@ class BirthdayReminderTest extends IntegrationTestBase {
         birthdayReminder.checkBirthdaysForHour(UTC_9);
 
         UserPreference pref = userPreferenceRepository.findById(31L).orElseThrow();
-        assertThat(pref.getLastNotifiedDate()).isEqualTo(LocalDate.now());
+        assertThat(pref.getLastNotifiedDate()).isNull();
+        verify(birthdayBot, org.mockito.Mockito.times(2)).send(eq(31L), contains("FailedFriend"));
     }
 
     @Test

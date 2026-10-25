@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.MonthDay;
-import java.time.Period;
 import java.util.Locale;
 
 @Data
@@ -106,47 +105,24 @@ public class Friend {
         if (!hasYear()) {
             throw new IllegalStateException("Cannot calculate age without birth year for " + name);
         }
-        return Period.between(getBirthDate(), on).getYears();
+        int age = on.getYear() - birthYear;
+        return on.isBefore(birthdayInYear(on.getYear())) ? age - 1 : age;
     }
 
     public LocalDate nextBirthday(LocalDate from) {
-        boolean isLeapDayBirthday = (birthMonth == 2 && birthDay == 29);
-
-        LocalDate next;
-        try {
-            next = LocalDate.of(from.getYear(), birthMonth, birthDay);
-        } catch (DateTimeException e) {
-            if (hasYear()) {
-                int year = from.getYear();
-                while (!LocalDate.of(year, 1, 1).isLeapYear()) {
-                    year++;
-                }
-                next = LocalDate.of(year, 2, 29);
-            } else {
-                next = LocalDate.of(from.getYear(), 2, 28);
-            }
-        }
-
+        LocalDate next = birthdayInYear(from.getYear());
         if (next.isBefore(from)) {
-            if (isLeapDayBirthday) {
-                if (hasYear()) {
-                    int year = from.getYear() + 1;
-                    while (!LocalDate.of(year, 1, 1).isLeapYear()) {
-                        year++;
-                    }
-                    next = LocalDate.of(year, 2, 29);
-                } else {
-                    int year = from.getYear() + 1;
-                    next = LocalDate.of(year, 1, 1).isLeapYear()
-                            ? LocalDate.of(year, 2, 29)
-                            : LocalDate.of(year, 2, 28);
-                }
-            } else {
-                next = LocalDate.of(from.getYear() + 1, birthMonth, birthDay);
-            }
+            next = birthdayInYear(from.getYear() + 1);
         }
-
         return next;
+    }
+
+    private LocalDate birthdayInYear(int year) {
+        try {
+            return LocalDate.of(year, birthMonth, birthDay);
+        } catch (DateTimeException e) {
+            return LocalDate.of(year, 2, 28);
+        }
     }
 
     public int getNextAge(LocalDate from) {

@@ -19,19 +19,23 @@ public class BotCommandsService {
     private final BotCommandsProvider commandsProvider;
 
     public void registerGlobalCommands() {
-        try {
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(commandsProvider.getCommandsForLanguage(Lang.EN))
-                    .languageCode(Lang.EN.code())
-                    .build());
+        registerGlobalCommands(Lang.EN, null);
+        registerGlobalCommands(Lang.EN, Lang.EN.code());
+        registerGlobalCommands(Lang.RU, Lang.RU.code());
+    }
 
-            telegramClient.execute(SetMyCommands.builder()
-                    .commands(commandsProvider.getCommandsForLanguage(Lang.RU))
-                    .languageCode(Lang.RU.code())
-                    .build());
+    private void registerGlobalCommands(Lang commandsLang, String languageCode) {
+        try {
+            SetMyCommands.SetMyCommandsBuilder builder = SetMyCommands.builder()
+                    .commands(commandsProvider.getCommandsForLanguage(commandsLang));
+            if (languageCode != null) {
+                builder.languageCode(languageCode);
+            }
+            telegramClient.execute(builder.build());
         } catch (TelegramApiException e) {
             log.atWarn()
                     .setMessage("bot_commands_register_failed")
+                    .addKeyValue("language", languageCode == null ? "default" : languageCode)
                     .setCause(e)
                     .log();
         }

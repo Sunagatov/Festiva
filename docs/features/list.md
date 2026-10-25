@@ -158,7 +158,7 @@ No structured log events for this feature.
 - **Uses server date** — not the user's configured timezone. Same systemic issue as `today`, `stats`, `jubilee`, `upcoming-birthdays`, `birthdays-by-month`.
 - **"Coming up" / "Already celebrated" split is per-page** — if page 1 has only "Already celebrated" friends and page 2 has only "Coming up" friends, the sections appear on separate pages, which can be confusing.
 - **Pagination page size (10) is hardcoded** in `ListCommandHandler.PAGE_SIZE`.
-- **Feb 29 birthdays** — in non-leap years, `nextBirthday()` advances to the next leap year. The friend appears in "Already celebrated" for the entire non-leap year.
+- **Feb 29 birthdays** — observed on Feb 28 in non-leap years and grouped according to whether that observed date has passed.
 
 ---
 

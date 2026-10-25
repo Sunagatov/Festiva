@@ -10,6 +10,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -61,8 +62,9 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
     }
 
     public InlineKeyboardMarkup keyboard(List<Friend> friends, int page, Lang lang) {
-        int from = page * PAGE_SIZE;
-        if (from >= friends.size()) from = 0;
+        int totalPages = Math.max(1, (int) Math.ceil((double) friends.size() / PAGE_SIZE));
+        int safePage = Math.max(0, Math.min(page, totalPages - 1));
+        int from = safePage * PAGE_SIZE;
         int to = Math.min(from + PAGE_SIZE, friends.size());
 
         List<InlineKeyboardRow> rows = new ArrayList<>();
@@ -75,13 +77,12 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
                             .callbackData("EDIT_" + f.getId()).build()));
         });
 
-        int totalPages = (int) Math.ceil((double) friends.size() / PAGE_SIZE);
         if (totalPages > 1) {
             InlineKeyboardRow nav = new InlineKeyboardRow();
-            if (page > 0)
-                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(EDIT_PAGE_PREFIX + (page - 1)).build());
-            if (page < totalPages - 1)
-                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(EDIT_PAGE_PREFIX + (page + 1)).build());
+            if (safePage > 0)
+                nav.add(InlineKeyboardButton.builder().text("◀").callbackData(EDIT_PAGE_PREFIX + (safePage - 1)).build());
+            if (safePage < totalPages - 1)
+                nav.add(InlineKeyboardButton.builder().text("▶").callbackData(EDIT_PAGE_PREFIX + (safePage + 1)).build());
             rows.add(nav);
         }
         rows.add(MessageBuilder.backToMoreRow(lang));
@@ -113,12 +114,12 @@ public class EditFriendCommandHandler implements StatefulCommandHandler {
         }
 
         if (friendService.friendExists(userId, newName) && !newName.equalsIgnoreCase(currentFriend.getName())) {
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, newName));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.NAME_EXISTS, HtmlEscaper.escape(newName)));
         }
 
         friendService.updateFriendNameById(id, userId, newName);
         userStateService.clearState(userId);
-        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_NAME_DONE, newName), MessageBuilder.editAndListMarkup(lang));
+        return MessageBuilder.html(chatId, Messages.get(lang, Messages.EDIT_NAME_DONE, HtmlEscaper.escape(newName)), MessageBuilder.editAndListMarkup(lang));
     }
 
     private String compactDate(Friend friend) {

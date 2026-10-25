@@ -76,6 +76,17 @@ class CommandRouterTest {
     }
 
     @Test
+    @DisplayName("recognized slash command clears an active conversational state before routing")
+    void commandHandler_clearsActiveState() {
+        stateService.setState(1L, BotState.WAITING_FOR_ADD_FRIEND_NAME);
+
+        SendMessage result = router.route(update("/start"));
+
+        assertThat(result.getText()).isEqualTo("started");
+        assertThat(stateService.getState(1L)).isEqualTo(BotState.IDLE);
+    }
+
+    @Test
     @DisplayName("@botname suffix is stripped before routing — /start@mybot routes to /start")
     void command_botnameSuffixIsStripped() {
         SendMessage result = router.route(update("/start@mybot"));

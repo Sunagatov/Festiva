@@ -20,6 +20,8 @@ public class UserSession {
     private long userId;
     
     private BotState state = BotState.IDLE;
+
+    private String lastSearchQuery;
     
     @Indexed(expireAfter = "1h")
     private LocalDateTime lastActivity;

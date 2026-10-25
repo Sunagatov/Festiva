@@ -5,10 +5,15 @@ import com.festiva.command.handler.BirthdayPeriodListService;
 import com.festiva.command.handler.MoreCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
+import com.festiva.command.handler.SearchCommandHandler;
+import com.festiva.command.handler.TodayCommandHandler;
+import com.festiva.command.handler.JubileeCommandHandler;
 import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendCallbackService;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.importing.PendingIcsImportService;
+import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
 import com.festiva.user.api.AccountDeletionService;
 import com.festiva.user.api.UserLanguageCallbackService;
@@ -42,6 +47,9 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock private UserStateService userStateService;
     @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
+    @Mock private SearchCommandHandler searchHandler;
+    @Mock private TodayCommandHandler todayHandler;
+    @Mock private JubileeCommandHandler jubileeHandler;
     @Mock private BirthdayPeriodListService birthdayPeriodListService;
     @Mock private BulkAddCommandHandler bulkAddHandler;
     @Mock private FriendCallbackService friendCallbackService;
@@ -49,6 +57,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
     @Mock private AccountDeletionService accountDeletionService;
     @Mock private UserLanguageCallbackService userLanguageCallbackService;
     @Mock private UserPreferenceService userPreferenceService;
+    @Mock private PendingIcsImportService pendingIcsImportService;
     @InjectMocks private CallbackQueryHandler handler;
 
     @BeforeEach
@@ -320,6 +329,48 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.DELETE_ACCOUNT_CANCEL));
         assertThat(result.getText()).doesNotContain("/settings");
         assertThat(result.getReplyMarkup()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("expired ICS confirmation cannot import old pending data")
+    void expiredIcsConfirmation_isRejected() {
+        when(userStateService.getState(1L)).thenReturn(BotState.IDLE);
+
+        EditMessageText result = handler.handle(callback("ICS_CONFIRM"));
+
+        verify(userStateService).clearState(1L);
+        verifyNoInteractions(pendingIcsImportService);
+        assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    @DisplayName("search page callback reuses the saved query")
+    void searchPageCallback_reusesSavedQuery() {
+        when(userStateService.getLastSearchQuery(1L)).thenReturn("Alice");
+        when(searchHandler.view(1L, Lang.EN, "Alice", 1))
+                .thenReturn(new SearchCommandHandler.View("search page 2", null));
+
+        EditMessageText result = handler.handle(callback(SearchCommandHandler.SEARCH_PAGE_PREFIX + "1"));
+
+        assertThat(result.getText()).isEqualTo("search page 2");
+    }
+
+    @Test
+    @DisplayName("today, upcoming and jubilee page callbacks render the requested page")
+    void resultPageCallbacks_renderRequestedPage() {
+        when(todayHandler.view(1L, Lang.EN, 1))
+                .thenReturn(new TodayCommandHandler.View("today page 2", null));
+        when(upcomingHandler.view(1L, Lang.EN, 30, 1))
+                .thenReturn(new UpcomingBirthdaysCommandHandler.View("upcoming page 2", null));
+        when(jubileeHandler.view(1L, Lang.EN, 1))
+                .thenReturn(new JubileeCommandHandler.View("jubilee page 2", null));
+
+        assertThat(handler.handle(callback(TodayCommandHandler.TODAY_PAGE_PREFIX + "1")).getText())
+                .isEqualTo("today page 2");
+        assertThat(handler.handle(callback(UpcomingBirthdaysCommandHandler.UPCOMING_PAGE_PREFIX + "30_1")).getText())
+                .isEqualTo("upcoming page 2");
+        assertThat(handler.handle(callback(JubileeCommandHandler.JUBILEE_PAGE_PREFIX + "1")).getText())
+                .isEqualTo("jubilee page 2");
     }
 
     @Test

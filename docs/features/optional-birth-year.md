@@ -391,7 +391,7 @@ No changes. Ownership scoping remains unchanged.
 
 ## 16. Open Questions
 
-- [ ] **Leap year handling:** Feb 29 without year in non-leap year — remind on Feb 28 or Mar 1?
+- [x] **Leap year handling:** Feb 29 is observed on Feb 28 in non-leap years, with or without a known birth year.
 - [ ] **Sorting:** Should no-year friends appear intermixed with full-date friends by month-day, or grouped separately?
 - [ ] **UI copy:** Should year picker button say "⏭ Skip year" or "❓ Year unknown"?
 - [ ] **CSV import:** Should year column be optional or required-but-can-be-empty?

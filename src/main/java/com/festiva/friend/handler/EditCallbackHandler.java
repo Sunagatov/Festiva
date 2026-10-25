@@ -9,6 +9,7 @@ import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.state.BotState;
 import com.festiva.state.UserStateService;
+import com.festiva.util.HtmlEscaper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -38,7 +39,7 @@ public class EditCallbackHandler {
         if (friend == null)
             return new CallbackResult(Messages.get(lang, Messages.SESSION_EXPIRED), null);
         boolean enabled = friendService.toggleFriendNotifyById(id, userId);
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, friend.getName(),
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_NOTIFY_TOGGLED, HtmlEscaper.escape(friend.getName()),
                 Messages.get(lang, enabled ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF)),
                 MessageBuilder.editAndListMarkup(lang));
     }
@@ -51,8 +52,9 @@ public class EditCallbackHandler {
         friendWorkflowSessionService.setPendingName(userId, friend.getName());
         friendWorkflowSessionService.setPendingId(userId, id);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_NAME);
-        String currentName = lang == Lang.RU ? "Текущее имя: <b>" + friend.getName() + "</b>" : "Current name: <b>" + friend.getName() + "</b>";
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, friend.getName()) + "\n" + currentName, null);
+        String escapedName = HtmlEscaper.escape(friend.getName());
+        String currentName = lang == Lang.RU ? "Текущее имя: <b>" + escapedName + "</b>" : "Current name: <b>" + escapedName + "</b>";
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_ENTER_NAME, escapedName) + "\n" + currentName, null);
     }
 
     public CallbackResult handleEditFieldDate(String data, long userId, Lang lang) {
@@ -64,7 +66,7 @@ public class EditCallbackHandler {
         friendWorkflowSessionService.setPendingId(userId, id);
         friendWorkflowSessionService.setYearPageOffset(userId, DatePickerKeyboard.DEFAULT_YEAR_OFFSET);
         userStateService.setState(userId, BotState.WAITING_FOR_EDIT_DATE);
-        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, friend.getName()),
+        return new CallbackResult(Messages.get(lang, Messages.DATE_PICK_YEAR, HtmlEscaper.escape(friend.getName())),
                 DatePickerKeyboard.yearKeyboard(DatePickerKeyboard.DEFAULT_YEAR_OFFSET, lang));
     }
 
@@ -90,7 +92,7 @@ public class EditCallbackHandler {
         String summary = lang == Lang.RU
                 ? "\n\n💞 Сейчас: <b>" + relationship + "</b>\n🔔 Напоминания: <b>" + Messages.get(lang, notifyOn ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF) + "</b>"
                 : "\n\n💞 Current: <b>" + relationship + "</b>\n🔔 Reminders: <b>" + Messages.get(lang, notifyOn ? Messages.NOTIFY_STATUS_ON : Messages.NOTIFY_STATUS_OFF) + "</b>";
-        return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, name, currentDate) + summary, markup);
+        return new CallbackResult(Messages.get(lang, Messages.EDIT_CHOOSE_FIELD, HtmlEscaper.escape(name), currentDate) + summary, markup);
     }
 
 }

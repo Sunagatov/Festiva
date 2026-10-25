@@ -36,6 +36,8 @@ public final class Messages {
     public static final String SEARCH_RESULTS_HINT    = "search_results_hint";
     public static final String SEARCH_NONE            = "search_none";
     public static final String SEARCH_TOO_LONG        = "search_too_long";
+    public static final String RESULTS_MORE           = "results_more";
+    public static final String ITEMS_MORE             = "items_more";
     public static final String STATS_HEADER           = "stats_header";
     public static final String STATS_FRIENDS          = "stats_friends";
     public static final String STATS_NEXT_NONE        = "stats_next_none";
@@ -103,6 +105,7 @@ public final class Messages {
     public static final String CANCEL_IDLE            = "cancel_idle";
     public static final String UNKNOWN_COMMAND        = "unknown_command";
     public static final String SESSION_EXPIRED         = "session_expired";
+    public static final String PRIVATE_CHAT_ONLY       = "private_chat_only";
     public static final String LANGUAGE_CHOOSE        = "language_choose";
     public static final String LANGUAGE_SET           = "language_set";
     public static final String MONTH_PARSE_ERROR      = "month_parse_error";
@@ -137,7 +140,9 @@ public final class Messages {
     public static final String YEARS_TURNS            = "years_turns";
     public static final String BULK_ADD_PROMPT        = "bulk_add_prompt";
     public static final String BULK_ADD_SUCCESS       = "bulk_add_success";
+    public static final String BULK_ADD_SUCCESS_HINT  = "bulk_add_success_hint";
     public static final String BULK_ADD_ERRORS        = "bulk_add_errors";
+    public static final String BULK_ADD_RETRY_HINT    = "bulk_add_retry_hint";
     public static final String BULK_ADD_EMPTY         = "bulk_add_empty";
     public static final String BULK_ADD_FILE_INVALID  = "bulk_add_file_invalid";
     public static final String BULK_ADD_CHOOSE        = "bulk_add_choose";
@@ -184,6 +189,7 @@ public final class Messages {
     public static final String ICS_DONE            = "ics_done";
     public static final String ICS_NONE_SAVED      = "ics_none_saved";
     public static final String ICS_CANCELLED       = "ics_cancelled";
+    public static final String ICS_INVALID_SKIPPED = "ics_invalid_skipped";
     public static final String YEARS_OLD_ONE           = "years_old_one";
     public static final String YEARS_OLD_FEW           = "years_old_few";
     public static final String YEARS_OLD_MANY          = "years_old_many";

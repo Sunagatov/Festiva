@@ -30,7 +30,9 @@ import java.util.List;
 public class UpcomingBirthdaysCommandHandler implements CommandHandler {
 
     public static final String UPCOMING_DAYS_PREFIX = "UPCOMING_DAYS_";
+    public static final String UPCOMING_PAGE_PREFIX = "UPCOMING_PAGE_";
     private static final int DEFAULT_DAYS = 30;
+    private static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -45,11 +47,19 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userPreferenceService.getLanguage(userId);
-        List<Friend> friends = friendService.getFriends(userId);
-        return MessageBuilder.html(chatId, buildText(friends, lang, DEFAULT_DAYS, userId), MessageBuilder.upcomingMarkup(lang, DEFAULT_DAYS));
+        View view = view(userId, lang, DEFAULT_DAYS, 0);
+        return MessageBuilder.html(chatId, view.text(), view.markup());
     }
 
     public String buildText(List<Friend> friends, Lang lang, int daysLimit, long userId) {
+        return buildView(friends, lang, daysLimit, userId, 0).text();
+    }
+
+    public View view(long userId, Lang lang, int daysLimit, int requestedPage) {
+        return buildView(friendService.getFriends(userId), lang, daysLimit, userId, requestedPage);
+    }
+
+    private View buildView(List<Friend> friends, Lang lang, int daysLimit, long userId, int requestedPage) {
         LocalDate today = userDateService.todayFor(userId);
         record Entry(Friend friend, LocalDate next, long days) {}
 
@@ -63,11 +73,15 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
                 .toList();
 
         if (upcoming.isEmpty()) {
-            return Messages.get(lang, Messages.UPCOMING_NONE, daysLimit);
+            return new View(Messages.get(lang, Messages.UPCOMING_NONE, daysLimit), filterKeyboard(lang, daysLimit));
         }
 
+        int totalPages = (int) Math.ceil((double) upcoming.size() / PAGE_SIZE);
+        int page = Math.max(0, Math.min(requestedPage, totalPages - 1));
+        int from = page * PAGE_SIZE;
+        List<Entry> pageEntries = upcoming.subList(from, Math.min(from + PAGE_SIZE, upcoming.size()));
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.UPCOMING_HEADER) + "\n\n");
-        upcoming.forEach(e -> {
+        pageEntries.forEach(e -> {
             boolean isToday = e.days() == 0;
             sb.append(isToday ? "🎂 " : "").append("<b>").append(HtmlEscaper.escape(e.friend().getName())).append("</b>")
                     .append(relationshipLabel(lang, e.friend().getRelationship())).append("\n");
@@ -85,7 +99,12 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
             }
             sb.append("\n\n");
         });
-        return sb.toString();
+        if (totalPages > 1) {
+            sb.append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages)).append("\n");
+        }
+        InlineKeyboardMarkup markup = MessageBuilder.withPagination(
+                filterKeyboard(lang, daysLimit), UPCOMING_PAGE_PREFIX + daysLimit + "_", page, totalPages);
+        return new View(sb.toString(), markup);
     }
 
     public InlineKeyboardMarkup filterKeyboard(Lang lang, int activeDays) {
@@ -115,4 +134,6 @@ public class UpcomingBirthdaysCommandHandler implements CommandHandler {
         }
         return " " + label.substring(0, firstSpace) + " " + label.substring(firstSpace + 1);
     }
+
+    public record View(String text, InlineKeyboardMarkup markup) {}
 }

@@ -2,6 +2,7 @@ package com.festiva.bot;
 
 import com.festiva.command.CommandRouter;
 import com.festiva.i18n.Lang;
+import com.festiva.i18n.Messages;
 import com.festiva.metrics.MetricsSender;
 import com.festiva.notification.NotificationSender;
 import com.festiva.state.UserStateService;
@@ -27,6 +28,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, NotificationSender {
 
     private final String botToken;
+    @Value("${telegram.bot.polling-enabled:true}")
+    private boolean pollingEnabled = true;
     private final TelegramClient telegramClient;
     private TelegramBotsLongPollingApplication botsApplication;
     private final CommandRouter commandRouter;
@@ -54,6 +57,10 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
     @PostConstruct
     public void start() {
+        if (!pollingEnabled) {
+            log.info("telegram_bot_polling_disabled");
+            return;
+        }
         try {
             botsApplication = new TelegramBotsLongPollingApplication();
             botsApplication.registerBot(botToken, this);
@@ -102,6 +109,15 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         long userId = extractUserId(update);
         long chatId = extractChatId(update);
         try {
+            if (chatId != 0 && userId != 0 && chatId != userId) {
+                Lang lang = userPreferenceService.getLanguage(userId);
+                telegramClient.execute(SendMessage.builder()
+                        .chatId(chatId)
+                        .text(Messages.get(lang, Messages.PRIVATE_CHAT_ONLY))
+                        .build());
+                metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
+                return;
+            }
             if (update.hasCallbackQuery()) {
                 EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
                 if (edit != null) {

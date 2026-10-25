@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +25,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class JubileeCommandHandler implements CommandHandler {
+
+    public static final String JUBILEE_PAGE_PREFIX = "JUBILEE_PAGE_";
+    private static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -40,15 +44,13 @@ public class JubileeCommandHandler implements CommandHandler {
         long chatId = update.getMessage().getChatId();
         long userId = update.getMessage().getFrom().getId();
         Lang lang = userPreferenceService.getLanguage(userId);
-        LocalDate today = userDateService.todayFor(userId);
-        List<Friend> friends = friendService.getFriends(userId).stream()
-                .sorted(Comparator.comparing(f -> f.nextBirthday(today)))
-                .toList();
+        List<Friend> friends = friendService.getFriends(userId);
         if (friends.isEmpty()) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.FRIENDS_EMPTY),
                     MessageBuilder.withBackToMore(lang, MessageBuilder.emptyStateAddMarkup(lang)));
         }
-        return MessageBuilder.html(chatId, buildText(friends, lang, today), MessageBuilder.backToMoreMarkup(lang));
+        View view = view(userId, lang, 0);
+        return MessageBuilder.html(chatId, view.text(), view.markup());
     }
 
     private static String milestoneEmoji(int age) {
@@ -58,18 +60,26 @@ public class JubileeCommandHandler implements CommandHandler {
         return "🎉";
     }
 
-    private String buildText(List<Friend> friends, Lang lang, LocalDate today) {
+    public View view(long userId, Lang lang, int requestedPage) {
+        LocalDate today = userDateService.todayFor(userId);
+        List<Friend> friends = friendService.getFriends(userId).stream()
+                .sorted(Comparator.comparing(friend -> friend.nextBirthday(today)))
+                .toList();
         List<Friend> jubilee = friends.stream()
                 .filter(Friend::hasYear)  // Only friends with known year
                 .filter(f -> f.getNextAge(today) > 0 && f.getNextAge(today) % FriendService.JUBILEE_INTERVAL == 0)
                 .toList();
 
         if (jubilee.isEmpty()) {
-            return Messages.get(lang, Messages.JUBILEE_NONE);
+            return new View(Messages.get(lang, Messages.JUBILEE_NONE), MessageBuilder.backToMoreMarkup(lang));
         }
 
+        int totalPages = (int) Math.ceil((double) jubilee.size() / PAGE_SIZE);
+        int page = Math.max(0, Math.min(requestedPage, totalPages - 1));
+        int from = page * PAGE_SIZE;
+        List<Friend> pageFriends = jubilee.subList(from, Math.min(from + PAGE_SIZE, jubilee.size()));
         StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.JUBILEE_HEADER) + "\n\n");
-        jubilee.forEach(f -> {
+        pageFriends.forEach(f -> {
             LocalDate next = f.nextBirthday(today);
             long days = ChronoUnit.DAYS.between(today, next);
             int age = f.getNextAge(today);
@@ -86,6 +96,13 @@ public class JubileeCommandHandler implements CommandHandler {
             }
             sb.append("\n");
         });
-        return sb.toString();
+        if (totalPages > 1) {
+            sb.append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages)).append("\n");
+        }
+        InlineKeyboardMarkup markup = MessageBuilder.withPagination(
+                MessageBuilder.backToMoreMarkup(lang), JUBILEE_PAGE_PREFIX, page, totalPages);
+        return new View(sb.toString(), markup);
     }
+
+    public record View(String text, InlineKeyboardMarkup markup) {}
 }

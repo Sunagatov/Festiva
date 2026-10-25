@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -30,6 +31,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public class SearchCommandHandler implements StatefulCommandHandler {
+
+    public static final String SEARCH_PAGE_PREFIX = "SEARCH_PAGE_";
+    private static final int PAGE_SIZE = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
@@ -65,20 +69,36 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         if (rawQuery.length() > 100) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_TOO_LONG), MessageBuilder.backToMoreMarkup(lang));
         }
-        userStateService.clearState(userId);
-
-        List<Friend> matches = friendService.getFriendsSortedByDayMonth(userId).stream()
-                .filter(f -> f.getName().toLowerCase(Locale.ROOT).contains(query))
-                .toList();
+        List<Friend> matches = findMatches(userId, query);
 
         if (matches.isEmpty()) {
             userStateService.setState(userId, BotState.WAITING_FOR_SEARCH);
-            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_NONE, rawQuery), MessageBuilder.backToMoreMarkup(lang));
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.SEARCH_NONE, HtmlEscaper.escape(rawQuery)), MessageBuilder.backToMoreMarkup(lang));
+        }
+
+        userStateService.clearState(userId);
+        userStateService.setLastSearchQuery(userId, rawQuery);
+        View view = view(userId, lang, rawQuery, 0);
+        return MessageBuilder.html(chatId, view.text(), view.markup());
+    }
+
+    public View view(long userId, Lang lang, String rawQuery, int requestedPage) {
+        if (rawQuery == null || rawQuery.isBlank()) {
+            return null;
+        }
+        List<Friend> matches = findMatches(userId, rawQuery.toLowerCase(Locale.ROOT));
+        if (matches.isEmpty()) {
+            return new View(Messages.get(lang, Messages.SEARCH_NONE, HtmlEscaper.escape(rawQuery)),
+                    MessageBuilder.backToMoreMarkup(lang));
         }
 
         LocalDate today = userDateService.todayFor(userId);
-        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, rawQuery) + "\n\n");
-        matches.forEach(f -> {
+        int totalPages = (int) Math.ceil((double) matches.size() / PAGE_SIZE);
+        int page = Math.max(0, Math.min(requestedPage, totalPages - 1));
+        int from = page * PAGE_SIZE;
+        List<Friend> pageMatches = matches.subList(from, Math.min(from + PAGE_SIZE, matches.size()));
+        StringBuilder sb = new StringBuilder(Messages.get(lang, Messages.SEARCH_RESULTS, HtmlEscaper.escape(rawQuery)) + "\n\n");
+        pageMatches.forEach(f -> {
             long days = ChronoUnit.DAYS.between(today, f.nextBirthday(today));
             LocalDate next = f.nextBirthday(today);
             boolean alreadyHadBirthday = next.equals(today) || next.getYear() > today.getYear();
@@ -110,8 +130,19 @@ public class SearchCommandHandler implements StatefulCommandHandler {
             }
             sb.append("\n");
         });
+        if (totalPages > 1) {
+            sb.append(Messages.get(lang, Messages.LIST_PAGE, page + 1, totalPages)).append("\n");
+        }
         sb.append("\n").append(Messages.get(lang, Messages.SEARCH_RESULTS_HINT));
-        return MessageBuilder.html(chatId, sb.toString(), MessageBuilder.searchResultsMarkup(lang));
+        InlineKeyboardMarkup markup = MessageBuilder.withPagination(
+                MessageBuilder.searchResultsMarkup(lang), SEARCH_PAGE_PREFIX, page, totalPages);
+        return new View(sb.toString(), markup);
+    }
+
+    private List<Friend> findMatches(long userId, String query) {
+        return friendService.getFriendsSortedByDayMonth(userId).stream()
+                .filter(friend -> friend.getName().toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT)))
+                .toList();
     }
 
     private String formatDateLabel(Friend friend, Lang lang) {
@@ -137,4 +168,6 @@ public class SearchCommandHandler implements StatefulCommandHandler {
         }
         return " " + label.substring(0, firstSpace) + " " + label.substring(firstSpace + 1);
     }
+
+    public record View(String text, InlineKeyboardMarkup markup) {}
 }

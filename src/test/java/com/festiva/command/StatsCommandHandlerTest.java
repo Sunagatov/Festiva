@@ -58,7 +58,7 @@ class StatsCommandHandlerTest extends MessagesTestSupport {
         assertThat(text).contains("📊 <b>Your Festiva Stats</b>");
         assertThat(text).contains("👥 Friends: 4");
         assertThat(text).contains("🎂 Next: Maria — in 3 days");
-        assertThat(text).contains("📅 This month: 4  ████░░░░░░");
+        assertThat(text).contains("📅 This month: 4  ██████████");
     }
 
     @Test

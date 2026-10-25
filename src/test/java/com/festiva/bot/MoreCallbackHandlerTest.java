@@ -5,6 +5,7 @@ import com.festiva.command.handler.MoreCommandHandler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.i18n.MessagesTestSupport;
+import com.festiva.state.UserStateService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -29,11 +30,13 @@ class MoreCallbackHandlerTest extends MessagesTestSupport {
         when(searchHandler.command()).thenReturn("/search");
         when(searchHandler.handle(any())).thenReturn(SendMessage.builder().chatId(1L).text("search").build());
 
-        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(searchHandler));
+        UserStateService userStateService = mock(UserStateService.class);
+        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(searchHandler), userStateService);
 
         CallbackResult result = handler.handle(MoreCommandHandler.CALLBACK_SEARCH, 1L, 1L, Lang.EN);
 
         verify(searchHandler).handle(any());
+        verify(userStateService).clearState(1L);
         assertThat(result.sendMessage).isNotNull();
         assertThat(result.sendMessage.getText()).isEqualTo("search");
     }
@@ -45,11 +48,13 @@ class MoreCallbackHandlerTest extends MessagesTestSupport {
         when(exportHandler.command()).thenReturn("/export");
         when(exportHandler.handle(any())).thenReturn(null);
 
-        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(exportHandler));
+        UserStateService userStateService = mock(UserStateService.class);
+        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(exportHandler), userStateService);
 
         CallbackResult result = handler.handle(MoreCommandHandler.CALLBACK_EXPORT, 1L, 1L, Lang.EN);
 
         verify(exportHandler).handle(any());
+        verify(userStateService).clearState(1L);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.MORE_HEADER));
         assertThat(result.markup).isEqualTo(MoreCommandHandler.keyboard(Lang.EN));
     }
@@ -60,11 +65,13 @@ class MoreCallbackHandlerTest extends MessagesTestSupport {
         CommandHandler searchHandler = mock(CommandHandler.class);
         when(searchHandler.command()).thenReturn("/search");
 
-        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(searchHandler));
+        UserStateService userStateService = mock(UserStateService.class);
+        MoreCallbackHandler handler = new MoreCallbackHandler(List.of(searchHandler), userStateService);
 
         CallbackResult result = handler.handle(MoreCommandHandler.CALLBACK_BACK, 1L, 1L, Lang.EN);
 
         verify(searchHandler, never()).handle(any());
+        verify(userStateService).clearState(1L);
         assertThat(result.text).contains(Messages.get(Lang.EN, Messages.MORE_HEADER));
         assertThat(result.markup).isEqualTo(MoreCommandHandler.keyboard(Lang.EN));
     }

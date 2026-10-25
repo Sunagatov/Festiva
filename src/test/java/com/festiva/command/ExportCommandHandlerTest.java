@@ -142,6 +142,20 @@ class ExportCommandHandlerTest extends MessagesTestSupport {
         assertThat(new String(bytes, StandardCharsets.UTF_8)).contains('"' + "Smith, John" + '"');
     }
 
+    @Test
+    @DisplayName("name with newline → quoted correctly in CSV")
+    void nameWithNewline_quotedInCsv() throws Exception {
+        when(friendService.getFriendsSortedByDayMonth(1L))
+                .thenReturn(List.of(new Friend("Alice\nSmith", LocalDate.of(1985, 7, 22))));
+
+        handler.handle(update());
+
+        ArgumentCaptor<SendDocument> captor = ArgumentCaptor.forClass(SendDocument.class);
+        verify(telegramClient).execute(captor.capture());
+        byte[] bytes = captor.getValue().getDocument().getNewMediaStream().readAllBytes();
+        assertThat(new String(bytes, StandardCharsets.UTF_8)).contains("\"Alice\nSmith\"");
+    }
+
     private Update update() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

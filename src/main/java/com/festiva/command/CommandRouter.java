@@ -70,8 +70,13 @@ public class CommandRouter {
         String text = update.getMessage().getText().trim();
         String command = text.split("[\\s@]")[0];
 
-        if ("/cancel".equals(command) || handlers.containsKey(command)) {
+        if ("/cancel".equals(command)) {
             return handlers.getOrDefault(command, defaultHandler).handle(update);
+        }
+
+        if (handlers.containsKey(command)) {
+            userStateService.clearState(userId);
+            return handlers.get(command).handle(update);
         }
 
         String mappedCommand = MessageBuilder.LABEL_TO_COMMAND.get(text);

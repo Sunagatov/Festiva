@@ -147,6 +147,37 @@ class SearchCommandHandlerTest extends MessagesTestSupport {
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SEARCH_NONE, "xyz"));
     }
 
+    @Test
+    @DisplayName("handleState escapes query and friend name for Telegram HTML")
+    void handleState_escapesDynamicHtml() {
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(
+                List.of(new Friend("<b>Alice & Bob</b>", LocalDate.now().minusYears(25))));
+
+        String text = handler.handleState(update("<b>")).getText();
+
+        assertThat(text).contains("&lt;b&gt;")
+                .contains("&lt;b&gt;Alice &amp; Bob&lt;/b&gt;")
+                .doesNotContain("<b>Alice & Bob</b>");
+    }
+
+    @Test
+    @DisplayName("handleState paginates broad results")
+    void handleState_manyMatches_paginatesResults() {
+        List<Friend> friends = java.util.stream.IntStream.range(0, 11)
+                .mapToObj(i -> new Friend("Alice " + i, LocalDate.now().minusYears(25)))
+                .toList();
+        when(friendService.getFriendsSortedByDayMonth(1L)).thenReturn(friends);
+
+        var first = handler.handleState(update("Alice"));
+        var second = handler.view(1L, Lang.EN, "Alice", 1);
+
+        assertThat(first.getText()).contains("Alice 9")
+                .doesNotContain("Alice 10")
+                .contains(Messages.get(Lang.EN, Messages.LIST_PAGE, 1, 2));
+        assertThat(second.text()).contains("Alice 10")
+                .contains(Messages.get(Lang.EN, Messages.LIST_PAGE, 2, 2));
+    }
+
     private Update update(String text) {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);

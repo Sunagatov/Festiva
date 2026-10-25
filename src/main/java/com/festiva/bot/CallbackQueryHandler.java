@@ -5,6 +5,9 @@ import com.festiva.command.handler.BulkAddCommandHandler;
 import com.festiva.command.handler.BirthdayPeriodListService;
 import com.festiva.command.handler.ImportIcsCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
+import com.festiva.command.handler.SearchCommandHandler;
+import com.festiva.command.handler.TodayCommandHandler;
+import com.festiva.command.handler.JubileeCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
 import com.festiva.friend.api.FriendAction;
 import com.festiva.friend.api.FriendCallbackService;
@@ -41,6 +44,9 @@ public class CallbackQueryHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final UpcomingBirthdaysCommandHandler upcomingHandler;
+    private final SearchCommandHandler searchHandler;
+    private final TodayCommandHandler todayHandler;
+    private final JubileeCommandHandler jubileeHandler;
     private final BirthdayPeriodListService birthdayPeriodListService;
     private final BulkAddCommandHandler bulkAddHandler;
     private final FriendCallbackService friendCallbackService;
@@ -104,6 +110,18 @@ public class CallbackQueryHandler {
 
     private CallbackResult dispatchMisc(String data, long chatId, long userId, Lang lang) {
         CallbackResult r;
+        if (data.startsWith(SearchCommandHandler.SEARCH_PAGE_PREFIX)) {
+            return handleSearchPage(data, userId, lang);
+        }
+        if (data.startsWith(TodayCommandHandler.TODAY_PAGE_PREFIX)) {
+            return handleTodayPage(data, userId, lang);
+        }
+        if (data.startsWith(JubileeCommandHandler.JUBILEE_PAGE_PREFIX)) {
+            return handleJubileePage(data, userId, lang);
+        }
+        if (data.startsWith(BirthdayPeriodListService.CALLBACK_PREFIX)) {
+            userStateService.clearState(userId);
+        }
         if ((r = birthdayPeriodListService.handleCallback(data, userId, lang)) != null) {
             return r;
         }
@@ -117,7 +135,11 @@ public class CallbackQueryHandler {
             return handleSettingsTz(data, userId, lang);
         }
         if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_DAYS_PREFIX)) {
+            userStateService.clearState(userId);
             return handleUpcoming(data, userId, lang);
+        }
+        if (data.startsWith(UpcomingBirthdaysCommandHandler.UPCOMING_PAGE_PREFIX)) {
+            return handleUpcomingPage(data, userId, lang);
         }
         if ((r = moreCallbackHandler.handle(data, chatId, userId, lang)) != null) {
             return r;
@@ -238,14 +260,72 @@ public class CallbackQueryHandler {
                 return sessionExpired(lang);
             }
 
-            var friends = friendService.getFriends(userId);
-            return new CallbackResult(upcomingHandler.buildText(friends, lang, days, userId),
-                    upcomingHandler.filterKeyboard(lang, days));
+            UpcomingBirthdaysCommandHandler.View view = upcomingHandler.view(userId, lang, days, 0);
+            return new CallbackResult(view.text(), view.markup());
         } catch (NumberFormatException e) {
             log.atDebug()
                     .setMessage("callback_upcoming_days_parse_failed")
                     .addKeyValue("data", data)
                     .log();
+            return sessionExpired(lang);
+        }
+    }
+
+    private CallbackResult handleUpcomingPage(String data, long userId, Lang lang) {
+        try {
+            String payload = data.substring(UpcomingBirthdaysCommandHandler.UPCOMING_PAGE_PREFIX.length());
+            String[] parts = payload.split("_");
+            if (parts.length != 2) {
+                return sessionExpired(lang);
+            }
+            int days = Integer.parseInt(parts[0]);
+            int page = Integer.parseInt(parts[1]);
+            if (!Set.of(7, 14, 30).contains(days) || page < 0) {
+                return sessionExpired(lang);
+            }
+            UpcomingBirthdaysCommandHandler.View view = upcomingHandler.view(userId, lang, days, page);
+            return new CallbackResult(view.text(), view.markup());
+        } catch (NumberFormatException e) {
+            return sessionExpired(lang);
+        }
+    }
+
+    private CallbackResult handleSearchPage(String data, long userId, Lang lang) {
+        try {
+            int page = Integer.parseInt(data.substring(SearchCommandHandler.SEARCH_PAGE_PREFIX.length()));
+            String query = userStateService.getLastSearchQuery(userId);
+            if (page < 0 || query == null || query.isBlank()) {
+                return sessionExpired(lang);
+            }
+            SearchCommandHandler.View view = searchHandler.view(userId, lang, query, page);
+            return view == null ? sessionExpired(lang) : new CallbackResult(view.text(), view.markup());
+        } catch (NumberFormatException e) {
+            return sessionExpired(lang);
+        }
+    }
+
+    private CallbackResult handleTodayPage(String data, long userId, Lang lang) {
+        try {
+            int page = Integer.parseInt(data.substring(TodayCommandHandler.TODAY_PAGE_PREFIX.length()));
+            if (page < 0) {
+                return sessionExpired(lang);
+            }
+            TodayCommandHandler.View view = todayHandler.view(userId, lang, page);
+            return new CallbackResult(view.text(), view.markup());
+        } catch (NumberFormatException e) {
+            return sessionExpired(lang);
+        }
+    }
+
+    private CallbackResult handleJubileePage(String data, long userId, Lang lang) {
+        try {
+            int page = Integer.parseInt(data.substring(JubileeCommandHandler.JUBILEE_PAGE_PREFIX.length()));
+            if (page < 0) {
+                return sessionExpired(lang);
+            }
+            JubileeCommandHandler.View view = jubileeHandler.view(userId, lang, page);
+            return new CallbackResult(view.text(), view.markup());
+        } catch (NumberFormatException e) {
             return sessionExpired(lang);
         }
     }
@@ -263,6 +343,10 @@ public class CallbackQueryHandler {
     }
 
     private CallbackResult handleIcsConfirm(long userId, Lang lang) {
+        if (userStateService.getState(userId) != BotState.WAITING_FOR_ICS_CONFIRM) {
+            userStateService.clearState(userId);
+            return sessionExpired(lang);
+        }
         List<com.festiva.friend.entity.Friend> pending = pendingIcsImportService != null
                 ? pendingIcsImportService.get(userId)
                 : userStateService.getPendingIcsImport(userId);

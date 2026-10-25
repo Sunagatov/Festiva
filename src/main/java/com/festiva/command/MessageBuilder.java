@@ -235,6 +235,34 @@ public final class MessageBuilder {
         return InlineKeyboardMarkup.builder().keyboard(rows).build();
     }
 
+    public static InlineKeyboardMarkup withPagination(InlineKeyboardMarkup markup,
+                                                       String callbackPrefix,
+                                                       int page,
+                                                       int totalPages) {
+        if (totalPages <= 1) {
+            return markup;
+        }
+        List<InlineKeyboardRow> rows = new ArrayList<>();
+        InlineKeyboardRow navigation = new InlineKeyboardRow();
+        if (page > 0) {
+            navigation.add(InlineKeyboardButton.builder()
+                    .text("◀")
+                    .callbackData(callbackPrefix + (page - 1))
+                    .build());
+        }
+        if (page < totalPages - 1) {
+            navigation.add(InlineKeyboardButton.builder()
+                    .text("▶")
+                    .callbackData(callbackPrefix + (page + 1))
+                    .build());
+        }
+        rows.add(navigation);
+        if (markup != null) {
+            rows.addAll(markup.getKeyboard());
+        }
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
+
     // EN labels → command
     private static final Map<String, String> LABEL_TO_COMMAND_EN = Map.ofEntries(
             Map.entry("➕ Add", "/add"),

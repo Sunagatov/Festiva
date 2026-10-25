@@ -4,6 +4,7 @@ import com.festiva.command.CommandHandler;
 import com.festiva.command.handler.MoreCommandHandler;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
+import com.festiva.state.UserStateService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -21,15 +22,18 @@ import java.util.stream.Collectors;
 public class MoreCallbackHandler {
 
     private final Map<String, CommandHandler> handlers;
+    private final UserStateService userStateService;
 
-    public MoreCallbackHandler(List<CommandHandler> allHandlers) {
+    public MoreCallbackHandler(List<CommandHandler> allHandlers, UserStateService userStateService) {
         this.handlers = allHandlers.stream()
                 .filter(handler -> handler.command() != null)
                 .collect(Collectors.toMap(CommandHandler::command, Function.identity()));
+        this.userStateService = userStateService;
     }
 
     public CallbackResult handle(String data, long chatId, long userId, Lang lang) {
         if (MoreCommandHandler.CALLBACK_BACK.equals(data)) {
+            userStateService.clearState(userId);
             return new CallbackResult(Messages.get(lang, Messages.MORE_HEADER), MoreCommandHandler.keyboard(lang));
         }
 
@@ -43,6 +47,7 @@ public class MoreCallbackHandler {
             return null;
         }
 
+        userStateService.clearState(userId);
         SendMessage response = handler.handle(syntheticUpdate(chatId, userId, command));
         if (response == null) {
             return new CallbackResult(Messages.get(lang, Messages.MORE_HEADER), MoreCommandHandler.keyboard(lang));
