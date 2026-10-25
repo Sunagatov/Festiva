@@ -52,6 +52,7 @@ public final class Messages {
     public static final String MORE_REMOVE_BTN        = "more_remove_btn";
     public static final String MORE_JUBILEE_BTN       = "more_jubilee_btn";
     public static final String MORE_BROWSE_BTN        = "more_browse_btn";
+    public static final String MORE_MISSED_BTN        = "more_missed_btn";
     public static final String MORE_STATS_BTN         = "more_stats_btn";
     public static final String MORE_IMPORT_BTN        = "more_import_btn";
     public static final String MORE_EXPORT_BTN        = "more_export_btn";
@@ -85,6 +86,12 @@ public final class Messages {
     public static final String BIRTHDAYS_HEADER       = "birthdays_header";
     public static final String BIRTHDAYS_NONE         = "birthdays_none";
     public static final String CURRENT_MONTH          = "current_month";
+    public static final String THIS_MONTH_HEADER      = "this_month_header";
+    public static final String THIS_MONTH_NONE        = "this_month_none";
+    public static final String MISSED_BIRTHDAYS_HEADER = "missed_birthdays_header";
+    public static final String MISSED_BIRTHDAYS_NONE   = "missed_birthdays_none";
+    public static final String MISSED_DAY_AGO          = "missed_day_ago";
+    public static final String MISSED_DAYS_AGO         = "missed_days_ago";
     public static final String UPCOMING_TODAY         = "upcoming_today";
     public static final String UPCOMING_HEADER        = "upcoming_header";
     public static final String UPCOMING_NONE          = "upcoming_none";

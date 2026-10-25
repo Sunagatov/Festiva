@@ -129,7 +129,9 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 | `/list` | List all friends sorted by birthday |
 | `/birthdays` | Browse birthdays by month |
 | `/today` | See today's birthdays |
+| `/thismonth` | See birthdays in the current month |
 | `/upcomingbirthdays` | Birthdays in the next 30 days |
+| `/missed` | Birthdays from the previous 60 days |
 | `/jubilee` | Upcoming milestone birthdays (multiples of 5) |
 | `/search` | Search friends by name |
 | `/stats` | Birthday statistics |

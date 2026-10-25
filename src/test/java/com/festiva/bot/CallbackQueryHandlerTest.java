@@ -1,6 +1,7 @@
 package com.festiva.bot;
 
 import com.festiva.command.handler.BulkAddCommandHandler;
+import com.festiva.command.handler.BirthdayPeriodListService;
 import com.festiva.command.handler.MoreCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
@@ -41,6 +42,7 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock private UserStateService userStateService;
     @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
+    @Mock private BirthdayPeriodListService birthdayPeriodListService;
     @Mock private BulkAddCommandHandler bulkAddHandler;
     @Mock private FriendCallbackService friendCallbackService;
     @Mock private MoreCallbackHandler moreCallbackHandler;

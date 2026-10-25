@@ -239,6 +239,7 @@ public final class MessageBuilder {
     private static final Map<String, String> LABEL_TO_COMMAND_EN = Map.ofEntries(
             Map.entry("➕ Add", "/add"),
             Map.entry("🎂 Today", "/today"),
+            Map.entry("📅 This month", "/thismonth"),
             Map.entry("👥 Friends", "/list"),
             Map.entry("⚙️ More", "/more"),
             Map.entry("\uD83D\uDDD1 Remove", "/remove"),
@@ -260,6 +261,7 @@ public final class MessageBuilder {
     private static final Map<String, String> LABEL_TO_COMMAND_RU = Map.ofEntries(
             Map.entry("➕ Добавить", "/add"),
             Map.entry("🎂 Сегодня", "/today"),
+            Map.entry("📅 Этот месяц", "/thismonth"),
             Map.entry("👥 Друзья", "/list"),
             Map.entry("⚙️ Ещё", "/more"),
             Map.entry("\uD83D\uDDD1 Удалить", "/remove"),
@@ -291,7 +293,9 @@ public final class MessageBuilder {
                 .keyboard(List.of(
                         new KeyboardRow(List.of(
                                 new KeyboardButton(ru ? "➕ Добавить" : "➕ Add"),
-                                new KeyboardButton(ru ? "🎂 Сегодня" : "🎂 Today"),
+                                new KeyboardButton(ru ? "🎂 Сегодня" : "🎂 Today"))),
+                        new KeyboardRow(List.of(
+                                new KeyboardButton(ru ? "📅 Этот месяц" : "📅 This month"),
                                 new KeyboardButton(ru ? "🔔 Ближайшие" : "🔔 Upcoming"))),
                         new KeyboardRow(List.of(
                                 new KeyboardButton(ru ? "👥 Друзья" : "👥 Friends"),

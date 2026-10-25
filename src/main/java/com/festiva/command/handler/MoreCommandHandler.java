@@ -27,6 +27,7 @@ public class MoreCommandHandler implements CommandHandler {
     public static final String CALLBACK_REMOVE = "MORE_REMOVE";
     public static final String CALLBACK_JUBILEE = "MORE_JUBILEE";
     public static final String CALLBACK_BROWSE = "MORE_BROWSE";
+    public static final String CALLBACK_MISSED = "MORE_MISSED";
     public static final String CALLBACK_STATS = "MORE_STATS";
     public static final String CALLBACK_IMPORT = "MORE_IMPORT";
     public static final String CALLBACK_EXPORT = "MORE_EXPORT";
@@ -41,6 +42,7 @@ public class MoreCommandHandler implements CommandHandler {
             Map.entry(CALLBACK_REMOVE, "/remove"),
             Map.entry(CALLBACK_JUBILEE, "/jubilee"),
             Map.entry(CALLBACK_BROWSE, "/birthdays"),
+            Map.entry(CALLBACK_MISSED, "/missed"),
             Map.entry(CALLBACK_STATS, "/stats"),
             Map.entry(CALLBACK_IMPORT, "/addmany"),
             Map.entry(CALLBACK_EXPORT, "/export"),
@@ -85,15 +87,18 @@ public class MoreCommandHandler implements CommandHandler {
                                 button(lang, Messages.MORE_BROWSE_BTN, CALLBACK_BROWSE)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_STATS_BTN, CALLBACK_STATS),
-                                button(lang, Messages.MORE_IMPORT_BTN, CALLBACK_IMPORT)
+                                button(lang, Messages.MORE_MISSED_BTN, CALLBACK_MISSED),
+                                button(lang, Messages.MORE_STATS_BTN, CALLBACK_STATS)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_EXPORT_BTN, CALLBACK_EXPORT),
-                                button(lang, Messages.MORE_LANGUAGE_BTN, CALLBACK_LANGUAGE)
+                                button(lang, Messages.MORE_IMPORT_BTN, CALLBACK_IMPORT),
+                                button(lang, Messages.MORE_EXPORT_BTN, CALLBACK_EXPORT)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_SETTINGS_BTN, CALLBACK_SETTINGS),
+                                button(lang, Messages.MORE_LANGUAGE_BTN, CALLBACK_LANGUAGE),
+                                button(lang, Messages.MORE_SETTINGS_BTN, CALLBACK_SETTINGS)
+                        ),
+                        new InlineKeyboardRow(
                                 button(lang, Messages.MORE_ABOUT_BTN, CALLBACK_ABOUT)
                         )
                 ))

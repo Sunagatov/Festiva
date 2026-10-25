@@ -2,6 +2,7 @@ package com.festiva.bot;
 
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.handler.BulkAddCommandHandler;
+import com.festiva.command.handler.BirthdayPeriodListService;
 import com.festiva.command.handler.ImportIcsCommandHandler;
 import com.festiva.command.handler.SettingsCommandHandler;
 import com.festiva.command.handler.UpcomingBirthdaysCommandHandler;
@@ -40,6 +41,7 @@ public class CallbackQueryHandler {
     private final FriendService friendService;
     private final UserStateService userStateService;
     private final UpcomingBirthdaysCommandHandler upcomingHandler;
+    private final BirthdayPeriodListService birthdayPeriodListService;
     private final BulkAddCommandHandler bulkAddHandler;
     private final FriendCallbackService friendCallbackService;
     private final MoreCallbackHandler moreCallbackHandler;
@@ -102,6 +104,9 @@ public class CallbackQueryHandler {
 
     private CallbackResult dispatchMisc(String data, long chatId, long userId, Lang lang) {
         CallbackResult r;
+        if ((r = birthdayPeriodListService.handleCallback(data, userId, lang)) != null) {
+            return r;
+        }
         if (data.startsWith(SettingsCommandHandler.SETTINGS_HOUR_PREFIX)) {
             return handleSettingsHour(data, userId, lang);
         }
