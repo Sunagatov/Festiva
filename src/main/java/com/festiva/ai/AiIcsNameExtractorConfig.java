@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import java.time.Duration;
 
 @Configuration
 @ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
@@ -22,13 +23,17 @@ class AiIcsNameExtractorConfig {
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .temperature(0.0)
+                .maxCompletionTokens(64)
+                .timeout(Duration.ofSeconds(2))
+                .maxRetries(0)
                 .build();
     }
 
     @Bean
-    IcsNameExtractorService icsNameExtractorService(OpenAiChatModel model) {
-        return AiServices.builder(IcsNameExtractorService.class)
+    IcsNameExtractorService icsNameExtractorService(OpenAiChatModel model, AiUsageBudget budget) {
+        var delegate = AiServices.builder(IcsNameExtractorService.class)
                 .chatModel(model)
                 .build();
+        return new BudgetedNameExtractor(delegate, budget);
     }
 }

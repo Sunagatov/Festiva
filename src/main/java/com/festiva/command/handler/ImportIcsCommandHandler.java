@@ -1,6 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.ai.IcsNameExtractorService;
+import com.festiva.abuse.BotAbuseGuard;
+import com.festiva.importing.ImportFileReader;
 import com.festiva.command.MessageBuilder;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
@@ -15,23 +17,15 @@ import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -51,22 +45,18 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     private static final DateTimeFormatter ICS_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd", Locale.ROOT);
     private static final DateTimeFormatter CSV_DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
-    private static final int FILE_CONNECT_TIMEOUT_MILLIS = 10_000;
-    private static final int FILE_READ_TIMEOUT_MILLIS = 10_000;
     private static final int MAX_ICS_FILE_SIZE_BYTES = 512 * 1024;
     private static final int PREVIEW_LIMIT = 10;
 
     private final FriendService friendService;
     private final UserStateService userStateService;
-    private final TelegramClient telegramClient;
     private final UserPreferenceService userPreferenceService;
     private final PendingIcsImportService pendingIcsImportService;
+    private final ImportFileReader importFileReader;
+    private final BotAbuseGuard abuseGuard;
 
     @Autowired(required = false)
     private IcsNameExtractorService icsNameExtractorService;
-
-    @Value("${telegram.bot.token}")
-    private String botToken;
 
     @Override
     public String command() {
@@ -106,30 +96,42 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_TOO_LARGE), MessageBuilder.backToMoreMarkup(lang));
         }
 
+        if (!abuseGuard.allowImport(userId)) {
+            return MessageBuilder.html(chatId, Messages.get(lang, "import_rate_limited"));
+        }
         List<String> lines = downloadLines(doc.getFileId());
         if (lines == null) {
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_PARSE_ERROR), MessageBuilder.backToMoreMarkup(lang));
         }
 
-        List<IcsEntry> entries = extractYearlyEntries(lines);
+        List<IcsEntry> entries;
+        try { entries = extractYearlyEntries(lines); }
+        catch (IllegalArgumentException ignored) {
+            return MessageBuilder.html(chatId, Messages.get(lang, "ics_too_many_events"));
+        }
         if (entries.isEmpty()) {
             userStateService.clearState(userId);
             return MessageBuilder.html(chatId, Messages.get(lang, Messages.ICS_NO_EVENTS), MessageBuilder.backToMoreMarkup(lang));
         }
 
+        Set<String> existing = friendService.getFriends(userId).stream()
+                .map(friend -> Friend.normalizeName(friend.getName()))
+                .collect(Collectors.toSet());
+        if (existing.size() >= FriendService.FRIEND_CAP) {
+            return MessageBuilder.html(chatId, Messages.get(lang, Messages.BULK_CAP_EXCEEDED, 0, FriendService.FRIEND_CAP));
+        }
+
         List<Friend> candidates = new ArrayList<>();
         int invalidEntryCount = 0;
+        int aiAttempts = 0;
+        long enrichmentDeadline = System.nanoTime() + 5_000_000_000L;
         for (IcsEntry entry : entries) {
             try {
-                candidates.add(convertToFriend(entry));
+                candidates.add(convertToFriend(entry, aiAttempts++ < 10 && System.nanoTime() < enrichmentDeadline));
             } catch (IllegalArgumentException e) {
                 invalidEntryCount++;
             }
         }
-
-        Set<String> existing = friendService.getFriends(userId).stream()
-                .map(friend -> Friend.normalizeName(friend.getName()))
-                .collect(Collectors.toSet());
 
         List<Friend> toSave = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -216,10 +218,12 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         boolean yearly = false;
         boolean isBirthday = false;
         boolean trustedYearSource = false;
+        int eventCount = 0;
 
         for (String line : unfolded) {
             String upper = line.toUpperCase(Locale.ROOT);
             if (upper.equals("BEGIN:VEVENT")) {
+                if (++eventCount > 1000) throw new IllegalArgumentException("Too many calendar events");
                 inEvent = true;
                 summary = null;
                 dtstart = null;
@@ -236,6 +240,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
                             boolean yearTrusted = trustedYearSource && date.isBefore(LocalDate.now()) &&
                                     date.getYear() > 1900 &&
                                     date.getYear() < LocalDate.now().getYear();
+                            if (result.size() >= FriendService.FRIEND_CAP) throw new IllegalArgumentException("Too many birthdays");
                             result.add(new IcsEntry(unescapeIcsText(summary.trim()), date, yearTrusted));
                         }
                     }
@@ -298,8 +303,8 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         }
     }
 
-    private Friend convertToFriend(IcsEntry entry) {
-        String name = resolveName(entry.summary());
+    private Friend convertToFriend(IcsEntry entry, boolean useAi) {
+        String name = useAi ? resolveName(entry.summary()) : entry.summary();
         LocalDate date = entry.date();
 
         if (!entry.yearTrusted()) {
@@ -314,6 +319,9 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
         for (String line : lines) {
             if (!line.isEmpty() && (line.charAt(0) == ' ' || line.charAt(0) == '\t')) {
                 if (!out.isEmpty()) {
+                    if (out.getLast().length() + line.length() - 1 > ImportFileReader.MAX_LINE_CHARS) {
+                        throw new IllegalArgumentException("Calendar logical line is too long");
+                    }
                     out.set(out.size() - 1, out.getLast() + line.substring(1));
                 }
             } else {
@@ -364,19 +372,7 @@ public class ImportIcsCommandHandler implements StatefulCommandHandler {
 
     private List<String> downloadLines(String fileId) {
         try {
-            org.telegram.telegrambots.meta.api.objects.File tgFile =
-                    telegramClient.execute(GetFile.builder().fileId(fileId).build());
-
-            String url = "https://api.telegram.org/file/bot" + botToken + "/" + tgFile.getFilePath();
-            URLConnection connection = URI.create(url).toURL().openConnection();
-            connection.setConnectTimeout(FILE_CONNECT_TIMEOUT_MILLIS);
-            connection.setReadTimeout(FILE_READ_TIMEOUT_MILLIS);
-            connection.setUseCaches(false);
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                return reader.lines().toList();
-            }
+            return importFileReader.download(fileId);
         } catch (TelegramApiException | IOException e) {
             log.atWarn()
                     .setMessage("ics_import_file_download_failed")

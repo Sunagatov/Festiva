@@ -1,6 +1,8 @@
 package com.festiva.command.handler;
 
 import com.festiva.command.MessageBuilder;
+import com.festiva.abuse.BotAbuseGuard;
+import com.festiva.importing.ImportFileReader;
 import com.festiva.command.StatefulCommandHandler;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
@@ -14,9 +16,7 @@ import com.festiva.user.api.UserDateService;
 import com.festiva.user.api.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -27,12 +27,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,8 +46,6 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     public static final String CALLBACK_CSV   = "BULK_CSV";
     public static final String CALLBACK_ICS   = "BULK_ICS";
 
-    private static final int FILE_CONNECT_TIMEOUT_MILLIS = 10_000;
-    private static final int FILE_READ_TIMEOUT_MILLIS = 10_000;
     private static final int DISPLAY_ERROR_LIMIT = 10;
 
     private final FriendService friendService;
@@ -59,9 +53,8 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
     private final TelegramClient telegramClient;
     private final UserPreferenceService userPreferenceService;
     private final UserDateService userDateService;
-
-    @Value("${telegram.bot.token}")
-    private String botToken;
+    private final ImportFileReader importFileReader;
+    private final BotAbuseGuard abuseGuard;
 
     @Override
     public String command() {
@@ -123,6 +116,10 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
         Lang lang = userPreferenceService.getLanguage(userId);
 
         List<String> lines;
+
+        if (!abuseGuard.allowImport(userId)) {
+            return MessageBuilder.html(chatId, Messages.get(lang, "import_rate_limited"));
+        }
 
         if (update.getMessage().hasDocument()) {
             lines = downloadDocument(update, userId);
@@ -224,19 +221,7 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 return null;
             }
 
-            org.telegram.telegrambots.meta.api.objects.File tgFile =
-                    telegramClient.execute(GetFile.builder().fileId(doc.getFileId()).build());
-
-            String url = "https://api.telegram.org/file/bot" + botToken + "/" + tgFile.getFilePath();
-            URLConnection connection = URI.create(url).toURL().openConnection();
-            connection.setConnectTimeout(FILE_CONNECT_TIMEOUT_MILLIS);
-            connection.setReadTimeout(FILE_READ_TIMEOUT_MILLIS);
-            connection.setUseCaches(false);
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                return reader.lines().toList();
-            }
+            return importFileReader.download(doc.getFileId());
         } catch (TelegramApiException | IOException e) {
             log.atWarn()
                     .setMessage("bulk_add_file_download_failed")

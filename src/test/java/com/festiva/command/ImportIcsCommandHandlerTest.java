@@ -11,6 +11,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("ImportIcsCommandHandler — ICS parsing")
 @SuppressWarnings("unused")
 class ImportIcsCommandHandlerTest {
+    @Test
+    void excessiveEventsAndFoldedLinesAreRejectedBeforeConversion() {
+        var events = new java.util.ArrayList<String>();
+        for (int i = 0; i < 1001; i++) events.addAll(List.of("BEGIN:VEVENT", "END:VEVENT"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ImportIcsCommandHandler.extractYearlyEntries(events))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ImportIcsCommandHandler.extractYearlyEntries(
+                List.of("SUMMARY:" + "a".repeat(4000), " " + "b".repeat(200))))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
 
     private static List<String> extract(String... lines) {
         return ImportIcsCommandHandler.extractYearlyCsvLines(List.of(lines));

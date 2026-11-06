@@ -1,6 +1,7 @@
 package com.festiva.bot;
 
 import com.festiva.command.CommandRouter;
+import com.festiva.abuse.BotAbuseGuard;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.metrics.MetricsSender;
@@ -13,19 +14,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
-import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
 @Component
 @SuppressWarnings("unused")
-public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, NotificationSender {
+public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSender {
 
     private final String botToken;
     @Value("${telegram.bot.polling-enabled:true}")
@@ -37,6 +43,9 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     private final MetricsSender metricsSender;
     private final BotCommandsService commandsService;
     private final UserPreferenceService userPreferenceService;
+    private final BotAbuseGuard abuseGuard;
+    private final ThreadPoolExecutor updates = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(32), Thread.ofPlatform().name("festiva-updates-", 0).factory());
 
     public BirthdayBot(CommandRouter commandRouter,
                        CallbackQueryHandler callbackQueryHandler,
@@ -45,7 +54,8 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
                        MetricsSender metricsSender,
                        BotCommandsService commandsService,
                        UserStateService userStateService,
-                       UserPreferenceService userPreferenceService) {
+                       UserPreferenceService userPreferenceService,
+                       BotAbuseGuard abuseGuard) {
         this.botToken = botToken;
         this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
@@ -53,6 +63,7 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
         this.metricsSender = metricsSender;
         this.commandsService = commandsService;
         this.userPreferenceService = userPreferenceService;
+        this.abuseGuard = abuseGuard;
     }
 
     @PostConstruct
@@ -78,14 +89,23 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
     }
 
     @Override
-    public void consume(Update update) {
-        if (update == null) {
-            log.atWarn()
-                    .setMessage("telegram_update_missing")
-                    .log();
-            return;
+    public void consume(List<Update> batch) {
+        for (Update update : batch) {
+            if (!admit(update)) continue;
+            try { updates.execute(() -> handleAdmitted(update)); }
+            catch (RejectedExecutionException ignored) { abuseGuard.queueFull(); }
         }
+    }
 
+    public void consume(Update update) {
+        if (admit(update)) handleAdmitted(update);
+    }
+
+    private boolean admit(Update update) {
+        return update != null && abuseGuard.allowUpdate(extractUserId(update));
+    }
+
+    private void handleAdmitted(Update update) {
         if (update.hasCallbackQuery()) {
             String callbackId = update.getCallbackQuery().getId();
             try {
@@ -169,8 +189,11 @@ public class BirthdayBot implements LongPollingSingleThreadUpdateConsumer, Notif
 
     @PreDestroy
     public void stop() throws Exception {
-        if (botsApplication != null) {
-            botsApplication.close();
+        try {
+            if (botsApplication != null) botsApplication.close();
+        } finally {
+            updates.shutdown();
+            if (!updates.awaitTermination(20, TimeUnit.SECONDS)) updates.shutdownNow();
         }
     }
 

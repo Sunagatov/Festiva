@@ -1,6 +1,8 @@
 package com.festiva.command;
 
 import com.festiva.command.handler.BulkAddCommandHandler;
+import com.festiva.abuse.BotAbuseGuard;
+import com.festiva.importing.ImportFileReader;
 import com.festiva.friend.api.FriendService;
 import com.festiva.friend.entity.Friend;
 import com.festiva.i18n.Lang;
@@ -38,10 +40,21 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
     @Mock TelegramClient telegramClient;
     @Mock UserPreferenceService userPreferenceService;
     @Mock UserDateService userDateService;
+    @Mock ImportFileReader importFileReader;
+    @Mock BotAbuseGuard abuseGuard;
     @InjectMocks BulkAddCommandHandler handler;
+
+    @Test
+    void deniedImportPreservesStateAndSkipsFileAndDatabaseWork() {
+        when(abuseGuard.allowImport(1L)).thenReturn(false);
+        assertThat(handler.handleState(update("Alice,15.03.1990")).getText()).contains("Too many imports");
+        verifyNoInteractions(importFileReader, friendService);
+        verify(userStateService, never()).clearState(anyLong());
+    }
 
     @BeforeEach
     void defaults() {
+        lenient().when(abuseGuard.allowImport(anyLong())).thenReturn(true);
         lenient().when(userPreferenceService.getLanguage(anyLong())).thenReturn(Lang.EN);
         lenient().when(friendService.getFriends(anyLong())).thenReturn(List.of());
         lenient().when(userDateService.todayFor(anyLong())).thenReturn(LocalDate.now());

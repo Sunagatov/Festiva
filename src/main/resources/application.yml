@@ -47,3 +47,11 @@ ai:
   api-key: ${OPENAI_API_KEY:}
   base-url: ${AI_BASE_URL:https://api.openai.com/v1}
   model-name: ${AI_MODEL_NAME:gpt-4o-mini}
+  daily-call-limit: ${AI_DAILY_CALL_LIMIT:100}
+
+festiva:
+  abuse:
+    updates-per-user-minute: ${FESTIVA_ABUSE_UPDATES_PER_USER_MINUTE:30}
+    updates-per-minute: ${FESTIVA_ABUSE_UPDATES_PER_MINUTE:300}
+    imports-per-user-hour: ${FESTIVA_ABUSE_IMPORTS_PER_USER_HOUR:3}
+    imports-per-hour: ${FESTIVA_ABUSE_IMPORTS_PER_HOUR:20}
