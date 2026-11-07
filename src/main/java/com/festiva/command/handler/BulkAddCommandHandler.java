@@ -178,7 +178,9 @@ public class BulkAddCommandHandler implements StatefulCommandHandler {
                 .addKeyValue("errorCount", errors.size())
                 .log();
 
-        return MessageBuilder.html(chatId, buildResponse(lang, new BulkAddParser.ParseResult(added, errors, false)));
+        String response = buildResponse(lang, new BulkAddParser.ParseResult(added, errors, false));
+        return added.isEmpty() ? MessageBuilder.html(chatId, response)
+                : MessageBuilder.html(chatId, response, MessageBuilder.coffeeMarkup(lang));
     }
 
     private String buildResponse(Lang lang, BulkAddParser.ParseResult result) {

@@ -138,6 +138,9 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
                 metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
                 return;
             }
+            if (chatId > 0 && userId > 0) {
+                commandsService.ensureCommandsForUser(chatId, userPreferenceService.getLanguage(userId));
+            }
             if (update.hasCallbackQuery()) {
                 EditMessageText edit = callbackQueryHandler.handle(update.getCallbackQuery());
                 if (edit != null) {

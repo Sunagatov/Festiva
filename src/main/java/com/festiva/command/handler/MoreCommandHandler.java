@@ -99,7 +99,11 @@ public class MoreCommandHandler implements CommandHandler {
                                 button(lang, Messages.MORE_SETTINGS_BTN, CALLBACK_SETTINGS)
                         ),
                         new InlineKeyboardRow(
-                                button(lang, Messages.MORE_ABOUT_BTN, CALLBACK_ABOUT)
+                                button(lang, Messages.MORE_ABOUT_BTN, CALLBACK_ABOUT),
+                                InlineKeyboardButton.builder()
+                                        .text(Messages.get(lang, Messages.SUPPORT_PROJECT_BTN))
+                                        .url(MessageBuilder.COFFEE_URL)
+                                        .build()
                         )
                 ))
                 .build();

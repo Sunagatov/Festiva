@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.LinkPreviewOptions;
 
 @Component
 @RequiredArgsConstructor
@@ -30,7 +31,10 @@ public class StartCommandHandler implements CommandHandler {
         userStateService.clearState(userId);
 
         Lang lang = userPreferenceService.getLanguage(userId);
-        String text = Messages.get(lang, Messages.WELCOME) + "\n\n" + Messages.get(lang, Messages.MENU);
-        return MessageBuilder.html(chatId, text, MessageBuilder.mainMenu(lang));
+        String text = Messages.get(lang, Messages.WELCOME) + "\n\n" + Messages.get(lang, Messages.MENU)
+                + "\n\n" + MessageBuilder.coffeeLink(lang);
+        SendMessage message = MessageBuilder.html(chatId, text, MessageBuilder.mainMenu(lang));
+        message.setLinkPreviewOptions(LinkPreviewOptions.builder().isDisabled(true).build());
+        return message;
     }
 }

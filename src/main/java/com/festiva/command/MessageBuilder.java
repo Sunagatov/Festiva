@@ -21,10 +21,30 @@ import java.util.Map;
 
 public final class MessageBuilder {
 
+    public static final String COFFEE_URL = "https://buymeacoffee.com/lucky_1uck";
+
     public static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
 
     private MessageBuilder() {}
+
+    public static InlineKeyboardButton coffeeButton(Lang lang) {
+        return InlineKeyboardButton.builder()
+                .text(Messages.get(lang, Messages.SUPPORT_COFFEE_BTN))
+                .url(COFFEE_URL)
+                .build();
+    }
+
+    public static InlineKeyboardMarkup coffeeMarkup(Lang lang) {
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(new InlineKeyboardRow(coffeeButton(lang))))
+                .build();
+    }
+
+    public static String coffeeLink(Lang lang) {
+        return "<a href=\"" + COFFEE_URL + "\">"
+                + Messages.get(lang, Messages.SUPPORT_COFFEE_BTN) + "</a>";
+    }
 
     public static SendMessage html(long chatId, String text) {
         return SendMessage.builder().chatId(chatId).parseMode("HTML").text(text).build();

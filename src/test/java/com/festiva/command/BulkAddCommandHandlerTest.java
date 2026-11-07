@@ -106,6 +106,9 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
         verify(friendService, times(2)).addFriend(eq(1L), any(Friend.class));
         verify(userStateService).clearState(1L);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_ADD_SUCCESS, 2));
+        var keyboard = (org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup) result.getReplyMarkup();
+        assertThat(keyboard.getKeyboard()).flatExtracting(row -> row)
+                .filteredOn(button -> MessageBuilder.COFFEE_URL.equals(button.getUrl())).hasSize(1);
     }
 
     @Test
@@ -134,6 +137,7 @@ class BulkAddCommandHandlerTest extends MessagesTestSupport {
         var result = handler.handleState(update("Alice,15.03.1990"));
         verify(friendService, never()).addFriend(anyLong(), any());
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.BULK_CAP_EXCEEDED, 0, FriendService.FRIEND_CAP));
+        assertThat(result.getReplyMarkup()).isNull();
     }
 
     @Test

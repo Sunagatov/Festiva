@@ -46,6 +46,7 @@ import static org.mockito.Mockito.*;
 class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
 
     @Mock private UserStateService userStateService;
+    @Mock private com.festiva.friend.api.FriendService friendService;
     @Mock private UpcomingBirthdaysCommandHandler upcomingHandler;
     @Mock private SearchCommandHandler searchHandler;
     @Mock private TodayCommandHandler todayHandler;
@@ -341,6 +342,37 @@ class CallbackQueryHandlerTest extends com.festiva.i18n.MessagesTestSupport {
         verify(userStateService).clearState(1L);
         verifyNoInteractions(pendingIcsImportService);
         assertThat(result.getText()).contains(Messages.get(Lang.EN, Messages.SESSION_EXPIRED));
+    }
+
+    @Test
+    void completedIcsBatchShowsOneCoffeeButton() {
+        when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ICS_CONFIRM);
+        when(pendingIcsImportService.get(1L)).thenReturn(List.of(
+                new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1)),
+                new com.festiva.friend.entity.Friend("Bob", java.time.LocalDate.of(1991, 2, 2))));
+        when(friendService.getFriends(1L)).thenReturn(List.of());
+
+        var response = handler.handle(callback("ICS_CONFIRM"));
+
+        verify(friendService, times(2)).addFriend(eq(1L), any());
+        assertThat(response.getText()).isEqualTo(Messages.get(Lang.EN, Messages.ICS_DONE, 2));
+        assertThat(response.getReplyMarkup().getKeyboard()).flatExtracting(row -> row)
+                .filteredOn(button -> com.festiva.command.MessageBuilder.COFFEE_URL.equals(button.getUrl()))
+                .hasSize(1);
+    }
+
+    @Test
+    void duplicateOnlyIcsBatchDoesNotShowCoffeeButton() {
+        var existing = new com.festiva.friend.entity.Friend("Alice", java.time.LocalDate.of(1990, 1, 1));
+        when(userStateService.getState(1L)).thenReturn(BotState.WAITING_FOR_ICS_CONFIRM);
+        when(pendingIcsImportService.get(1L)).thenReturn(List.of(existing));
+        when(friendService.getFriends(1L)).thenReturn(List.of(existing));
+
+        var response = handler.handle(callback("ICS_CONFIRM"));
+
+        verify(friendService, never()).addFriend(anyLong(), any());
+        assertThat(response.getReplyMarkup()).isNull();
+        assertThat(response.getText()).isEqualTo(Messages.get(Lang.EN, Messages.ICS_NONE_SAVED));
     }
 
     @Test

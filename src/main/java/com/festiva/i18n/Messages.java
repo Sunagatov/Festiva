@@ -65,6 +65,11 @@ public final class Messages {
     public static final String WELCOME                = "welcome";
     public static final String MENU                   = "menu";
     public static final String ABOUT                  = "about";
+    public static final String SUPPORT_PROJECT_BTN    = "support_project_btn";
+    public static final String SUPPORT_COFFEE_BTN     = "support_coffee_btn";
+    public static final String SUPPORT_PROJECT        = "support_project";
+    public static final String SUPPORT_PROFILE        = "support_profile";
+    public static final String SUPPORT_PROFILE_SHORT  = "support_profile_short";
     public static final String ENTER_NAME             = "enter_name";
     public static final String NAME_EMPTY             = "name_empty";
     public static final String NAME_TOO_LONG          = "name_too_long";

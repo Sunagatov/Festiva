@@ -121,6 +121,7 @@ Festiva is a Telegram bot that helps you manage and receive birthday reminders f
 | `/menu` | Show the command menu |
 | `/help` | Alias for `/menu` |
 | `/about` | About Festiva |
+| `/supportproject` | Support Festiva through Buy Me a Coffee |
 | `/add` | Add a friend with their birthdate |
 | `/addmany` | Bulk-add friends via CSV file or paste |
 | `/importics` | Import birthdays from Google Calendar (.ics) |

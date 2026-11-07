@@ -29,7 +29,7 @@ public class AboutCommandHandler implements CommandHandler {
         long userId = update.getMessage().getFrom().getId();
         Lang language = userPreferenceService.getLanguage(userId);
         String text = Messages.get(language, Messages.ABOUT);
-        InlineKeyboardMarkup markup = MessageBuilder.backToMoreMarkup(language);
+        InlineKeyboardMarkup markup = MessageBuilder.withBackToMore(language, MessageBuilder.coffeeMarkup(language));
 
         userStateService.clearState(userId);
 

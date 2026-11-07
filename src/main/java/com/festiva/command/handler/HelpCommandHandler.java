@@ -29,7 +29,8 @@ public class HelpCommandHandler implements CommandHandler {
 
         userStateService.clearState(userId);
 
+        var lang = userPreferenceService.getLanguage(userId);
         return MessageBuilder.html(update.getMessage().getChatId(),
-                Messages.get(userPreferenceService.getLanguage(userId), Messages.MENU));
+                Messages.get(lang, Messages.MENU), MessageBuilder.coffeeMarkup(lang));
     }
 }

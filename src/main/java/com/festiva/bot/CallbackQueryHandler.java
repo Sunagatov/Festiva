@@ -409,7 +409,7 @@ public class CallbackQueryHandler {
         String message = saved > 0
                 ? Messages.get(lang, Messages.ICS_DONE, saved)
                 : Messages.get(lang, Messages.ICS_NONE_SAVED);
-        return new CallbackResult(message, null);
+        return new CallbackResult(message, saved > 0 ? MessageBuilder.coffeeMarkup(lang) : null);
     }
 
     private EditMessageText toEdit(SendMessage msg, int messageId) {

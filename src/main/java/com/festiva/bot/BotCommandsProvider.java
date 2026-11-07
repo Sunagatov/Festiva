@@ -34,6 +34,7 @@ public class BotCommandsProvider {
                     new BotCommand("menu",              "Все команды"),
                     new BotCommand("help",              "Помощь"),
                     new BotCommand("about",             "О боте"),
+                    new BotCommand("supportproject",    "☕ Поддержать проект"),
                     new BotCommand("deleteaccount",     "Удалить данные"),
                     new BotCommand("cancel",            "Отмена"),
                     new BotCommand("importics",         "Импорт из Google Календаря")
@@ -61,6 +62,7 @@ public class BotCommandsProvider {
                     new BotCommand("menu",              "Show all commands"),
                     new BotCommand("help",              "Help"),
                     new BotCommand("about",             "About Festiva"),
+                    new BotCommand("supportproject",    "☕ Support the project"),
                     new BotCommand("deleteaccount",     "Delete my data"),
                     new BotCommand("cancel",            "Cancel"),
                     new BotCommand("importics",         "Import from Google Calendar")
