@@ -11,6 +11,11 @@
   [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
   [![GitHub Stars](https://img.shields.io/github/stars/Sunagatov/Festiva)](https://github.com/Sunagatov/Festiva/stargazers)
   [![Contributors](https://img.shields.io/github/contributors/Sunagatov/Festiva)](https://github.com/Sunagatov/Festiva/graphs/contributors)
+  <p>
+    <a href="https://buymeacoffee.com/lucky_1uck">
+      <img src="https://img.shields.io/badge/Support_the_project-FFDD00?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=black" alt="Support the project" width="260" height="40">
+    </a>
+  </p>
 </div>
 
 ---
@@ -224,6 +229,18 @@ Each feature has a full spec covering user stories, functional & non-functional 
 | 💡 Want a feature | Start a [Discussion](https://github.com/Sunagatov/Festiva/discussions) first |
 | 👨💻 Ready to code | Pick a [`good first issue`](https://github.com/Sunagatov/Festiva/issues?q=is%3Aopen+label%3A%22good+first+issue%22), comment "I'm on it" |
 | 🔧 Big change | Comment on the issue before writing code — tickets may have hidden constraints |
+
+---
+
+## ☕ Support the project
+
+If Festiva helps you remember birthdays, you can support its development.
+
+<p>
+  <a href="https://buymeacoffee.com/lucky_1uck">
+    <img src="https://img.shields.io/badge/Support_the_project-FFDD00?style=for-the-badge&amp;logo=buymeacoffee&amp;logoColor=black" alt="Support the project" width="260" height="40">
+  </a>
+</p>
 
 ---
 
