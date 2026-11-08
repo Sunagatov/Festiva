@@ -38,7 +38,7 @@ class ApplicationYamlTest {
     @DisplayName("console log pattern includes structured key value pairs")
     void consolePatternIncludesKeyValuePairs() throws IOException {
         assertThat(property("logging.pattern.console"))
-                .isEqualTo("%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p --- [%15.15t] %-40.40logger{39} : %m %kvp%n%wEx");
+                .asString().contains("%kvp", "%X{traceId:-}", "%X{spanId:-}", "%wEx");
     }
 
     @Test

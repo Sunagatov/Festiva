@@ -10,6 +10,16 @@ spring:
     database: ${MONGO_DATABASE_NAME:FestivaDatabase}
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name:festiva-bot}
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTEL_EXPORTER_ENABLED:false}
+  tracing:
+    export:
+      enabled: ${OTEL_EXPORTER_ENABLED:false}
   endpoints:
     web:
       base-path: /actuator
@@ -30,7 +40,7 @@ logging:
   level:
     org.telegram.telegrambots: INFO
   pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p --- [%15.15t] %-40.40logger{39} : %m %kvp%n%wEx"
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p --- [%15.15t] %-40.40logger{39} traceId=%X{traceId:-} spanId=%X{spanId:-} : %m %kvp%n%wEx"
   group:
     festiva: com.festiva
     telegram: org.telegram.telegrambots

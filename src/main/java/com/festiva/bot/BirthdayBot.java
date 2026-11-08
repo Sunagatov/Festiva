@@ -5,6 +5,8 @@ import com.festiva.abuse.BotAbuseGuard;
 import com.festiva.i18n.Lang;
 import com.festiva.i18n.Messages;
 import com.festiva.metrics.MetricsSender;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import com.festiva.notification.NotificationSender;
 import com.festiva.state.UserStateService;
 import com.festiva.user.api.UserPreferenceService;
@@ -44,6 +46,7 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
     private final BotCommandsService commandsService;
     private final UserPreferenceService userPreferenceService;
     private final BotAbuseGuard abuseGuard;
+    private final ObservationRegistry observationRegistry;
     private final ThreadPoolExecutor updates = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(32), Thread.ofPlatform().name("festiva-updates-", 0).factory());
 
@@ -55,7 +58,8 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
                        BotCommandsService commandsService,
                        UserStateService userStateService,
                        UserPreferenceService userPreferenceService,
-                       BotAbuseGuard abuseGuard) {
+                       BotAbuseGuard abuseGuard,
+                       ObservationRegistry observationRegistry) {
         this.botToken = botToken;
         this.telegramClient = telegramClient;
         this.commandRouter = commandRouter;
@@ -64,6 +68,7 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
         this.commandsService = commandsService;
         this.userPreferenceService = userPreferenceService;
         this.abuseGuard = abuseGuard;
+        this.observationRegistry = observationRegistry;
     }
 
     @PostConstruct
@@ -120,7 +125,9 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
             }
         }
 
-        processUpdate(update);
+        Observation.createNotStarted("festiva.telegram.update", observationRegistry)
+                .lowCardinalityKeyValue("update.type", update.hasCallbackQuery() ? "callback" : update.hasMessage() ? "message" : "other")
+                .observe(() -> processUpdate(update));
     }
 
     private void processUpdate(Update update) {
@@ -160,6 +167,8 @@ public class BirthdayBot implements LongPollingUpdateConsumer, NotificationSende
             }
             metricsSender.sendMetrics(update, "SUCCESS", System.currentTimeMillis() - startTime);
         } catch (TelegramApiException | RuntimeException e) {
+            Observation current = observationRegistry.getCurrentObservation();
+            if (current != null) current.error(e);
             metricsSender.sendMetrics(update, "ERROR", System.currentTimeMillis() - startTime);
             log.atError()
                     .setMessage("telegram_update_processing_failed")

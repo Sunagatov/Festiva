@@ -21,7 +21,7 @@ import java.util.Properties;
 @Component
 @ConditionalOnProperty(prefix = "kafka", name = "enabled", havingValue = "true")
 @SuppressWarnings("unused")
-public class FestivaMetricsSender implements MetricsSender {
+public class FestivaMetricsSender {
 
     private final KafkaProducer<String, String> producer;
     private final String topic;
@@ -55,7 +55,6 @@ public class FestivaMetricsSender implements MetricsSender {
         return props;
     }
 
-    @Override
     public void sendMetrics(Update update, String status, long processingTimeMillis) {
         try {
             String json = buildJson(update, status, processingTimeMillis);

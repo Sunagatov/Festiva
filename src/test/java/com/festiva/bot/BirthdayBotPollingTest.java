@@ -22,6 +22,37 @@ import static org.mockito.Mockito.reset;
 
 class BirthdayBotPollingTest extends com.festiva.i18n.MessagesTestSupport {
     @Test
+    void telegramProcessingCreatesAnObservationAndMarksCaughtFailures() throws Exception {
+        var registry = io.micrometer.observation.ObservationRegistry.create();
+        var stopped = new java.util.concurrent.atomic.AtomicReference<io.micrometer.observation.Observation.Context>();
+        registry.observationConfig().observationHandler(new io.micrometer.observation.ObservationHandler<>() {
+            public boolean supportsContext(io.micrometer.observation.Observation.Context context) { return true; }
+            public void onStop(io.micrometer.observation.Observation.Context context) { stopped.set(context); }
+        });
+        var router = mock(CommandRouter.class);
+        when(router.route(org.mockito.ArgumentMatchers.any())).thenThrow(new IllegalStateException("test failure"));
+        var preferences = mock(UserPreferenceService.class);
+        when(preferences.getLanguage(42L)).thenReturn(Lang.EN);
+        var bot = new BirthdayBot(router, mock(CallbackQueryHandler.class), mock(TelegramClient.class), "unused",
+                mock(MetricsSender.class), mock(BotCommandsService.class), null, preferences,
+                new BotAbuseGuard(30, 300, 3, 20), registry);
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(42L);
+        Message message = mock(Message.class);
+        when(message.getFrom()).thenReturn(user);
+        when(message.getChatId()).thenReturn(42L);
+        Update update = mock(Update.class);
+        when(update.hasMessage()).thenReturn(true);
+        when(update.getMessage()).thenReturn(message);
+        try {
+            bot.consume(update);
+            org.assertj.core.api.Assertions.assertThat(stopped.get().getName()).isEqualTo("festiva.telegram.update");
+            org.assertj.core.api.Assertions.assertThat(stopped.get().getError()).isInstanceOf(IllegalStateException.class);
+            org.assertj.core.api.Assertions.assertThat(registry.getCurrentObservation()).isNull();
+        } finally { bot.stop(); }
+    }
+
+    @Test
     void pollingBatchCannotCreateAnUnboundedQueue() throws Exception {
         TelegramClient client = mock(TelegramClient.class);
         CommandRouter router = mock(CommandRouter.class);
@@ -35,7 +66,7 @@ class BirthdayBotPollingTest extends com.festiva.i18n.MessagesTestSupport {
         });
         BirthdayBot bot = new BirthdayBot(router, mock(CallbackQueryHandler.class), client, "unused", metrics,
                 mock(BotCommandsService.class), null, mock(UserPreferenceService.class),
-                new BotAbuseGuard(2000, 2000, 3, 20));
+                new BotAbuseGuard(2000, 2000, 3, 20), io.micrometer.observation.ObservationRegistry.NOOP);
         User user = mock(User.class);
         when(user.getId()).thenReturn(42L);
         Message message = mock(Message.class);
@@ -60,7 +91,7 @@ class BirthdayBotPollingTest extends com.festiva.i18n.MessagesTestSupport {
         MetricsSender metrics = mock(MetricsSender.class);
         UserPreferenceService preferences = mock(UserPreferenceService.class);
         BirthdayBot bot = new BirthdayBot(router, callbacks, client, "unused", metrics,
-                mock(BotCommandsService.class), null, preferences, new BotAbuseGuard(1, 100, 3, 20));
+                mock(BotCommandsService.class), null, preferences, new BotAbuseGuard(1, 100, 3, 20), io.micrometer.observation.ObservationRegistry.NOOP);
         User user = mock(User.class);
         when(user.getId()).thenReturn(42L);
         Message message = mock(Message.class);
@@ -86,7 +117,7 @@ class BirthdayBotPollingTest extends com.festiva.i18n.MessagesTestSupport {
     void disabledPollingDoesNotRegisterWithTelegram() {
         TelegramClient client = mock(TelegramClient.class);
         BotCommandsService commands = mock(BotCommandsService.class);
-        BirthdayBot bot = new BirthdayBot(null, null, client, "unused", null, commands, null, null, new BotAbuseGuard(30, 300, 3, 20));
+        BirthdayBot bot = new BirthdayBot(null, null, client, "unused", null, commands, null, null, new BotAbuseGuard(30, 300, 3, 20), io.micrometer.observation.ObservationRegistry.NOOP);
         ReflectionTestUtils.setField(bot, "pollingEnabled", false);
         bot.start();
         verifyNoInteractions(client, commands);
@@ -100,7 +131,7 @@ class BirthdayBotPollingTest extends com.festiva.i18n.MessagesTestSupport {
         UserPreferenceService preferences = mock(UserPreferenceService.class);
         when(preferences.getLanguage(42L)).thenReturn(Lang.EN);
         BirthdayBot bot = new BirthdayBot(router, mock(CallbackQueryHandler.class), client,
-                "unused", metrics, mock(BotCommandsService.class), null, preferences, new BotAbuseGuard(30, 300, 3, 20));
+                "unused", metrics, mock(BotCommandsService.class), null, preferences, new BotAbuseGuard(30, 300, 3, 20), io.micrometer.observation.ObservationRegistry.NOOP);
 
         User user = mock(User.class);
         when(user.getId()).thenReturn(42L);
