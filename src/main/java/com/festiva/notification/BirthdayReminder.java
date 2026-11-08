@@ -53,6 +53,7 @@ public class BirthdayReminder {
     private final FriendService friendService;
     private final NotificationSender notificationSender;
     private final UserPreferenceService userPreferenceService;
+    private final ReminderMetrics reminderMetrics;
 
     @PostConstruct
     public void checkBirthdaysOnStartup() {
@@ -84,34 +85,42 @@ public class BirthdayReminder {
     }
 
     void checkBirthdaysForHour(ZonedDateTime utcNow, String trigger) {
-        Instant startedAt = Instant.now();
-        List<Long> userIds = friendService.getAllUserIds();
+        var sample = reminderMetrics.start();
         ReminderRunStats stats = new ReminderRunStats();
-        stats.scannedUsers = userIds.size();
+        boolean completed = false;
+        try {
+            Instant startedAt = Instant.now();
+            List<Long> userIds = friendService.getAllUserIds();
+            stats.scannedUsers = userIds.size();
 
-        Map<Long, UserPreference> prefByUser = userPreferenceService.findByUserIds(userIds);
-        Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
+            Map<Long, UserPreference> prefByUser = userPreferenceService.findByUserIds(userIds);
+            Map<Long, List<Friend>> friendsByUser = friendService.getFriendsByUserIds(userIds);
 
-        userIds.forEach(userId -> {
-            MDC.put("userId", String.valueOf(userId));
-            try {
-                processUser(userId, prefByUser.get(userId), friendsByUser.getOrDefault(userId, List.of()), utcNow, stats);
-            } finally {
-                MDC.remove("userId");
-            }
-        });
+            userIds.forEach(userId -> {
+                MDC.put("userId", String.valueOf(userId));
+                try {
+                    processUser(userId, prefByUser.get(userId), friendsByUser.getOrDefault(userId, List.of()), utcNow, stats);
+                } finally {
+                    MDC.remove("userId");
+                }
+            });
 
-        log.atInfo()
-                .setMessage("birthday_reminder_check_completed")
-                .addKeyValue("trigger", trigger)
-                .addKeyValue("scannedUsers", stats.scannedUsers)
-                .addKeyValue("processedUsers", stats.processedUsers)
-                .addKeyValue("notifiedUsers", stats.notifiedUsers)
-                .addKeyValue("notificationsSent", stats.notificationsSent)
-                .addKeyValue("notificationFailures", stats.notificationFailures)
-                .addKeyValue("invalidTimezones", stats.invalidTimezones)
-                .addKeyValue("durationMs", ChronoUnit.MILLIS.between(startedAt, Instant.now()))
-                .log();
+            log.atInfo()
+                    .setMessage("birthday_reminder_check_completed")
+                    .addKeyValue("trigger", trigger)
+                    .addKeyValue("scannedUsers", stats.scannedUsers)
+                    .addKeyValue("processedUsers", stats.processedUsers)
+                    .addKeyValue("notifiedUsers", stats.notifiedUsers)
+                    .addKeyValue("notificationsSent", stats.notificationsSent)
+                    .addKeyValue("notificationFailures", stats.notificationFailures)
+                    .addKeyValue("invalidTimezones", stats.invalidTimezones)
+                    .addKeyValue("durationMs", ChronoUnit.MILLIS.between(startedAt, Instant.now()))
+                    .log();
+            completed = true;
+        } finally {
+            reminderMetrics.complete(sample, completed && stats.notificationFailures == 0 && stats.invalidTimezones == 0,
+                    stats.notificationsSent, stats.notificationFailures);
+        }
     }
 
     private void processUser(long userId, UserPreference pref, List<Friend> friends, ZonedDateTime utcNow, ReminderRunStats stats) {

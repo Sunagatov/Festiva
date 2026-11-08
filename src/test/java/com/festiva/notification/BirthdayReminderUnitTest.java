@@ -32,6 +32,8 @@ class BirthdayReminderUnitTest extends MessagesTestSupport {
     @Mock FriendService friendService;
     @Mock NotificationSender notificationSender;
     @Mock UserPreferenceService userPreferenceService;
+    @Mock ReminderMetrics reminderMetrics;
+
     @InjectMocks BirthdayReminder reminder;
 
     @BeforeEach
